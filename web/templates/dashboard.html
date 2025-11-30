@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Minecraft Server</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --dark-bg: #0f0f23;
+            --card-bg: #ffffff;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-color: #e2e8f0;
+        }
+
+        [data-bs-theme="dark"] {
+            --card-bg: #1a1a2e;
+            --text-primary: #f7fafc;
+            --text-secondary: #cbd5e0;
+            --border-color: #2d3748;
+        }
+
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--primary-gradient);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: -0.5px;
+        }
+
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            background: var(--card-bg);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .card-header {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 1.2rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header i {
+            font-size: 1.3rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .status-badge {
+            font-size: 1rem;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .stat-card h3 {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 2rem;
+            margin: 10px 0;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        .plugin-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .plugin-item:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .plugin-item:last-child {
+            border-bottom: none;
+        }
+
+        .plugin-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .plugin-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--primary-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .plugin-details strong {
+            color: var(--text-primary);
+            font-weight: 600;
+            display: block;
+        }
+
+        .plugin-details small {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .logs-container {
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 1.5rem;
+            border-radius: 15px;
+            max-height: 450px;
+            overflow-y: auto;
+            font-family: 'Cascadia Code', 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            border: 1px solid #30363d;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .logs-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .logs-container::-webkit-scrollbar-track {
+            background: #161b22;
+            border-radius: 10px;
+        }
+
+        .logs-container::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 10px;
+        }
+
+        .logs-container::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+
+        .btn {
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+        }
+
+        .btn-warning {
+            background: var(--warning-gradient);
+        }
+
+        .btn-danger {
+            background: var(--danger-gradient);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            font-family: 'Cascadia Code', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.1);
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            background: var(--success-gradient);
+            border-radius: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(102, 126, 234, 0.02);
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        @media (max-width: 768px) {
+            .stat-card h3 {
+                font-size: 1.5rem;
+            }
+            
+            .plugin-item {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark sticky-top">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-controller"></i> Panel Minecraft Server
+            </span>
+            <div class="d-flex align-items-center gap-3">
+                <div class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                    <i class="bi bi-moon-stars" id="theme-icon"></i>
+                </div>
+                <span class="text-white me-2">
+                    <i class="bi bi-person-circle"></i> {{ current_user.id }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Estado del Servidor -->
+            <div class="col-md-12 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-server"></i> Estado del Servidor
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                                <div class="stat-card">
+                                    <p>Estado</p>
+                                    <h3 id="server-status">
+                                        <span class="badge bg-secondary status-badge">
+                                            <i class="bi bi-hourglass-split"></i> Cargando
+                                        </span>
+                                    </h3>
+                                    <small class="text-muted d-block mt-2" id="server-version">Versión: ...</small>
+                                    <small class="text-muted d-block mt-1" id="server-uptime">Uptime: ...</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                                <div class="stat-card">
+                                    <p>CPU</p>
+                                    <h3 id="cpu-usage">0%</h3>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" id="cpu-progress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                                <div class="stat-card">
+                                    <p>Memoria</p>
+                                    <h3 id="memory-usage">0 MB</h3>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" id="memory-progress" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted" id="memory-detail">0 / 0 MB</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <div class="stat-card">
+                                    <p>Controles</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <button class="btn btn-success btn-sm" onclick="startServer()">
+                                            <i class="bi bi-play-fill"></i> Iniciar
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="restartServer()">
+                                            <i class="bi bi-arrow-clockwise"></i> Reiniciar
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="stopServer()">
+                                            <i class="bi bi-stop-fill"></i> Detener
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Jugadores Online -->
+            <div class="col-md-12 mb-3">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-people-fill"></i> Jugadores Online
+                        <span class="badge bg-light text-dark ms-2" id="players-count">0/0</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="players-list" class="d-flex flex-wrap gap-2">
+                            <span class="text-muted">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna izquierda: Plugins y Listas -->
+            <div class="col-md-6">
+                <!-- Gestión de Plugins -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-puzzle"></i> Gestión de Plugins
+                        <span class="badge bg-light text-dark ms-2" id="plugin-count">0</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-warning flex-fill" onclick="updateAllPlugins()">
+                                <i class="bi bi-arrow-repeat"></i> Actualizar Plugins
+                            </button>
+                            <button class="btn btn-info flex-fill" onclick="updateServer()">
+                                <i class="bi bi-download"></i> Actualizar Servidor
+                            </button>
+                        </div>
+                        <div class="upload-area mb-3" id="upload-area">
+                            <i class="bi bi-cloud-upload" style="font-size: 2.5rem; color: #667eea;"></i>
+                            <p class="mb-2 mt-2"><strong>Arrastra un archivo .jar aquí</strong></p>
+                            <p class="text-muted small mb-3">o haz clic para seleccionar</p>
+                            <input type="file" class="d-none" id="plugin-file" accept=".jar">
+                            <button class="btn btn-primary btn-sm" onclick="document.getElementById('plugin-file').click()">
+                                <i class="bi bi-folder2-open"></i> Seleccionar archivo
+                            </button>
+                        </div>
+                        <div id="plugins-list">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="text-muted mt-2">Cargando plugins...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Whitelist -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="bi bi-person-check"></i> Whitelist
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" id="whitelist-content" rows="5" placeholder='[{"uuid":"...","name":"Player1"}, ...]'></textarea>
+                        <button class="btn btn-success mt-2" onclick="saveWhitelist()">
+                            <i class="bi bi-save"></i> Guardar Whitelist
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Blacklist -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="bi bi-person-x"></i> Blacklist (Baneados)
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" id="blacklist-content" rows="5" placeholder='[{"uuid":"...","name":"Player1","reason":"..."}, ...]'></textarea>
+                        <button class="btn btn-success mt-2" onclick="saveBlacklist()">
+                            <i class="bi bi-save"></i> Guardar Blacklist
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna derecha: Logs y Configuración -->
+            <div class="col-md-6">
+                <!-- Logs del Servidor -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <i class="bi bi-terminal"></i> Logs en Tiempo Real
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-light" onclick="loadLogs()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light" onclick="clearLogs()">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="logs-container" id="logs-content">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="mt-2" style="color: #8b949e;">Cargando logs del servidor...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuración server.properties -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="bi bi-gear"></i> Configuración (server.properties)
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" id="server-properties-content" rows="10" style="font-family: monospace; font-size: 0.9rem;"></textarea>
+                        <button class="btn btn-success mt-2" onclick="saveServerProperties()">
+                            <i class="bi bi-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Backups -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="bi bi-archive"></i> Backups de Mundos
+                        <span class="badge bg-light text-dark ms-2" id="backup-count">0</span>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-success mb-3 w-100" onclick="createBackup()">
+                            <i class="bi bi-plus-circle"></i> Crear Nuevo Backup
+                        </button>
+                        <div id="backups-list">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="text-muted mt-2">Cargando backups...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sistema de notificaciones Toast
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container');
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-warning';
+            const icon = type === 'success' ? 'check-circle-fill' : type === 'error' ? 'exclamation-triangle-fill' : 'info-circle-fill';
+            
+            const toastHTML = `
+                <div class="toast align-items-center text-white ${bgClass} border-0" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi bi-${icon} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+            toast.show();
+            
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+
+        // Toggle tema claro/oscuro
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const icon = document.getElementById('theme-icon');
+            
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            icon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars';
+        }
+
+        // Cargar tema guardado
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const icon = document.getElementById('theme-icon');
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            icon.className = savedTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars';
+        });
+
+        // Drag & Drop para subir plugins
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('plugin-file');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].name.endsWith('.jar')) {
+                fileInput.files = files;
+                uploadPlugin();
+            } else {
+                showToast('Solo se permiten archivos .jar', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadPlugin();
+            }
+        });
+
+        // Limpiar logs
+        function clearLogs() {
+            document.getElementById('logs-content').textContent = 'Logs limpiados. Esperando nuevas entradas...';
+        }
+
+        // Cargar jugadores online
+        function loadPlayers() {
+            fetch('/api/server/players')
+                .then(response => response.json())
+                .then(data => {
+                    const countBadge = document.getElementById('players-count');
+                    const playersList = document.getElementById('players-list');
+                    
+                    countBadge.textContent = `${data.online}/${data.max}`;
+                    
+                    if (data.players && data.players.length > 0) {
+                        playersList.innerHTML = '';
+                        data.players.forEach(player => {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-primary';
+                            badge.innerHTML = `<i class="bi bi-person-fill"></i> ${player}`;
+                            playersList.appendChild(badge);
+                        });
+                    } else {
+                        playersList.innerHTML = '<span class="text-muted">No hay jugadores conectados</span>';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Cargar versión del servidor
+        function loadVersion() {
+            fetch('/api/server/version')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('server-version').textContent = 'Versión: ' + (data.version || 'Desconocida');
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Cargar uptime
+        function loadUptime() {
+            fetch('/api/server/uptime')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('server-uptime').textContent = 'Uptime: ' + (data.uptime || '0d 0h 0m');
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Actualizar servidor
+        function updateServer() {
+            if (confirm('¿Actualizar PaperMC a la última versión?\n\nEl servidor será detenido y reiniciado. Esto puede tardar varios minutos.')) {
+                showToast('Actualizando servidor... Esto puede tardar varios minutos.', 'info');
+                
+                fetch('/api/server/update', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            loadVersion();
+                        } else {
+                            showToast('Error: ' + data.error, 'error');
+                        }
+                    })
+                    .catch(error => showToast('Error al actualizar servidor', 'error'));
+            }
+        }
+
+        // Actualizar todos los plugins
+        function updateAllPlugins() {
+            if (confirm('¿Actualizar todos los plugins a la última versión?\n\nGeyser, Floodgate, ViaVersion, ViaBackwards y ViaRewind serán actualizados.')) {
+                showToast('Actualizando plugins... Esto puede tardar un minuto.', 'info');
+                
+                fetch('/api/plugins/update-all', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message + ' - Reinicia el servidor para aplicar cambios.', 'success');
+                            loadPlugins();
+                        } else {
+                            showToast('Error: ' + data.error, 'error');
+                        }
+                    })
+                    .catch(error => showToast('Error al actualizar plugins', 'error'));
+            }
+        }
+
+        // Crear backup
+        function createBackup() {
+            if (confirm('¿Crear backup de los mundos?\n\nSe guardará una copia comprimida de todos los mundos.')) {
+                showToast('Creando backup...', 'info');
+                
+                fetch('/api/backup/create', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message + ` (${data.backup.size_mb} MB)`, 'success');
+                            loadBackups();
+                        } else {
+                            showToast('Error: ' + data.error, 'error');
+                        }
+                    })
+                    .catch(error => showToast('Error al crear backup', 'error'));
+            }
+        }
+
+        // Cargar lista de backups
+        function loadBackups() {
+            fetch('/api/backup/list')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('backups-list');
+                    const countBadge = document.getElementById('backup-count');
+                    
+                    if (!data.backups || data.backups.length === 0) {
+                        list.innerHTML = '<p class="text-muted text-center">No hay backups disponibles</p>';
+                        countBadge.textContent = '0';
+                        return;
+                    }
+                    
+                    countBadge.textContent = data.backups.length;
+                    list.innerHTML = '';
+                    
+                    data.backups.forEach(backup => {
+                        const item = document.createElement('div');
+                        item.className = 'plugin-item';
+                        item.innerHTML = `
+                            <div class="plugin-info">
+                                <div class="plugin-icon">
+                                    <i class="bi bi-archive-fill"></i>
+                                </div>
+                                <div class="plugin-details">
+                                    <strong>${backup.name}</strong>
+                                    <small><i class="bi bi-calendar"></i> ${backup.date} | ${backup.size_mb} MB</small>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="/api/backup/download/${backup.name}" class="btn btn-sm btn-primary" title="Descargar backup">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger" onclick="deleteBackup('${backup.name}')" title="Eliminar backup">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Eliminar backup
+        function deleteBackup(name) {
+            if (confirm(`¿Eliminar el backup ${name}?\n\nEsta acción no se puede deshacer.`)) {
+                fetch('/api/backup/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        loadBackups();
+                    } else {
+                        showToast(data.error, 'error');
+                    }
+                })
+                .catch(error => showToast('Error al eliminar backup', 'error'));
+            }
+        }
+    </script>
+    <script>
+        // Cargar estado del servidor
+        function loadServerStatus() {
+            fetch('/api/server/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.running) {
+                        document.getElementById('server-status').innerHTML = '<span class="badge bg-success status-badge"><i class="bi bi-check-circle-fill"></i> ONLINE</span>';
+                        
+                        const cpuPercent = Math.round(data.cpu_percent);
+                        document.getElementById('cpu-usage').textContent = cpuPercent + '%';
+                        document.getElementById('cpu-progress').style.width = cpuPercent + '%';
+                        
+                        const memoryPercent = Math.round(data.memory_percent);
+                        document.getElementById('memory-usage').textContent = Math.round(data.memory_usage_mb) + ' MB';
+                        document.getElementById('memory-progress').style.width = memoryPercent + '%';
+                        document.getElementById('memory-detail').textContent = 
+                            Math.round(data.memory_usage_mb) + ' / ' + Math.round(data.memory_limit_mb) + ' MB (' + memoryPercent + '%)';
+                    } else {
+                        document.getElementById('server-status').innerHTML = '<span class="badge bg-danger status-badge"><i class="bi bi-x-circle-fill"></i> OFFLINE</span>';
+                        document.getElementById('cpu-usage').textContent = '0%';
+                        document.getElementById('cpu-progress').style.width = '0%';
+                        document.getElementById('memory-usage').textContent = '0 MB';
+                        document.getElementById('memory-progress').style.width = '0%';
+                        document.getElementById('memory-detail').textContent = '0 / 0 MB';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('server-status').innerHTML = '<span class="badge bg-danger status-badge"><i class="bi bi-exclamation-triangle-fill"></i> ERROR</span>';
+                    showToast('Error al obtener estado del servidor', 'error');
+                });
+        }
+
+        // Cargar logs
+        function loadLogs() {
+            fetch('/api/server/logs')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('logs-content').textContent = data.logs;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Cargar plugins
+        function loadPlugins() {
+            fetch('/api/plugins')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('plugins-list');
+                    const countBadge = document.getElementById('plugin-count');
+                    countBadge.textContent = data.plugins.length;
+                    
+                    if (data.plugins.length === 0) {
+                        list.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="bi bi-inbox" style="font-size: 3rem; color: #cbd5e0;"></i>
+                                <p class="text-muted mt-3">No hay plugins instalados</p>
+                                <p class="text-muted small">Sube un archivo .jar para comenzar</p>
+                            </div>
+                        `;
+                    } else {
+                        list.innerHTML = '';
+                        data.plugins.forEach(plugin => {
+                            const item = document.createElement('div');
+                            item.className = 'plugin-item';
+                            item.innerHTML = `
+                                <div class="plugin-info">
+                                    <div class="plugin-icon">
+                                        <i class="bi bi-puzzle-fill"></i>
+                                    </div>
+                                    <div class="plugin-details">
+                                        <strong>${plugin.name}</strong>
+                                        <small><i class="bi bi-hdd"></i> ${plugin.size_mb} MB</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm ${plugin.active ? 'btn-success' : 'btn-secondary'}" onclick="togglePlugin('${plugin.name}')" title="${plugin.active ? 'Desactivar' : 'Activar'} plugin">
+                                        <i class="bi bi-${plugin.active ? 'toggle-on' : 'toggle-off'}"></i>
+                                        <span class="d-none d-md-inline">${plugin.active ? 'Activo' : 'Inactivo'}</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="deletePlugin('${plugin.name}')" title="Eliminar plugin">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                            list.appendChild(item);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error al cargar plugins', 'error');
+                });
+        }
+
+        // Acciones del servidor
+        function startServer() {
+            if (confirm('¿Iniciar el servidor?')) {
+                showToast('Iniciando servidor...', 'info');
+                fetch('/api/server/start', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                        } else {
+                            showToast(data.error, 'error');
+                        }
+                        loadServerStatus();
+                    })
+                    .catch(error => showToast('Error al iniciar servidor', 'error'));
+            }
+        }
+
+        function restartServer() {
+            if (confirm('¿Reiniciar el servidor? Los jugadores conectados serán desconectados.')) {
+                showToast('Reiniciando servidor...', 'info');
+                fetch('/api/server/restart', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                        } else {
+                            showToast(data.error, 'error');
+                        }
+                        loadServerStatus();
+                    })
+                    .catch(error => showToast('Error al reiniciar servidor', 'error'));
+            }
+        }
+
+        function stopServer() {
+            if (confirm('¿Detener el servidor? Los jugadores conectados serán desconectados.')) {
+                showToast('Deteniendo servidor...', 'info');
+                fetch('/api/server/stop', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                        } else {
+                            showToast(data.error, 'error');
+                        }
+                        loadServerStatus();
+                    })
+                    .catch(error => showToast('Error al detener servidor', 'error'));
+            }
+        }
+
+        // Gestión de plugins
+        function togglePlugin(name) {
+            fetch('/api/plugins/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.error, 'error');
+                }
+                loadPlugins();
+            })
+            .catch(error => showToast('Error al cambiar estado del plugin', 'error'));
+        }
+
+        function deletePlugin(name) {
+            if (confirm(`¿Eliminar el plugin ${name}?\n\nEsta acción no se puede deshacer.`)) {
+                fetch('/api/plugins/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                    } else {
+                        showToast(data.error, 'error');
+                    }
+                    loadPlugins();
+                })
+                .catch(error => showToast('Error al eliminar plugin', 'error'));
+            }
+        }
+
+        function uploadPlugin() {
+            const fileInput = document.getElementById('plugin-file');
+            const file = fileInput.files[0];
+            if (!file) {
+                showToast('Selecciona un archivo .jar', 'error');
+                return;
+            }
+            
+            if (!file.name.endsWith('.jar')) {
+                showToast('Solo se permiten archivos .jar', 'error');
+                return;
+            }
+            
+            showToast('Subiendo plugin...', 'info');
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/api/plugins/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.error, 'error');
+                }
+                fileInput.value = '';
+                loadPlugins();
+            })
+            .catch(error => showToast('Error al subir plugin', 'error'));
+        }
+
+        // Whitelist y Blacklist
+        function loadWhitelist() {
+            fetch('/api/whitelist')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('whitelist-content').value = JSON.stringify(data.whitelist, null, 2);
+                })
+                .catch(error => showToast('Error al cargar whitelist', 'error'));
+        }
+
+        function saveWhitelist() {
+            const content = document.getElementById('whitelist-content').value;
+            try {
+                const whitelist = JSON.parse(content);
+                fetch('/api/whitelist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ whitelist: whitelist })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                    } else {
+                        showToast(data.error, 'error');
+                    }
+                })
+                .catch(error => showToast('Error al guardar whitelist', 'error'));
+            } catch (e) {
+                showToast('JSON inválido. Verifica el formato.', 'error');
+            }
+        }
+
+        function loadBlacklist() {
+            fetch('/api/blacklist')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('blacklist-content').value = JSON.stringify(data.blacklist, null, 2);
+                })
+                .catch(error => showToast('Error al cargar blacklist', 'error'));
+        }
+
+        function saveBlacklist() {
+            const content = document.getElementById('blacklist-content').value;
+            try {
+                const blacklist = JSON.parse(content);
+                fetch('/api/blacklist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ blacklist: blacklist })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                    } else {
+                        showToast(data.error, 'error');
+                    }
+                })
+                .catch(error => showToast('Error al guardar blacklist', 'error'));
+            } catch (e) {
+                showToast('JSON inválido. Verifica el formato.', 'error');
+            }
+        }
+
+        // Server properties
+        function loadServerProperties() {
+            fetch('/api/config/server-properties')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('server-properties-content').value = data.content || '';
+                })
+                .catch(error => showToast('Error al cargar configuración', 'error'));
+        }
+
+        function saveServerProperties() {
+            const content = document.getElementById('server-properties-content').value;
+            fetch('/api/config/server-properties', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message + ' - Reinicia el servidor para aplicar cambios', 'success');
+                } else {
+                    showToast(data.error, 'error');
+                }
+            })
+            .catch(error => showToast('Error al guardar configuración', 'error'));
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadServerStatus();
+            loadLogs();
+            loadPlugins();
+            loadWhitelist();
+            loadBlacklist();
+            loadServerProperties();
+            loadPlayers();
+            loadVersion();
+            loadUptime();
+            loadBackups();
+            
+            // Actualizar estado cada 5 segundos
+            setInterval(loadServerStatus, 5000);
+            // Actualizar logs cada 10 segundos
+            setInterval(loadLogs, 10000);
+            // Actualizar jugadores cada 10 segundos
+            setInterval(loadPlayers, 10000);
+            // Actualizar uptime cada 30 segundos
+            setInterval(loadUptime, 30000);
+        });
+    </script>
+</body>
+</html>

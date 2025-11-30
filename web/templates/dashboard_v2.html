@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Minecraft - Administración Completa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --header-height: 60px;
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --success: #48bb78;
+            --danger: #f56565;
+            --warning: #ed8936;
+            --info: #4299e1;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --sidebar-bg: #1a202c;
+            --sidebar-text: #cbd5e0;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            z-index: 1030;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            overflow-y: auto;
+            z-index: 1020;
+            transition: transform 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+
+        .sidebar-item {
+            padding: 0.75rem 1.5rem;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+
+        .sidebar-item.active {
+            background: rgba(102, 126, 234, 0.15);
+            color: white;
+            border-left-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-item i {
+            font-size: 1.2rem;
+            width: 24px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+            background: white;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 12px;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card p {
+            color: #718096;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        /* Logs */
+        .logs-container {
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 1.5rem;
+            border-radius: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        /* Console */
+        .console-input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            font-family: 'Cascadia Code', monospace;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+        }
+
+        .console-input:focus {
+            background: #161b22;
+            border-color: var(--primary);
+            color: #c9d1d9;
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            padding: 0.5rem 1.25rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            border: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            border: none;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            border: none;
+        }
+
+        .badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        /* Editor */
+        .code-editor {
+            font-family: 'Cascadia Code', monospace;
+            font-size: 0.9rem;
+            background: #0d1117;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 400px;
+        }
+
+        .code-editor:focus {
+            background: #161b22;
+            border-color: var(--primary);
+            color: #c9d1d9;
+        }
+
+        /* Player List */
+        .player-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .player-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        /* File Tree */
+        .file-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .file-item:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .file-item.selected {
+            background: rgba(102, 126, 234, 0.15);
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-brand">
+            <i class="bi bi-controller"></i>
+            Panel Minecraft Server
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-sm btn-light" onclick="toggleTheme()" title="Cambiar tema">
+                <i class="bi bi-moon-stars" id="theme-icon"></i>
+            </button>
+            <span class="text-white">
+                <i class="bi bi-person-circle"></i> {{ current_user.id }}
+            </span>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-box-arrow-right"></i> Salir
+            </a>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <div class="sidebar-item active" onclick="showSection('dashboard')">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('config')">
+                <i class="bi bi-gear"></i>
+                <span>Configuración</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('players')">
+                <i class="bi bi-people"></i>
+                <span>Jugadores</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('console')">
+                <i class="bi bi-terminal"></i>
+                <span>Consola</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('plugins')">
+                <i class="bi bi-puzzle"></i>
+                <span>Plugins</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('files')">
+                <i class="bi bi-file-earmark-code"></i>
+                <span>Editor Archivos</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('worlds')">
+                <i class="bi bi-globe2"></i>
+                <span>Mundos</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('backups')">
+                <i class="bi bi-archive"></i>
+                <span>Backups</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('whitelist')">
+                <i class="bi bi-person-check"></i>
+                <span>Whitelist</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('ops')">
+                <i class="bi bi-shield-check"></i>
+                <span>Operadores</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('stats')">
+                <i class="bi bi-graph-up"></i>
+                <span>Estadísticas</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <!-- Dashboard Section -->
+        <div class="content-section active" id="section-dashboard">
+            <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard del Servidor</h2>
+            
+            <!-- Server Status -->
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body stat-card">
+                            <p>ESTADO</p>
+                            <h3 id="server-status-dash">
+                                <span class="badge bg-secondary">Cargando...</span>
+                            </h3>
+                            <small class="text-muted d-block mt-2" id="server-version-dash">...</small>
+                            <small class="text-muted d-block" id="server-uptime-dash">...</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body stat-card">
+                            <p>CPU</p>
+                            <h3 id="cpu-dash">0%</h3>
+                            <div class="progress mt-2">
+                                <div class="progress-bar bg-primary" id="cpu-progress-dash" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body stat-card">
+                            <p>MEMORIA</p>
+                            <h3 id="memory-dash">0 MB</h3>
+                            <div class="progress mt-2">
+                                <div class="progress-bar bg-success" id="memory-progress-dash" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted d-block mt-2" id="memory-detail-dash">0 / 0 MB</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body stat-card">
+                            <p>JUGADORES</p>
+                            <h3 id="players-count-dash">0/0</h3>
+                            <small class="text-muted d-block mt-2">Conectados</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Controls -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-toggles"></i> Controles del Servidor
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-success" onclick="startServer()">
+                            <i class="bi bi-play-fill"></i> Iniciar
+                        </button>
+                        <button class="btn btn-warning" onclick="restartServer()">
+                            <i class="bi bi-arrow-clockwise"></i> Reiniciar
+                        </button>
+                        <button class="btn btn-danger" onclick="stopServer()">
+                            <i class="bi bi-stop-fill"></i> Detener
+                        </button>
+                        <button class="btn btn-info" onclick="updateServer()">
+                            <i class="bi bi-download"></i> Actualizar Servidor
+                        </button>
+                        <button class="btn btn-primary" onclick="createBackup()">
+                            <i class="bi bi-archive"></i> Crear Backup
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TPS Monitor -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-activity"></i> TPS (Ticks Per Second) - Rendimiento
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <p>Último minuto</p>
+                                <h3 id="tps-1m">20.0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <p>Últimos 5 minutos</p>
+                                <h3 id="tps-5m">20.0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <p>Últimos 15 minutos</p>
+                                <h3 id="tps-15m">20.0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle"></i> TPS ideal: 20.0 | Lag: < 19.0
+                    </small>
+                </div>
+            </div>
+
+            <!-- Logs -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div><i class="bi bi-file-text"></i> Logs del Servidor</div>
+                        <div>
+                            <button class="btn btn-sm btn-light" onclick="loadLogs()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="logs-container" id="logs-dash">Cargando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="content-section" id="section-config">
+            <h2 class="mb-4"><i class="bi bi-gear"></i> Configuración del Servidor</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-file-earmark-text"></i> server.properties
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Edición Rápida</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Dificultad</label>
+                                <select class="form-select" id="difficulty">
+                                    <option value="peaceful">Peaceful</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Modo de Juego</label>
+                                <select class="form-select" id="gamemode">
+                                    <option value="survival">Survival</option>
+                                    <option value="creative">Creative</option>
+                                    <option value="adventure">Adventure</option>
+                                    <option value="spectator">Spectator</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Máximo de Jugadores</label>
+                                <input type="number" class="form-control" id="max-players" value="20">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">View Distance</label>
+                                <input type="number" class="form-control" id="view-distance" value="10">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="pvp">
+                                    <label class="form-check-label" for="pvp">PVP Activado</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="whitelist-enabled">
+                                    <label class="form-check-label" for="whitelist-enabled">Whitelist Activada</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary mt-3" onclick="saveQuickConfig()">
+                            <i class="bi bi-save"></i> Guardar Configuración Rápida
+                        </button>
+                    </div>
+                    
+                    <hr>
+                    
+                    <label class="form-label fw-bold">Edición Completa (Avanzado)</label>
+                    <textarea class="form-control code-editor" id="server-properties" rows="15"></textarea>
+                    <button class="btn btn-success mt-2" onclick="saveServerProperties()">
+                        <i class="bi bi-save"></i> Guardar Archivo Completo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players Section -->
+        <div class="content-section" id="section-players">
+            <h2 class="mb-4"><i class="bi bi-people"></i> Gestión de Jugadores</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-person-circle"></i> Jugadores Online
+                    <span class="badge bg-light text-dark ms-2" id="online-count">0</span>
+                </div>
+                <div class="card-body">
+                    <div id="players-list-section">Cargando...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-chat-dots"></i> Chat del Servidor
+                </div>
+                <div class="card-body">
+                    <div class="logs-container mb-3" id="chat-messages" style="max-height: 300px;">
+                        Cargando mensajes de chat...
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="chat-message" placeholder="Enviar mensaje a todos los jugadores...">
+                        <button class="btn btn-primary" onclick="sendChatMessage()">
+                            <i class="bi bi-send"></i> Enviar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console Section -->
+        <div class="content-section" id="section-console">
+            <h2 class="mb-4"><i class="bi bi-terminal"></i> Consola Interactiva</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-code-square"></i> Ejecutar Comandos de Minecraft
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Comandos Rápidos</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="executeQuickCommand('list')">
+                                <i class="bi bi-people"></i> list
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="executeQuickCommand('save-all')">
+                                <i class="bi bi-save"></i> save-all
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="executeQuickCommand('plugins')">
+                                <i class="bi bi-puzzle"></i> plugins
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="executeQuickCommand('tps')">
+                                <i class="bi bi-activity"></i> tps
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="executeQuickCommand('reload confirm')">
+                                <i class="bi bi-arrow-clockwise"></i> reload
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ejecutar Comando Personalizado</label>
+                        <div class="input-group">
+                            <span class="input-group-text console-input">/</span>
+                            <input type="text" class="form-control console-input" id="console-command" 
+                                   placeholder="Escribe un comando (sin /)..." onkeypress="if(event.key==='Enter')executeCommand()">
+                            <button class="btn btn-primary" onclick="executeCommand()">
+                                <i class="bi bi-play-fill"></i> Ejecutar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="logs-container" id="console-output" style="max-height: 400px;">
+                        Consola lista. Ejecuta un comando para ver el resultado.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plugins Section -->
+        <div class="content-section" id="section-plugins">
+            <h2 class="mb-4"><i class="bi bi-puzzle"></i> Gestión de Plugins</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-cloud-upload"></i> Subir Plugin
+                </div>
+                <div class="card-body">
+                    <div class="upload-area" style="border: 2px dashed #ccc; padding: 2rem; text-align: center; border-radius: 12px; cursor: pointer;" 
+                         onclick="document.getElementById('plugin-file-upload').click()">
+                        <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #667eea;"></i>
+                        <p class="mt-3 mb-2"><strong>Arrastra un archivo .jar aquí o haz clic para seleccionar</strong></p>
+                        <input type="file" id="plugin-file-upload" accept=".jar" class="d-none" onchange="uploadPlugin()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div>
+                            <i class="bi bi-list-ul"></i> Plugins Instalados
+                            <span class="badge bg-light text-dark ms-2" id="plugins-count">0</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-warning" onclick="updateAllPlugins()">
+                                <i class="bi bi-arrow-repeat"></i> Actualizar Todos
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="reloadPlugins()">
+                                <i class="bi bi-arrow-clockwise"></i> Reload
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="plugins-list-section">Cargando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Files Editor Section -->
+        <div class="content-section" id="section-files">
+            <h2 class="mb-4"><i class="bi bi-file-earmark-code"></i> Editor de Archivos</h2>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-folder"></i> Archivos
+                        </div>
+                        <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                            <div id="files-tree">Cargando...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center w-100">
+                                <div id="current-file-name">
+                                    <i class="bi bi-file-code"></i> Selecciona un archivo
+                                </div>
+                                <button class="btn btn-sm btn-success" onclick="saveCurrentFile()" id="save-file-btn" style="display:none;">
+                                    <i class="bi bi-save"></i> Guardar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control code-editor" id="file-content-editor" rows="20" 
+                                      placeholder="Selecciona un archivo del menú izquierdo para editarlo..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Worlds Section -->
+        <div class="content-section" id="section-worlds">
+            <h2 class="mb-4"><i class="bi bi-globe2"></i> Gestión de Mundos</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-list"></i> Mundos del Servidor
+                </div>
+                <div class="card-body">
+                    <div id="worlds-list">Cargando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backups Section -->
+        <div class="content-section" id="section-backups">
+            <h2 class="mb-4"><i class="bi bi-archive"></i> Gestión de Backups</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-plus-circle"></i> Crear Backup
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-success btn-lg w-100" onclick="createBackup()">
+                        <i class="bi bi-archive"></i> Crear Backup Completo del Servidor
+                    </button>
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle"></i> Esto creará un backup de todos los mundos del servidor
+                    </small>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-clock-history"></i> Backups Disponibles
+                    <span class="badge bg-light text-dark ms-2" id="backups-count">0</span>
+                </div>
+                <div class="card-body">
+                    <div id="backups-list-section">Cargando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Whitelist Section -->
+        <div class="content-section" id="section-whitelist">
+            <h2 class="mb-4"><i class="bi bi-person-check"></i> Whitelist</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-list-check"></i> Gestión de Whitelist
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        La whitelist controla qué jugadores pueden conectarse al servidor. 
+                        Formato JSON con nombre y UUID de cada jugador.
+                    </div>
+                    <textarea class="form-control code-editor" id="whitelist-content" rows="15"></textarea>
+                    <button class="btn btn-success mt-3" onclick="saveWhitelist()">
+                        <i class="bi bi-save"></i> Guardar Whitelist
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ops Section -->
+        <div class="content-section" id="section-ops">
+            <h2 class="mb-4"><i class="bi bi-shield-check"></i> Operadores</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-person-plus"></i> Agregar Operador
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="op-player-name" placeholder="Nombre del jugador">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100" onclick="addOp()">
+                                <i class="bi bi-plus-circle"></i> Agregar OP
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-list"></i> Operadores Actuales
+                </div>
+                <div class="card-body">
+                    <div id="ops-list">Cargando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="content-section" id="section-stats">
+            <h2 class="mb-4"><i class="bi bi-graph-up"></i> Estadísticas y Monitoreo</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-bar-chart"></i> Rendimiento (Últimas 24 horas)
+                </div>
+                <div class="card-body">
+                    <canvas id="statsChart" height="80"></canvas>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-cpu"></i> Uso de CPU
+                        </div>
+                        <div class="card-body">
+                            <canvas id="cpuChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-memory"></i> Uso de Memoria
+                        </div>
+                        <div class="card-body">
+                            <canvas id="memoryChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal de Cambio de Contraseña Obligatorio -->
+    <div class="modal fade" id="passwordChangeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="passwordChangeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="passwordChangeModalLabel">
+                        <i class="bi bi-shield-exclamation"></i> Cambio de Contraseña Requerido
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i> Tu contraseña actual no está protegida. Por seguridad, debes cambiarla ahora.
+                    </div>
+                    <form id="passwordChangeForm">
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="newPassword" required minlength="8">
+                            <div class="form-text">Mínimo 8 caracteres</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+                            <input type="password" class="form-control" id="confirmPassword" required minlength="8">
+                        </div>
+                        <div class="mb-3">
+                            <label for="adminEmail" class="form-label">Email de Recuperación</label>
+                            <input type="email" class="form-control" id="adminEmail" placeholder="admin@example.com">
+                            <div class="form-text">Opcional: para recuperación de contraseña futura</div>
+                        </div>
+                        <div id="passwordChangeError" class="alert alert-danger d-none"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="submitPasswordChange()">
+                        <i class="bi bi-check-circle"></i> Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/dashboard.js?v=2.0.1"></script>
+</body>
+</html>

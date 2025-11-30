@@ -1,0 +1,101 @@
+# Archivos de entorno y configuración sensible
+.env
+web/.env
+*.env.local
+*.env.production
+web/.env.backup
+
+# Credenciales y configuración de administrador
+web/admin_config.json
+
+# Logs
+*.log
+logs/
+web/panel.log
+web/*.log
+nohup.out
+web/panel.pid
+
+# Datos del servidor Minecraft
+worlds/
+cache/
+crash-reports/
+libraries/
+
+# Archivos del servidor (mantener solo la configuración base)
+paper-*.jar
+paper.jar
+server.jar
+eula.txt
+usercache.json
+banned-ips.json
+banned-players.json
+ops.json
+whitelist.json
+version_history.json
+
+# Plugins (solo ignorar JARs, mantener configuración)
+plugins/*.jar
+plugins/*/cache/
+plugins/*/logs/
+
+# Backups
+backups/
+*.zip
+*.tar.gz
+*.backup
+*.bak
+
+# Resourcepacks grandes
+resourcepacks/*.zip
+resourcepacks/*.jar
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Node modules (si usas npm para frontend)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Docker volumes persistentes
+.docker/

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  minecraft:
+    build: .
+    container_name: minecraft-paper
+    restart: unless-stopped
+    ports:
+      - "25565:25565/tcp"  # Puerto Java
+      - "19132:19132/udp"  # Puerto Bedrock
+      - "25575:25575/tcp"  # Puerto RCON
+    volumes:
+      - ./worlds:/server/worlds
+      - ./plugins:/server/plugins
+      - ./resourcepacks:/server/resourcepacks
+      - ./config/server.properties:/server/server.properties
+      - ./logs:/server/logs
+    environment:
+      - EULA=TRUE
+      - RCON_PASSWORD=minecraft123
+      - ENABLE_RCON=true
+    stdin_open: true
+    tty: true
