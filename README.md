@@ -138,8 +138,8 @@ Gestiona tu servidor Minecraft de forma moderna y eficiente con interfaz web com
 
 ```bash
 # 1. Clonar repositorio
-git clone https://github.com/tu-usuario/mc-paper.git
-cd mc-paper
+git clone https://github.com/Yupick/mc-paper-docker.git
+cd mc-paper-docker
 
 # 2. Ejecutar instalación automática
 chmod +x create.sh
@@ -183,22 +183,26 @@ cd web && ./start-web-panel.sh    # Panel Web
 
 #### Estructura de Directorios
 ```
-mc-paper/
+mc-paper-docker/
 ├── docker-compose.yml          # Configuración Docker
 ├── .env                        # Variables de entorno
+├── README.md                   # Documentación principal
 ├── create.sh                   # Script de instalación completa
 ├── uninstall.sh                # Script de desinstalación
-├── start-server.sh             # Iniciar servidor
-├── stop-server.sh              # Detener servidor
-├── restart-server.sh           # Reiniciar servidor
-├── update-server.sh            # Actualizar PaperMC
-├── change-server-version.sh    # Cambiar versión
-├── backup.sh                   # Crear backup
-├── restore-backup.sh           # Restaurar backup
-├── verify-panel.sh             # Verificar instalación panel
-├── migrate-to-multiworld.sh    # Migrar a sistema multi-mundo (ejecutable)
-├── rollback-multiworld.sh      # Revertir migración (ejecutable)
-├── run-tests.sh                # Testing de integración (ejecutable)
+├── run.sh                      # Iniciar servidor
+├── stop.sh                     # Detener servidor
+├── start-web-panel.sh          # Iniciar panel web
+├── stop-web-panel.sh           # Detener panel web
+├── restart-web-panel.sh        # Reiniciar panel web
+├── status-web-panel.sh         # Estado del panel web
+├── logs-web-panel.sh           # Ver logs del panel web
+├── scripts/                    # Scripts auxiliares
+│   ├── migrate-to-multiworld.sh    # Migrar a sistema multi-mundo
+│   ├── rollback-multiworld.sh      # Revertir migración
+│   ├── run-tests.sh                # Testing de integración
+│   ├── verify-panel.sh             # Verificar instalación
+│   ├── update.sh                   # Actualizar servidor
+│   └── ...                         # Otros scripts auxiliares
 ├── plugins/                    # Plugins de Minecraft
 ├── worlds/                     # Sistema multi-mundo
 │   ├── active/                 # Symlink → mundo activo
@@ -222,9 +226,12 @@ mc-paper/
 │   ├── INSTALACION_RAPIDA.md
 │   ├── CAMBIOS_PERSISTENCIA.md
 │   └── setup-minecraft.md
-├── BACKUP_SYSTEM.md            # 📘 Sistema de backups completo
-├── BACKUP_CONFIG.md            # 📘 Configuración de backups
-├── PERFORMANCE_OPTIMIZATION.md # 📘 Optimización de rendimiento
+├── docs/                       # 📚 Documentación completa
+│   ├── BACKUP_SYSTEM.md        # Sistema de backups
+│   ├── BACKUP_CONFIG.md        # Configuración de backups
+│   ├── PERFORMANCE_OPTIMIZATION.md # Optimización
+│   ├── GUIA_MULTIMUNDOS.md     # Guía completa multi-mundo
+│   └── ...                     # Más documentación
 └── web/                        # Panel de administración
     ├── app.py                  # Backend Flask (1874 líneas)
     ├── start-web-panel.sh      # Iniciar panel
@@ -685,20 +692,25 @@ curl -X PUT http://localhost:5000/api/panel-config \
 
 #### Servidor Minecraft
 ```bash
-./start-server.sh              # Iniciar servidor
-./stop-server.sh               # Detener servidor
-./restart-server.sh            # Reiniciar servidor
-./update-server.sh             # Actualizar PaperMC
-./change-server-version.sh     # Cambiar versión de Minecraft
-./backup.sh                    # Crear backup completo
-./restore-backup.sh            # Restaurar desde backup
-./logs-server.sh               # Ver logs en tiempo real
+./run.sh                       # Iniciar servidor
+./stop.sh                      # Detener servidor
+docker-compose restart         # Reiniciar servidor
+docker logs -f mc-paper        # Ver logs en tiempo real
+```
+
+#### Panel Web
+```bash
+./start-web-panel.sh           # Iniciar panel web
+./stop-web-panel.sh            # Detener panel web
+./restart-web-panel.sh         # Reiniciar panel web
+./status-web-panel.sh          # Ver estado del panel
+./logs-web-panel.sh            # Ver logs del panel
 ```
 
 #### Sistema Multi-Mundo
 ```bash
-./migrate-to-multiworld.sh     # Migrar de single-world a multi-world
-./rollback-multiworld.sh       # Revertir migración multi-world
+scripts/migrate-to-multiworld.sh     # Migrar de single-world a multi-world
+scripts/rollback-multiworld.sh       # Revertir migración multi-world
 ```
 
 **Proceso de Migración:**
@@ -709,20 +721,10 @@ curl -X PUT http://localhost:5000/api/panel-config \
 5. Actualiza `docker-compose.yml` con symlinks
 6. 100% reversible con `rollback-multiworld.sh`
 
-#### Panel Web
+#### Verificación y Testing
 ```bash
-cd web
-./start-web-panel.sh           # Iniciar panel
-./stop-web-panel.sh            # Detener panel
-./restart-web-panel.sh         # Reiniciar panel
-./status-web-panel.sh          # Ver estado
-./logs-web-panel.sh            # Ver logs
-```
-
-#### Verificación
-```bash
-./verify-panel.sh              # Verificar instalación del panel
-./run-tests.sh                 # Testing de integración completo
+scripts/verify-panel.sh        # Verificar instalación del panel
+scripts/run-tests.sh           # Testing de integración completo (12 checks)
 ```
 
 **verify-panel.sh - Verificaciones:**
@@ -1220,11 +1222,11 @@ crontab -e
 - **[docs/ROADMAP_MULTIMUNDOS.md](docs/ROADMAP_MULTIMUNDOS.md)** - Roadmap del desarrollo multi-mundo
 
 ### Documentación del Sistema de Backups
-- **[BACKUP_SYSTEM.md](BACKUP_SYSTEM.md)** - Sistema completo de backups (400+ líneas)
-- **[BACKUP_CONFIG.md](BACKUP_CONFIG.md)** - Configuración de backups automáticos (200+ líneas)
+- **[docs/BACKUP_SYSTEM.md](docs/BACKUP_SYSTEM.md)** - Sistema completo de backups (400+ líneas)
+- **[docs/BACKUP_CONFIG.md](docs/BACKUP_CONFIG.md)** - Configuración de backups automáticos (200+ líneas)
 
 ### Documentación de Optimización
-- **[PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)** - Optimización de rendimiento (300+ líneas)
+- **[docs/PERFORMANCE_OPTIMIZATION.md](docs/PERFORMANCE_OPTIMIZATION.md)** - Optimización de rendimiento (300+ líneas)
 
 ### Documentación del Servidor
 - **[docs/INSTALACION_RAPIDA.md](docs/INSTALACION_RAPIDA.md)** - Guía rápida de instalación

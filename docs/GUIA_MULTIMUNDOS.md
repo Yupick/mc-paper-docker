@@ -165,11 +165,11 @@ Si ya tienes un servidor funcionando con un solo mundo, usa el script de migraci
 
 ```bash
 # 1. IMPORTANTE: Crear backup antes de migrar
-./backup.sh
+docker-compose exec mc-paper rcon-cli save-all
 
 # 2. Ejecutar migración
-chmod +x migrate-to-multiworld.sh
-./migrate-to-multiworld.sh
+chmod +x scripts/migrate-to-multiworld.sh
+scripts/migrate-to-multiworld.sh
 ```
 
 #### ¿Qué hace el script de migración?
@@ -258,8 +258,8 @@ cat worlds/world-default/metadata.json
 Si algo sale mal, puedes revertir la migración:
 
 ```bash
-chmod +x rollback-multiworld.sh
-./rollback-multiworld.sh
+chmod +x scripts/rollback-multiworld.sh
+scripts/rollback-multiworld.sh
 ```
 
 **El script de rollback:**
@@ -1307,15 +1307,15 @@ R: Si tienes backups, usa la función de restaurar. Si no hay backups, lamentabl
 ### Documentación Relacionada
 
 - **[../README.md](../README.md)** - Documentación principal del proyecto
-- **[../BACKUP_SYSTEM.md](../BACKUP_SYSTEM.md)** - Sistema de backups detallado
-- **[../BACKUP_CONFIG.md](../BACKUP_CONFIG.md)** - Configuración de backups
-- **[../PERFORMANCE_OPTIMIZATION.md](../PERFORMANCE_OPTIMIZATION.md)** - Optimización del panel
+- **[BACKUP_SYSTEM.md](BACKUP_SYSTEM.md)** - Sistema de backups detallado
+- **[BACKUP_CONFIG.md](BACKUP_CONFIG.md)** - Configuración de backups
+- **[PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)** - Optimización del panel
 
 ### Scripts de Testing
 
 ```bash
 # Ejecutar suite completa de tests
-./run-tests.sh
+scripts/run-tests.sh
 
 # Tests específicos del sistema multi-mundo:
 # - Verificar estructura de directorios

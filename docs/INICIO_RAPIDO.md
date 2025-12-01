@@ -58,15 +58,15 @@ cd web
 
 ### 2. Verificar Sistema
 ```bash
-./run-tests.sh
+scripts/run-tests.sh
 ```
 
 **Esperar:** ✅ 12/12 tests passed
 
-### 3. Migrar a Multi-Mundo (si tienes servidor existente)
+### 2. Migrar a Multi-Mundo (si tienes servidor existente)
 ```bash
-chmod +x migrate-to-multiworld.sh
-./migrate-to-multiworld.sh
+chmod +x scripts/migrate-to-multiworld.sh
+scripts/migrate-to-multiworld.sh
 ```
 
 **Esto:**
@@ -183,16 +183,16 @@ tail -f panel.log              # Ver logs
 
 ### Multi-Mundo
 ```bash
-./migrate-to-multiworld.sh     # Migrar a multi-mundo
-./rollback-multiworld.sh       # Revertir migración
-readlink worlds/active         # Ver mundo activo
-ls -la worlds/                 # Ver todos los mundos
+scripts/migrate-to-multiworld.sh     # Migrar a multi-mundo
+scripts/rollback-multiworld.sh       # Revertir migración
+readlink worlds/active               # Ver mundo activo
+ls -la worlds/                       # Ver todos los mundos
 ```
 
 ### Testing
 ```bash
-./run-tests.sh                 # Suite completa (12 checks)
-./verify-panel.sh              # Verificar instalación
+scripts/run-tests.sh                 # Suite completa (12 checks)
+scripts/verify-panel.sh              # Verificar instalación
 ```
 
 ### Backups Manuales
@@ -330,8 +330,8 @@ tar -czf ../../backups/worlds/{slug}/manual_$(date +%Y%m%d_%H%M%S).tar.gz world 
 ### Documentación Completa
 - **[../README.md](../README.md)** - Documentación principal
 - **[GUIA_MULTIMUNDOS.md](GUIA_MULTIMUNDOS.md)** - Guía completa multi-mundo (1,000+ líneas)
-- **[../BACKUP_SYSTEM.md](../BACKUP_SYSTEM.md)** - Sistema de backups detallado
-- **[../PERFORMANCE_OPTIMIZATION.md](../PERFORMANCE_OPTIMIZATION.md)** - Optimización de rendimiento
+- **[BACKUP_SYSTEM.md](BACKUP_SYSTEM.md)** - Sistema de backups detallado
+- **[PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)** - Optimización de rendimiento
 - **[RESUMEN_SISTEMA_V2.md](RESUMEN_SISTEMA_V2.md)** - Resumen técnico completo
 
 ### API REST
