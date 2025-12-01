@@ -43,12 +43,12 @@ Gestiona tu servidor Minecraft de forma moderna y eficiente con interfaz web com
 
 ### 🌐 Panel de Administración Web
 - ✅ **Dashboard moderno** con Bootstrap 5
-- ✅ **90% funcionalidades** implementadas (18/20)
-- ✅ **46 endpoints API** REST completos
+- ✅ **100% funcionalidades** implementadas (20/20)
+- ✅ **24 endpoints API** REST completos
 - ✅ **Autenticación segura** con hash de contraseñas
-- ✅ **Tema claro/oscuro** persistente
+- ✅ **Tema oscuro** profesional (#1a1d29)
 - ✅ **Responsive design** mobile-friendly
-- ✅ **Actualizaciones en tiempo real** (5-10s)
+- ✅ **Actualizaciones optimizadas** (configurables 1-60s)
 - ✅ **Cambio obligatorio de contraseña** en primer login
 - ✅ **Email de recuperación** opcional
 
@@ -64,10 +64,28 @@ Gestiona tu servidor Minecraft de forma moderna y eficiente con interfaz web com
 - ✅ **Gestión de plugins** (upload, delete, reload)
 - ✅ **Gestión de jugadores** (kick, ban, gamemode)
 - ✅ **Whitelist y Operadores** (OPs)
-- ✅ **Sistema de backups** (crear, restaurar, descargar)
+- ✅ **Sistema de backups** (crear, restaurar, descargar, auto-cleanup)
 - ✅ **Consola web interactiva** con comandos rápidos
 - ✅ **Editor de archivos** YAML/JSON/Properties
-- ✅ **Gestión de mundos** con backups individuales
+- ✅ **Multi-Mundos** con cambio en caliente
+
+### 🌍 Sistema Multi-Mundo (NUEVO)
+- ✅ **Crear mundos ilimitados** con configuración independiente
+- ✅ **Cambio en caliente** sin detener el servidor
+- ✅ **Duplicar mundos** con un click
+- ✅ **Backups individuales** por mundo con retención configurable
+- ✅ **Configuración por mundo** (server.properties independientes)
+- ✅ **Arquitectura symlink** (worlds/active → worlds/{slug}/)
+- ✅ **Metadata JSON** con información de cada mundo
+- ✅ **Script de migración** desde modo single-world
+
+### ⚡ Optimización de Rendimiento (NUEVO)
+- ✅ **Polling dinámico** con intervalos configurables (1-60s)
+- ✅ **Page Visibility API** pausa automática cuando tab oculto
+- ✅ **Reducción de 78%** en solicitudes RCON (potencial)
+- ✅ **Configuración per-endpoint** (refresh, logs, TPS)
+- ✅ **Cache TTL** configurable
+- ✅ **Status UI** (Active/Paused)
 
 ---
 
@@ -116,35 +134,37 @@ Gestiona tu servidor Minecraft de forma moderna y eficiente con interfaz web com
 - **4GB RAM** mínimo (recomendado 8GB)
 - **10GB espacio** en disco
 
-### Instalación en 5 Minutos
+### Instalación en 3 Minutos (Automática)
 
 ```bash
 # 1. Clonar repositorio
 git clone https://github.com/tu-usuario/mc-paper.git
 cd mc-paper
 
-# 2. Configurar servidor Minecraft
-cp .env.example .env
-nano .env  # Editar configuración
+# 2. Ejecutar instalación automática
+chmod +x create.sh
+./create.sh
 
-# 3. Iniciar servidor Minecraft
-./start-server.sh
-
-# 4. Configurar panel web
+# 3. Configurar credenciales del panel web
 cd web
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-nano .env  # Configurar credenciales
+nano .env  # Editar ADMIN_USERNAME y ADMIN_PASSWORD
 
-# 5. Iniciar panel web
-./start-web-panel.sh
+# 4. Iniciar servicios
+docker-compose up -d              # Servidor Minecraft
+cd web && ./start-web-panel.sh    # Panel Web
 
-# 6. Acceder
+# 5. Acceder
 # Panel Web: http://localhost:5000
 # Minecraft: localhost:25565
 ```
+
+**El script `create.sh` automáticamente:**
+- ✅ Crea estructura de directorios (worlds/, backups/, config/, web/models, web/services)
+- ✅ Descarga plugins esenciales (EssentialsX, Vault, LuckPerms)
+- ✅ Genera configuración inicial (server.properties, backup_config.json, panel_config.json)
+- ✅ Acepta EULA de Minecraft
+- ✅ Construye imagen Docker optimizada
+- ✅ Muestra comandos disponibles
 
 ### Primer Login
 1. Acceder a `http://localhost:5000`
@@ -166,6 +186,8 @@ nano .env  # Configurar credenciales
 mc-paper/
 ├── docker-compose.yml          # Configuración Docker
 ├── .env                        # Variables de entorno
+├── create.sh                   # Script de instalación completa
+├── uninstall.sh                # Script de desinstalación
 ├── start-server.sh             # Iniciar servidor
 ├── stop-server.sh              # Detener servidor
 ├── restart-server.sh           # Reiniciar servidor
@@ -174,26 +196,51 @@ mc-paper/
 ├── backup.sh                   # Crear backup
 ├── restore-backup.sh           # Restaurar backup
 ├── verify-panel.sh             # Verificar instalación panel
+├── migrate-to-multiworld.sh    # Migrar a sistema multi-mundo (ejecutable)
+├── rollback-multiworld.sh      # Revertir migración (ejecutable)
+├── run-tests.sh                # Testing de integración (ejecutable)
 ├── plugins/                    # Plugins de Minecraft
-├── worlds/                     # Mundos del servidor
+├── worlds/                     # Sistema multi-mundo
+│   ├── active/                 # Symlink → mundo activo
+│   ├── world-default/          # Mundo por defecto
+│   │   ├── metadata.json       # Metadata del mundo
+│   │   ├── world/              # Overworld
+│   │   ├── world_nether/       # Nether
+│   │   └── world_the_end/      # End
+│   └── {slug}/                 # Otros mundos (creative, survival, etc.)
 ├── config/                     # Archivos de configuración
+│   ├── server.properties       # Configuración global
+│   ├── backup_config.json      # Config de backups automáticos
+│   ├── panel_config.json       # Config de rendimiento del panel
+│   └── worlds.json             # Config de mundos (opcional)
 ├── backups/                    # Backups del servidor
+│   └── worlds/                 # Backups por mundo
+│       └── {slug}/             # Backups de cada mundo
+│           └── backup_*.tar.gz
 ├── logs/                       # Logs del servidor
 ├── docs/                       # 📚 Documentación del servidor
 │   ├── INSTALACION_RAPIDA.md
 │   ├── CAMBIOS_PERSISTENCIA.md
 │   └── setup-minecraft.md
+├── BACKUP_SYSTEM.md            # 📘 Sistema de backups completo
+├── BACKUP_CONFIG.md            # 📘 Configuración de backups
+├── PERFORMANCE_OPTIMIZATION.md # 📘 Optimización de rendimiento
 └── web/                        # Panel de administración
-    ├── app.py                  # Backend Flask
+    ├── app.py                  # Backend Flask (1874 líneas)
     ├── start-web-panel.sh      # Iniciar panel
     ├── stop-web-panel.sh       # Detener panel
     ├── .env                    # Configuración panel
     ├── requirements.txt        # Dependencias Python
+    ├── models/                 # Modelos de datos
+    │   ├── world.py            # Clase World (247 líneas)
+    │   └── world_manager.py    # Clase WorldManager (404 líneas)
+    ├── services/               # Servicios de negocio
+    │   └── backup_service.py   # BackupService (309 líneas)
     ├── templates/              # Templates HTML
     │   ├── login.html
-    │   └── dashboard_v2.html
+    │   └── dashboard_v2.html   # Dashboard completo (1196 líneas)
     ├── static/                 # CSS/JS
-    │   └── dashboard.js
+    │   └── dashboard.js        # Frontend logic (1816 líneas)
     └── docs/                   # 📚 Documentación del panel
         ├── GUIA_COMPLETA.md   # Guía completa de funcionalidades
         ├── VIRTUALMIN-CONFIG.md
@@ -347,18 +394,32 @@ tail -f panel.log
 - Backup automático antes de guardar (.backup)
 - Validación de sintaxis
 
-#### 7. 🌍 Mundos
-- Listar todos los mundos
-- Ver tamaño de cada mundo
-- Backup individual de mundos
-- Información de dimensiones (overworld, nether, end)
+#### 7. 🌍 Mundos (Sistema Multi-Mundo)
+- **Listar mundos:** Grid responsive con tarjetas
+- **Crear mundo:** Modal con configuración (nombre, slug, descripción, gamemode, dificultad, PVP, semilla)
+- **Activar mundo:** Cambio en caliente con backup automático pre-switch
+- **Duplicar mundo:** Copia completa de mundo existente
+- **Editar configuración:** server.properties independiente por mundo
+- **Backup individual:** Crear/restaurar backups por mundo
+- **Eliminar mundo:** Con confirmación de seguridad
+- **Información detallada:** Tamaño, dimensiones, fecha de creación, último acceso
+- **Indicador de activo:** Badge verde en mundo actualmente en uso
 
-#### 8. 💾 Backups
-- **Crear backup:** Backup completo con timestamp
-- **Listar backups:** Con fecha, tamaño, acciones
-- **Restaurar backup:** Con backup de seguridad pre-restauración
+#### 8. 💾 Backups (Sistema Avanzado)
+- **Backups por mundo:** Almacenamiento en `backups/worlds/{slug}/`
+- **Crear backup:** Compresión tar.gz con metadata JSON
+- **Listar backups:** Con fecha, tamaño, tipo (manual/auto), nombre
+- **Restaurar backup:** Con backup de seguridad pre-restauración automático
 - **Descargar backups:** Descarga directa de archivos .tar.gz
-- **Eliminar backups:** Con confirmación
+- **Eliminar backups:** Con confirmación de seguridad
+- **Auto-cleanup:** Retención configurable (por defecto: 5 backups automáticos)
+- **Backups automáticos:** Al cambiar de mundo (configurable)
+- **Metadata tracking:** Información completa de cada backup (fecha, tamaño, mundo, tipo)
+
+**Configuración de Backups:**
+- **Toggle auto-backup:** Activar/desactivar backups automáticos al cambiar mundo
+- **Retención:** Configurar cantidad de backups automáticos a mantener (1-50)
+- **Panel de configuración:** Card dedicado en sección Backups
 
 #### 9. 📋 Whitelist
 - Ver jugadores en whitelist
@@ -377,6 +438,15 @@ tail -f panel.log
 - **Periodo:** Últimas 24 horas
 - **Actualización:** Automática cada minuto
 - **Almacenamiento:** JSON local
+
+#### 12. ⚡ Rendimiento (Optimización de Polling)
+- **Configuración de intervalos:** Refresh (1-60s), Logs (5-120s), TPS (5-120s)
+- **Presets rápidos:** 6 opciones predefinidas por endpoint
+- **Pausa automática:** Toggle para pausar cuando tab oculto (Page Visibility API)
+- **Indicador de estado:** Badge "Active" (verde) / "Paused" (amarillo)
+- **Reducción de RCON:** Hasta 78% menos solicitudes con configuración óptima
+- **Cache configurable:** TTL de 1-30 segundos
+- **Panel dedicado:** Card en sección Configuración
 
 ---
 
@@ -453,54 +523,62 @@ Actualización UI en Tiempo Real
 
 ## 🔌 API REST
 
-### Documentación Completa: 46 Endpoints
+### Documentación Completa: 24 Endpoints
+
+**Distribución:**
+- 8 Endpoints de Servidor (status, control, logs, players, TPS, command, chat)
+- 8 Endpoints de Mundos (list, get, create, activate, delete, duplicate, config)
+- 4 Endpoints de Backups (list, create, restore, delete)
+- 2 Endpoints de Configuración de Backups (get, update)
+- 2 Endpoints de Configuración del Panel (get, update)
 
 Ver documentación detallada en: [`web/docs/GUIA_COMPLETA.md`](web/docs/GUIA_COMPLETA.md)
 
 ### Endpoints Principales
 
-#### Servidor
+#### Servidor (8 endpoints)
 ```http
 GET  /api/server/status       # Estado: running, cpu, memory, uptime
 GET  /api/server/logs         # Últimos 50 logs
 GET  /api/server/players      # Jugadores online
 GET  /api/server/tps          # Ticks per second (1m, 5m, 15m)
+GET  /api/server/chat         # Mensajes del chat
 POST /api/server/start        # Iniciar servidor
 POST /api/server/stop         # Detener servidor
 POST /api/server/restart      # Reiniciar servidor
 POST /api/server/command      # Ejecutar comando
 ```
 
-#### Plugins
+#### Mundos (8 endpoints)
 ```http
-GET  /api/plugins             # Lista de plugins
-POST /api/plugins/upload      # Subir plugin (.jar)
-POST /api/plugins/delete      # Eliminar plugin
-POST /api/plugins/reload      # Recargar plugins
+GET  /api/worlds                   # Listar todos los mundos
+GET  /api/worlds/<slug>            # Obtener mundo específico
+POST /api/worlds                   # Crear nuevo mundo
+POST /api/worlds/<slug>/activate   # Activar mundo (cambio en caliente)
+DELETE /api/worlds/<slug>          # Eliminar mundo
+POST /api/worlds/<slug>/duplicate  # Duplicar mundo
+GET  /api/worlds/<slug>/config     # Obtener configuración (server.properties)
+PUT  /api/worlds/<slug>/config     # Actualizar configuración
 ```
 
-#### Backups
+#### Backups por Mundo (4 endpoints)
 ```http
-GET  /api/backup/list         # Listar backups
-POST /api/backup/create       # Crear backup
-POST /api/backup/restore      # Restaurar backup
-GET  /api/backup/download/<file> # Descargar backup
+GET  /api/worlds/<slug>/backups         # Listar backups de un mundo
+POST /api/worlds/<slug>/backup          # Crear backup de un mundo
+POST /api/worlds/<slug>/restore         # Restaurar backup de un mundo
+DELETE /api/backups/<filename>          # Eliminar backup específico
 ```
 
-#### Configuración
+#### Configuración de Backups (2 endpoints)
 ```http
-GET  /api/config/server-properties        # Leer server.properties
-POST /api/config/server-properties        # Guardar server.properties
-GET  /api/config/server-properties-parsed # Propiedades parseadas a JSON
-POST /api/config/update-property          # Actualizar propiedad específica
+GET  /api/backup-config           # Obtener configuración de backups
+PUT  /api/backup-config           # Actualizar configuración (auto_backup, retention)
 ```
 
-#### Autenticación
+#### Configuración del Panel (2 endpoints)
 ```http
-POST /login                            # Login
-GET  /logout                           # Logout
-GET  /api/auth/check-password-security # Verificar si requiere cambio
-POST /api/auth/change-password         # Cambiar contraseña
+GET  /api/panel-config            # Obtener configuración de rendimiento
+PUT  /api/panel-config            # Actualizar intervalos de polling
 ```
 
 ### Ejemplo de Uso
@@ -522,19 +600,80 @@ curl -X GET http://localhost:5000/api/server/status \
 }
 ```
 
-#### Ejecutar Comando
+#### Crear Nuevo Mundo
 ```bash
-curl -X POST http://localhost:5000/api/server/command \
+curl -X POST http://localhost:5000/api/worlds \
   -H "Content-Type: application/json" \
   -H "Cookie: session=tu_session_cookie" \
-  -d '{"command": "list"}'
+  -d '{
+    "name": "Survival Extremo",
+    "slug": "survival-extremo",
+    "description": "Modo supervivencia con dificultad Hard",
+    "gamemode": "survival",
+    "difficulty": "hard",
+    "pvp": true,
+    "seed": "12345"
+  }'
 ```
 
 **Respuesta:**
 ```json
 {
   "success": true,
-  "output": "There are 3 of a max of 20 players online: Player1, Player2, Player3"
+  "message": "Mundo creado exitosamente",
+  "world": {
+    "slug": "survival-extremo",
+    "name": "Survival Extremo",
+    "description": "Modo supervivencia con dificultad Hard",
+    "active": false,
+    "created_at": "2025-11-30T18:30:00",
+    "size_mb": 0.5
+  }
+}
+```
+
+#### Activar Mundo (Cambio en Caliente)
+```bash
+curl -X POST http://localhost:5000/api/worlds/survival-extremo/activate \
+  -H "Cookie: session=tu_session_cookie"
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "message": "Mundo activado exitosamente",
+  "backup_created": true,
+  "backup_filename": "world-default_auto_20251130_183045.tar.gz"
+}
+```
+
+#### Configurar Rendimiento del Panel
+```bash
+curl -X PUT http://localhost:5000/api/panel-config \
+  -H "Content-Type: application/json" \
+  -H "Cookie: session=tu_session_cookie" \
+  -d '{
+    "refresh_interval": 10000,
+    "logs_interval": 15000,
+    "tps_interval": 20000,
+    "pause_when_hidden": true
+  }'
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "message": "Configuración actualizada",
+  "config": {
+    "refresh_interval": 10000,
+    "logs_interval": 15000,
+    "tps_interval": 20000,
+    "pause_when_hidden": true,
+    "enable_cache": true,
+    "cache_ttl": 3000
+  }
 }
 ```
 
@@ -556,6 +695,20 @@ curl -X POST http://localhost:5000/api/server/command \
 ./logs-server.sh               # Ver logs en tiempo real
 ```
 
+#### Sistema Multi-Mundo
+```bash
+./migrate-to-multiworld.sh     # Migrar de single-world a multi-world
+./rollback-multiworld.sh       # Revertir migración multi-world
+```
+
+**Proceso de Migración:**
+1. Crea backup timestamped del mundo actual
+2. Mueve mundo a `worlds/world-default/`
+3. Crea symlink `worlds/active` → `worlds/world-default/`
+4. Genera `metadata.json` del mundo
+5. Actualiza `docker-compose.yml` con symlinks
+6. 100% reversible con `rollback-multiworld.sh`
+
 #### Panel Web
 ```bash
 cd web
@@ -569,9 +722,10 @@ cd web
 #### Verificación
 ```bash
 ./verify-panel.sh              # Verificar instalación del panel
+./run-tests.sh                 # Testing de integración completo
 ```
 
-**Verificaciones:**
+**verify-panel.sh - Verificaciones:**
 - ✅ Estructura de directorios
 - ✅ Archivos de Python
 - ✅ Templates HTML
@@ -580,6 +734,20 @@ cd web
 - ✅ Configuración .env
 - ✅ Docker y contenedor
 - ✅ Scripts de gestión
+
+**run-tests.sh - 12 Checks de Integración:**
+1. ✅ Verificar directorios (worlds/, backups/, config/, web/models, web/services)
+2. ✅ Verificar archivos esenciales (app.py, models, services, templates, JS)
+3. ✅ Verificar permisos de scripts
+4. ✅ Verificar configuración (backup_config.json, panel_config.json)
+5. ✅ Test de BackupService
+6. ✅ Verificar sintaxis Python
+7. ✅ Verificar docker-compose.yml
+8. ✅ Verificar symlinks de mundos
+9. ✅ Verificar endpoints API
+10. ✅ Verificar funciones JavaScript
+11. ✅ Verificar modales HTML
+12. ✅ Resumen final
 
 ### Comandos Docker Útiles
 
@@ -615,11 +783,47 @@ docker exec -it mc-paper bash
 
 Crea archivo: `backups/backup_YYYY-MM-DD_HH-MM-SS.tar.gz`
 
-#### Backup desde Panel Web
+#### Backups por Mundo (Sistema Avanzado)
+
+**Desde Panel Web:**
+1. Ir a sección **Mundos**
+2. Click en **"Backups"** del mundo deseado
+3. Modal con lista de backups del mundo
+4. **Crear backup manual:** Button "Crear Backup"
+5. **Restaurar:** Click en "Restore" con confirmación
+6. **Eliminar:** Click en "Delete" con confirmación
+
+**Características:**
+- 📦 **Almacenamiento:** `backups/worlds/{slug}/`
+- 🏷️ **Nomenclatura:** `{slug}_{tipo}_{timestamp}.tar.gz`
+  - Tipo: `manual` o `auto`
+- 📝 **Metadata:** JSON con fecha, tamaño, mundo, tipo
+- 🔄 **Auto-cleanup:** Mantiene solo N backups automáticos (configurable)
+- 🛡️ **Seguridad:** Backup pre-restauración automático
+- 📊 **Compresión:** tar.gz para optimizar espacio
+
+#### Configuración de Backups Automáticos
+
+**Desde Panel Web:**
 1. Ir a sección **Backups**
-2. Click en **"Crear Backup"**
-3. Esperar confirmación
-4. Ver en lista de backups
+2. Card "Configuración de Backups Automáticos"
+3. **Toggle Auto-Backup:** Activar/desactivar backups al cambiar mundo
+4. **Retención:** Slider 1-50 backups automáticos a mantener
+5. Cambios se guardan automáticamente
+
+**Archivo de configuración:** `config/backup_config.json`
+```json
+{
+  "auto_backup_enabled": true,
+  "retention_count": 5
+}
+```
+
+**Funcionamiento:**
+- Al activar un mundo nuevo, se crea backup automático del mundo anterior
+- Solo si `auto_backup_enabled: true`
+- Cleanup automático mantiene solo los últimos N backups auto
+- Backups manuales nunca se eliminan automáticamente
 
 #### Restaurar Backup
 ```bash
@@ -643,6 +847,62 @@ crontab -e
 # Agregar backup cada 6 horas
 0 */6 * * * /home/mkd/contenedores/mc-paper/backup.sh
 ```
+
+#### Documentación Completa de Backups
+Ver documentación detallada en:
+- **[BACKUP_SYSTEM.md](BACKUP_SYSTEM.md)** - Sistema completo de backups (400+ líneas)
+- **[BACKUP_CONFIG.md](BACKUP_CONFIG.md)** - Configuración de backups automáticos (200+ líneas)
+
+---
+
+### Optimización de Rendimiento
+
+#### Problema: RCON Polling Excesivo
+
+**Antes:**
+- 18 solicitudes RCON por minuto (constante)
+- Polling continúa cuando panel oculto/inactivo
+- Intervalos fijos sin configuración
+
+**Después:**
+- 2-18 solicitudes por minuto (configurable)
+- 0 solicitudes cuando tab oculto (Page Visibility API)
+- **Reducción potencial: hasta 78%**
+
+#### Configuración desde Panel Web
+
+1. Ir a sección **Configuración**
+2. Card "Optimización de Rendimiento"
+3. Configurar intervalos:
+   - **Refresh Interval:** 1-60 segundos (stats generales)
+   - **Logs Interval:** 5-120 segundos (logs del servidor)
+   - **TPS Interval:** 5-120 segundos (ticks per second)
+4. **Toggle "Pausar cuando oculto":** Activa Page Visibility API
+5. **Status Indicator:** Badge verde (Active) o amarillo (Paused)
+
+**Archivo de configuración:** `config/panel_config.json`
+```json
+{
+  "refresh_interval": 5000,
+  "logs_interval": 10000,
+  "tps_interval": 10000,
+  "pause_when_hidden": true,
+  "enable_cache": true,
+  "cache_ttl": 3000
+}
+```
+
+#### Comparación de Rendimiento
+
+| Configuración | Solicitudes/min | Reducción | Uso Servidor |
+|---------------|-----------------|-----------|--------------|
+| Original (5s/10s/10s) | 18 | 0% | Alto |
+| Moderado (10s/15s/20s) | 9 | 50% | Medio |
+| Conservador (30s/60s/60s) | 4 | 78% | Bajo |
+| Panel Oculto | 0 | 100% | Ninguno |
+
+#### Documentación Completa de Optimización
+Ver: **[PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)** (300+ líneas)
 
 ---
 
@@ -951,15 +1211,30 @@ crontab -e
 
 ## 📚 Documentación Adicional
 
+### 🚀 Inicio Rápido
+- **[docs/INICIO_RAPIDO.md](docs/INICIO_RAPIDO.md)** - Guía de inicio rápido (instalación en 3 pasos) 🆕
+
+### Documentación del Sistema Multi-Mundo
+- **[docs/GUIA_MULTIMUNDOS.md](docs/GUIA_MULTIMUNDOS.md)** - Guía completa del sistema multi-mundo (1,000+ líneas) 🆕
+- **[docs/RESUMEN_SISTEMA_V2.md](docs/RESUMEN_SISTEMA_V2.md)** - Resumen técnico completo v2.0 🆕
+- **[docs/ROADMAP_MULTIMUNDOS.md](docs/ROADMAP_MULTIMUNDOS.md)** - Roadmap del desarrollo multi-mundo
+
+### Documentación del Sistema de Backups
+- **[BACKUP_SYSTEM.md](BACKUP_SYSTEM.md)** - Sistema completo de backups (400+ líneas)
+- **[BACKUP_CONFIG.md](BACKUP_CONFIG.md)** - Configuración de backups automáticos (200+ líneas)
+
+### Documentación de Optimización
+- **[PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)** - Optimización de rendimiento (300+ líneas)
+
 ### Documentación del Servidor
-- **[INSTALACION_RAPIDA.md](docs/INSTALACION_RAPIDA.md)** - Guía rápida de instalación
-- **[setup-minecraft.md](docs/setup-minecraft.md)** - Setup inicial del servidor
-- **[CAMBIOS_PERSISTENCIA.md](docs/CAMBIOS_PERSISTENCIA.md)** - Configuración de persistencia
+- **[docs/INSTALACION_RAPIDA.md](docs/INSTALACION_RAPIDA.md)** - Guía rápida de instalación
+- **[docs/setup-minecraft.md](docs/setup-minecraft.md)** - Setup inicial del servidor
+- **[docs/CAMBIOS_PERSISTENCIA.md](docs/CAMBIOS_PERSISTENCIA.md)** - Configuración de persistencia
 
 ### Documentación del Panel Web
-- **[GUIA_COMPLETA.md](web/docs/GUIA_COMPLETA.md)** - Guía completa de funcionalidades (18 características)
-- **[PANEL_README.md](web/docs/PANEL_README.md)** - README del panel web
-- **[VIRTUALMIN-CONFIG.md](web/docs/VIRTUALMIN-CONFIG.md)** - Configuración para producción
+- **[web/docs/GUIA_COMPLETA.md](web/docs/GUIA_COMPLETA.md)** - Guía completa de funcionalidades (20 características)
+- **[web/docs/PANEL_README.md](web/docs/PANEL_README.md)** - README del panel web
+- **[web/docs/VIRTUALMIN-CONFIG.md](web/docs/VIRTUALMIN-CONFIG.md)** - Configuración para producción
 
 ---
 
@@ -1019,10 +1294,18 @@ Formato: `tipo: descripción`
 
 ### Roadmap de Desarrollo
 
+#### v2.0 (ACTUAL) ✅
+- [x] Sistema multi-mundo completo
+- [x] Backups automáticos por mundo
+- [x] Configuración de backups desde UI
+- [x] Optimización de polling RCON
+- [x] Page Visibility API
+- [x] Testing de integración
+
 #### v2.1 (Próximo)
 - [ ] Sistema de alertas (email/Discord)
-- [ ] Marketplace de plugins
-- [ ] Backups automáticos programables desde UI
+- [ ] Programación de backups desde UI (cron visual)
+- [ ] Exportar/importar mundos (.zip)
 - [ ] API REST pública con tokens
 - [ ] Roles y permisos de usuario
 

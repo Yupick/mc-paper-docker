@@ -10,6 +10,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import docker
+from models.world_manager import WorldManager
+from services.backup_service import BackupService
 
 # Cargar variables de entorno
 load_dotenv()
@@ -27,10 +29,16 @@ WHITELIST_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'whitelist.json')
 BLACKLIST_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'banned-players.json')
 OPS_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'ops.json')
 BACKUP_DIR = os.path.join(MINECRAFT_DIR, 'backups')
+WORLDS_DIR = os.path.join(MINECRAFT_DIR, 'worlds')
+BACKUP_WORLDS_DIR = os.path.join(BACKUP_DIR, 'worlds')
 CONTAINER_NAME = os.getenv('DOCKER_CONTAINER_NAME', 'mc-paper')
 
 app.config['UPLOAD_FOLDER'] = PLUGINS_DIR
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+
+# Inicializar WorldManager y BackupService
+world_manager = WorldManager(WORLDS_DIR)
+backup_service = BackupService(WORLDS_DIR, BACKUP_WORLDS_DIR)
 
 # Login manager
 login_manager = LoginManager()
@@ -1430,6 +1438,539 @@ def backup_world():
         else:
             return jsonify({'success': False, 'error': result.stderr}), 500
             
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========== GESTIÓN DE MUNDOS ==========
+
+@app.route('/api/worlds', methods=['GET'])
+@login_required
+def list_worlds():
+    """Listar todos los mundos disponibles"""
+    try:
+        summary = world_manager.get_worlds_summary()
+        return jsonify({
+            'success': True,
+            'worlds': summary['worlds'],
+            'active_world': summary['active_world'],
+            'total_worlds': summary['total_worlds'],
+            'max_worlds': summary['max_worlds']
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>', methods=['GET'])
+@login_required
+def get_world(slug):
+    """Obtener detalles de un mundo específico"""
+    try:
+        world = world_manager.get_world(slug)
+        if world is None:
+            return jsonify({'success': False, 'error': 'Mundo no encontrado'}), 404
+        
+        return jsonify({
+            'success': True,
+            'world': world.to_dict()
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds', methods=['POST'])
+@login_required
+def create_world():
+    """Crear nuevo mundo"""
+    try:
+        data = request.get_json()
+        
+        # Validar campos requeridos
+        name = data.get('name')
+        if not name:
+            return jsonify({'success': False, 'error': 'Nombre del mundo requerido'}), 400
+        
+        # Parámetros opcionales
+        template = data.get('template', 'vanilla')
+        seed = data.get('seed', '')
+        gamemode = data.get('gamemode', 'survival')
+        difficulty = data.get('difficulty', 'normal')
+        description = data.get('description', '')
+        tags = data.get('tags', [])
+        
+        # Crear mundo
+        world = world_manager.create_world(
+            name=name,
+            template=template,
+            seed=seed,
+            gamemode=gamemode,
+            difficulty=difficulty,
+            description=description,
+            tags=tags
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'Mundo "{name}" creado correctamente',
+            'world': world.to_dict()
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/activate', methods=['POST'])
+@login_required
+def activate_world(slug):
+    """Activar mundo (cambiar symlink y reiniciar servidor)"""
+    try:
+        data = request.get_json() or {}
+        
+        # Leer configuración de backups
+        config_file = os.path.join(CONFIG_DIR, 'backup_config.json')
+        backup_config = {'auto_backup_enabled': True}
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                backup_config = json.load(f)
+        
+        # Usar configuración de backup automático o el valor enviado
+        create_backup = data.get('create_backup', backup_config.get('auto_backup_enabled', True))
+        
+        # Verificar que el mundo existe
+        world = world_manager.get_world(slug)
+        if world is None:
+            return jsonify({'success': False, 'error': 'Mundo no encontrado'}), 404
+        
+        # Obtener contenedor
+        container = docker_client.containers.get(CONTAINER_NAME)
+        
+        # Verificar si el servidor está corriendo
+        server_was_running = container.status == 'running'
+        
+        # Detener servidor si está corriendo
+        if server_was_running:
+            try:
+                # Enviar comando de guardado y apagado
+                execute_rcon_command(container, 'save-all')
+                execute_rcon_command(container, 'stop')
+                
+                # Esperar a que se detenga (máximo 60 segundos)
+                import time
+                for _ in range(60):
+                    container.reload()
+                    if container.status != 'running':
+                        break
+                    time.sleep(1)
+                
+            except Exception as e:
+                print(f"Error al detener servidor: {e}")
+        
+        # Crear backup automático del mundo actual si se solicita
+        if create_backup:
+            try:
+                current_world = world_manager.get_active_world()
+                if current_world:
+                    backup_service.create_backup(
+                        current_world.slug,
+                        auto=True,
+                        description=f"Backup automático antes de cambiar a {world.metadata['name']}"
+                    )
+            except Exception as e:
+                print(f"Error al crear backup automático: {e}")
+        
+        # Cambiar mundo activo
+        world_manager.switch_world(slug)
+        
+        # Reiniciar servidor si estaba corriendo
+        if server_was_running:
+            container.start()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Mundo "{world.metadata["name"]}" activado correctamente',
+            'active_world': slug
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>', methods=['DELETE'])
+@login_required
+def delete_world(slug):
+    """Eliminar mundo"""
+    try:
+        # Obtener parámetro de backup
+        create_backup = request.args.get('backup', 'false').lower() == 'true'
+        
+        # Eliminar mundo
+        world_manager.delete_world(slug, create_backup=create_backup)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Mundo "{slug}" eliminado correctamente'
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/duplicate', methods=['POST'])
+@login_required
+def duplicate_world(slug):
+    """Duplicar mundo existente"""
+    try:
+        data = request.get_json()
+        new_name = data.get('new_name')
+        
+        if not new_name:
+            return jsonify({'success': False, 'error': 'Nombre del nuevo mundo requerido'}), 400
+        
+        # Duplicar mundo
+        new_world = world_manager.duplicate_world(slug, new_name)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Mundo duplicado como "{new_name}"',
+            'world': new_world.to_dict()
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/config', methods=['GET'])
+@login_required
+def get_world_config(slug):
+    """Obtener configuración de server.properties del mundo"""
+    try:
+        world = world_manager.get_world(slug)
+        if world is None:
+            return jsonify({'success': False, 'error': 'Mundo no encontrado'}), 404
+        
+        properties = world.get_server_properties()
+        
+        return jsonify({
+            'success': True,
+            'properties': properties
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/config', methods=['PUT'])
+@login_required
+def update_world_config(slug):
+    """Actualizar configuración de server.properties del mundo"""
+    try:
+        data = request.get_json()
+        properties = data.get('properties')
+        
+        if not properties:
+            return jsonify({'success': False, 'error': 'Propiedades requeridas'}), 400
+        
+        world = world_manager.get_world(slug)
+        if world is None:
+            return jsonify({'success': False, 'error': 'Mundo no encontrado'}), 404
+        
+        # Actualizar propiedades
+        world.update_server_properties(properties)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Configuración actualizada correctamente'
+        })
+        
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/backups', methods=['GET'])
+@login_required
+def list_world_backups(slug):
+    """Listar backups de un mundo específico"""
+    try:
+        # Verificar que el mundo existe
+        world = world_manager.get_world(slug)
+        if world is None:
+            return jsonify({'success': False, 'error': 'Mundo no encontrado'}), 404
+        
+        backups = backup_service.list_backups(slug)
+        total_size = backup_service.get_total_backup_size(slug)
+        
+        return jsonify({
+            'success': True,
+            'backups': backups,
+            'total_size_mb': total_size['total_mb'],
+            'total_count': total_size['count']
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/backup', methods=['POST'])
+@login_required
+def create_world_backup(slug):
+    """Crear backup manual de un mundo"""
+    try:
+        data = request.get_json() or {}
+        description = data.get('description', '')
+        
+        # Verificar que el mundo existe
+        world = world_manager.get_world(slug)
+        if world is None:
+            return jsonify({'success': False, 'error': 'Mundo no encontrado'}), 404
+        
+        # Crear backup
+        backup_info = backup_service.create_backup(
+            world_slug=slug,
+            auto=False,
+            description=description
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Backup creado correctamente',
+            'backup': backup_info
+        })
+        
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/restore', methods=['POST'])
+@login_required
+def restore_world_backup(slug):
+    """Restaurar un mundo desde un backup"""
+    try:
+        data = request.get_json()
+        backup_filename = data.get('backup_filename')
+        
+        if not backup_filename:
+            return jsonify({'success': False, 'error': 'Nombre de backup requerido'}), 400
+        
+        # Verificar que el mundo no está activo
+        active_world = world_manager.get_active_world()
+        if active_world and active_world.slug == slug:
+            return jsonify({
+                'success': False,
+                'error': 'No se puede restaurar el mundo activo. Cambia a otro mundo primero.'
+            }), 400
+        
+        # Restaurar backup
+        backup_service.restore_backup(backup_filename, slug)
+        
+        # Actualizar metadata del mundo
+        world = world_manager.get_world(slug)
+        if world:
+            world.metadata['last_played'] = datetime.now().isoformat() + "Z"
+            world.save_metadata()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Mundo restaurado correctamente'
+        })
+        
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'error': str(e)}), 404
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/backups/<backup_filename>', methods=['DELETE'])
+@login_required
+def delete_backup(backup_filename):
+    """Eliminar un backup específico"""
+    try:
+        # Verificar que el backup existe
+        backup_info = backup_service.get_backup_info(backup_filename)
+        if not backup_info:
+            return jsonify({'success': False, 'error': 'Backup no encontrado'}), 404
+        
+        # Eliminar backup
+        backup_service.delete_backup(backup_filename)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Backup eliminado correctamente'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/backup-config', methods=['GET'])
+@login_required
+def get_backup_config():
+    """Obtener configuración de backups"""
+    try:
+        config_file = os.path.join(CONFIG_DIR, 'backup_config.json')
+        
+        # Configuración por defecto
+        default_config = {
+            'auto_backup_enabled': True,
+            'retention_count': 5
+        }
+        
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+        else:
+            config = default_config
+            # Crear archivo con configuración por defecto
+            os.makedirs(CONFIG_DIR, exist_ok=True)
+            with open(config_file, 'w') as f:
+                json.dump(config, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'config': config
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/backup-config', methods=['PUT'])
+@login_required
+def update_backup_config():
+    """Actualizar configuración de backups"""
+    try:
+        data = request.get_json()
+        config_file = os.path.join(CONFIG_DIR, 'backup_config.json')
+        
+        # Leer configuración actual
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+        else:
+            config = {}
+        
+        # Actualizar valores
+        if 'auto_backup_enabled' in data:
+            config['auto_backup_enabled'] = bool(data['auto_backup_enabled'])
+        
+        if 'retention_count' in data:
+            retention = int(data['retention_count'])
+            if retention < 1 or retention > 50:
+                return jsonify({'success': False, 'error': 'retention_count debe estar entre 1 y 50'}), 400
+            config['retention_count'] = retention
+        
+        # Guardar configuración
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Configuración actualizada',
+            'config': config
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': 'Valor inválido'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/panel-config', methods=['GET'])
+@login_required
+def get_panel_config():
+    """Obtener configuración del panel"""
+    try:
+        config_file = os.path.join(CONFIG_DIR, 'panel_config.json')
+        
+        # Configuración por defecto
+        default_config = {
+            'refresh_interval': 5000,
+            'logs_interval': 10000,
+            'tps_interval': 10000,
+            'pause_when_hidden': True,
+            'enable_cache': True,
+            'cache_ttl': 3000
+        }
+        
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+        else:
+            config = default_config
+            os.makedirs(CONFIG_DIR, exist_ok=True)
+            with open(config_file, 'w') as f:
+                json.dump(config, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'config': config
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/panel-config', methods=['PUT'])
+@login_required
+def update_panel_config():
+    """Actualizar configuración del panel"""
+    try:
+        data = request.get_json()
+        config_file = os.path.join(CONFIG_DIR, 'panel_config.json')
+        
+        # Leer configuración actual
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+        else:
+            config = {}
+        
+        # Validar y actualizar intervalos
+        if 'refresh_interval' in data:
+            interval = int(data['refresh_interval'])
+            if interval < 1000 or interval > 60000:
+                return jsonify({'success': False, 'error': 'refresh_interval debe estar entre 1000 y 60000 ms'}), 400
+            config['refresh_interval'] = interval
+        
+        if 'logs_interval' in data:
+            interval = int(data['logs_interval'])
+            if interval < 5000 or interval > 120000:
+                return jsonify({'success': False, 'error': 'logs_interval debe estar entre 5000 y 120000 ms'}), 400
+            config['logs_interval'] = interval
+        
+        if 'tps_interval' in data:
+            interval = int(data['tps_interval'])
+            if interval < 5000 or interval > 120000:
+                return jsonify({'success': False, 'error': 'tps_interval debe estar entre 5000 y 120000 ms'}), 400
+            config['tps_interval'] = interval
+        
+        if 'pause_when_hidden' in data:
+            config['pause_when_hidden'] = bool(data['pause_when_hidden'])
+        
+        if 'enable_cache' in data:
+            config['enable_cache'] = bool(data['enable_cache'])
+        
+        if 'cache_ttl' in data:
+            ttl = int(data['cache_ttl'])
+            if ttl < 1000 or ttl > 30000:
+                return jsonify({'success': False, 'error': 'cache_ttl debe estar entre 1000 y 30000 ms'}), 400
+            config['cache_ttl'] = ttl
+        
+        # Guardar configuración
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Configuración del panel actualizada',
+            'config': config
+        })
+        
+    except ValueError as e:
+        return jsonify({'success': False, 'error': 'Valor inválido'}), 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

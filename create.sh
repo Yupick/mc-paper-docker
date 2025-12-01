@@ -6,7 +6,32 @@ echo "========================================="
 
 echo ""
 echo "[1/5] Creando directorios necesarios..."
-mkdir -p worlds plugins resourcepacks config logs
+mkdir -p worlds plugins resourcepacks config logs backups/worlds
+
+# Crear archivos de configuración del panel si no existen
+if [ ! -f config/backup_config.json ]; then
+    cat > config/backup_config.json << 'EOF'
+{
+  "auto_backup_enabled": true,
+  "retention_count": 5
+}
+EOF
+    echo "✅ Configuración de backups creada"
+fi
+
+if [ ! -f config/panel_config.json ]; then
+    cat > config/panel_config.json << 'EOF'
+{
+  "refresh_interval": 5000,
+  "logs_interval": 10000,
+  "tps_interval": 10000,
+  "pause_when_hidden": true,
+  "enable_cache": true,
+  "cache_ttl": 3000
+}
+EOF
+    echo "✅ Configuración del panel creada"
+fi
 
 # Crear server.properties por defecto si no existe
 if [ ! -f config/server.properties ]; then
@@ -167,12 +192,23 @@ echo "  - Estado: Habilitado"
 echo ""
 echo "Archivos de configuración en:"
 echo "  - ./config/server.properties"
+echo "  - ./config/backup_config.json (backups automáticos)"
+echo "  - ./config/panel_config.json (rendimiento del panel)"
 echo "  - ./worlds/ (mundos y datos del servidor)"
+echo "  - ./backups/worlds/ (backups de mundos)"
 echo "  - ./plugins/ (addons)"
 echo "  - ./resourcepacks/ (texturas)"
+echo ""
+echo "Sistema Multi-Mundos:"
+echo "  - Crear/gestionar mundos desde el panel web"
+echo "  - Cambiar entre mundos sin reiniciar"
+echo "  - Backups automáticos configurables"
+echo "  - Ver documentación: cat BACKUP_SYSTEM.md"
 echo ""
 echo "Comandos disponibles:"
 echo "  - Ver logs: ./run.sh"
 echo "  - Detener: ./stop.sh"
 echo "  - Actualizar servidor: ./update.sh"
 echo "  - Actualizar plugins: ./update.sh --plugins"
+echo "  - Migrar a multi-mundos: ./migrate-to-multiworld.sh"
+echo "  - Tests del sistema: ./run-tests.sh"

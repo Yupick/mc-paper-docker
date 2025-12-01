@@ -750,7 +750,112 @@ function backupWorld(worldName) {
 
 // ==================== BACKUPS ====================
 
+// Cargar configuración de backups al mostrar la sección
+async function loadBackupConfig() {
+    try {
+        const response = await fetch('/api/backup-config');
+        const data = await response.json();
+        
+        if (data.success) {
+            const config = data.config;
+            
+            // Actualizar toggle
+            const toggle = document.getElementById('autoBackupEnabled');
+            toggle.checked = config.auto_backup_enabled;
+            
+            // Actualizar label
+            updateAutoBackupLabel(config.auto_backup_enabled);
+            
+            // Actualizar select de retención
+            const retention = document.getElementById('autoBackupRetention');
+            if (retention) {
+                retention.value = config.retention_count || 5;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading backup config:', error);
+    }
+}
+
+// Actualizar label del toggle
+function updateAutoBackupLabel(enabled) {
+    const label = document.getElementById('autoBackupLabel');
+    if (enabled) {
+        label.innerHTML = '<span class=\"badge bg-success\">Activado</span>';
+    } else {
+        label.innerHTML = '<span class=\"badge bg-secondary\">Desactivado</span>';
+    }
+}
+
+// Toggle de backups automáticos
+async function toggleAutoBackup() {
+    const toggle = document.getElementById('autoBackupEnabled');
+    const enabled = toggle.checked;
+    
+    try {
+        const response = await fetch('/api/backup-config', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                auto_backup_enabled: enabled
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            updateAutoBackupLabel(enabled);
+            showNotification(
+                enabled ? 'Backups automáticos activados' : 'Backups automáticos desactivados',
+                'success'
+            );
+        } else {
+            // Revertir toggle en caso de error
+            toggle.checked = !enabled;
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error toggling auto backup:', error);
+        toggle.checked = !enabled;
+        showNotification('Error de conexión', 'danger');
+    }
+}
+
+// Actualizar cantidad de backups a conservar
+async function updateBackupRetention() {
+    const retention = document.getElementById('autoBackupRetention');
+    const retentionCount = parseInt(retention.value);
+    
+    try {
+        const response = await fetch('/api/backup-config', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                retention_count: retentionCount
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`Se conservarán los últimos ${retentionCount} backups automáticos`, 'success');
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error updating retention:', error);
+        showNotification('Error de conexión', 'danger');
+    }
+}
+
 function loadBackupsSection() {
+    // Cargar configuración
+    loadBackupConfig();
+    
     fetch('/api/backup/list')
         .then(r => r.json())
         .then(data => {
@@ -1004,29 +1109,879 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar seguridad de contraseña después de cargar dashboard
     setTimeout(() => checkPasswordSecurity(), 1000);
     
-    // Actualizar cada 5 segundos
-    setInterval(loadServerStatus, 5000);
-    setInterval(loadLogs, 10000);
-    setInterval(loadTPS, 10000);
+    // Cargar configuración del panel y configurar intervalos dinámicos
+    loadPanelConfig();
+});
+
+// ==================== CONFIGURACIÓN DE PANEL Y POLLING ====================
+
+// Variables de control de polling
+let pollingIntervals = {
+    serverStatus: null,
+    logs: null,
+    tps: null,
+    stats: null
+};
+
+let pollingConfig = {
+    refresh_interval: 5000,
+    logs_interval: 10000,
+    tps_interval: 10000,
+    pause_when_hidden: true,
+    enable_cache: true,
+    cache_ttl: 3000
+};
+
+let isPageVisible = true;
+
+// Cargar configuración del panel
+async function loadPanelConfig() {
+    try {
+        const response = await fetch('/api/panel-config');
+        const data = await response.json();
+        
+        if (data.success) {
+            pollingConfig = data.config;
+            updatePollingConfigUI();
+        }
+    } catch (error) {
+        console.error('Error loading panel config:', error);
+    }
+    
+    // Iniciar polling con configuración cargada
+    startPolling();
+}
+
+// Iniciar todos los intervalos de polling
+function startPolling() {
+    // Limpiar intervalos existentes
+    stopPolling();
+    
+    // Configurar Page Visibility API
+    setupPageVisibility();
+    
+    // Iniciar intervalos
+    pollingIntervals.serverStatus = setInterval(() => {
+        if (shouldPoll()) loadServerStatus();
+    }, pollingConfig.refresh_interval);
+    
+    pollingIntervals.logs = setInterval(() => {
+        if (shouldPoll()) loadLogs();
+    }, pollingConfig.logs_interval);
+    
+    pollingIntervals.tps = setInterval(() => {
+        if (shouldPoll()) loadTPS();
+    }, pollingConfig.tps_interval);
     
     // Guardar estadísticas cada minuto
-    setInterval(() => {
-        fetch('/api/server/status')
-            .then(r => r.json())
-            .then(data => {
-                if (data.running) {
-                    fetch('/api/server/players').then(r => r.json()).then(players => {
-                        fetch('/api/stats/save', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                cpu: data.cpu_percent,
-                                memory: data.memory_percent,
-                                players: players.online
-                            })
+    pollingIntervals.stats = setInterval(() => {
+        if (shouldPoll()) {
+            fetch('/api/server/status')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.running) {
+                        fetch('/api/server/players').then(r => r.json()).then(players => {
+                            fetch('/api/stats/save', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    cpu: data.cpu_percent,
+                                    memory: data.memory_percent,
+                                    players: players.online
+                                })
+                            });
                         });
-                    });
-                }
-            });
+                    }
+                });
+        }
     }, 60000);
-});
+}
+
+// Detener todos los intervalos
+function stopPolling() {
+    Object.keys(pollingIntervals).forEach(key => {
+        if (pollingIntervals[key]) {
+            clearInterval(pollingIntervals[key]);
+            pollingIntervals[key] = null;
+        }
+    });
+}
+
+// Verificar si debe hacer polling
+function shouldPoll() {
+    if (pollingConfig.pause_when_hidden && !isPageVisible) {
+        return false;
+    }
+    return true;
+}
+
+// Configurar Page Visibility API
+function setupPageVisibility() {
+    // Detectar si la página está visible
+    document.addEventListener('visibilitychange', () => {
+        isPageVisible = !document.hidden;
+        
+        // Actualizar UI de estado
+        updatePollingStatusUI();
+        
+        if (isPageVisible && pollingConfig.pause_when_hidden) {
+            // Página visible de nuevo, actualizar inmediatamente
+            loadServerStatus();
+            loadLogs();
+            loadTPS();
+        }
+    });
+}
+
+// Actualizar indicador de estado de polling
+function updatePollingStatusUI() {
+    const statusElement = document.getElementById('pollingStatus');
+    if (!statusElement) return;
+    
+    if (!isPageVisible && pollingConfig.pause_when_hidden) {
+        statusElement.innerHTML = '<span class="text-warning">⏸️ Pausado (pestaña oculta)</span>';
+    } else {
+        statusElement.innerHTML = '<span class="text-success">✓ Activo</span>';
+    }
+}
+
+// Actualizar UI de configuración
+function updatePollingConfigUI() {
+    const refreshSelect = document.getElementById('refreshInterval');
+    const logsSelect = document.getElementById('logsInterval');
+    const tpsSelect = document.getElementById('tpsInterval');
+    const pauseToggle = document.getElementById('pauseWhenHidden');
+    
+    if (refreshSelect) refreshSelect.value = pollingConfig.refresh_interval;
+    if (logsSelect) logsSelect.value = pollingConfig.logs_interval;
+    if (tpsSelect) tpsSelect.value = pollingConfig.tps_interval;
+    if (pauseToggle) pauseToggle.checked = pollingConfig.pause_when_hidden;
+    
+    // Actualizar estado inicial
+    updatePollingStatusUI();
+}
+
+// Actualizar configuración de refresco
+async function updateRefreshInterval() {
+    const interval = parseInt(document.getElementById('refreshInterval').value);
+    await updatePanelConfigValue('refresh_interval', interval);
+}
+
+async function updateLogsInterval() {
+    const interval = parseInt(document.getElementById('logsInterval').value);
+    await updatePanelConfigValue('logs_interval', interval);
+}
+
+async function updateTpsInterval() {
+    const interval = parseInt(document.getElementById('tpsInterval').value);
+    await updatePanelConfigValue('tps_interval', interval);
+}
+
+async function togglePauseWhenHidden() {
+    const enabled = document.getElementById('pauseWhenHidden').checked;
+    await updatePanelConfigValue('pause_when_hidden', enabled);
+}
+
+// Función auxiliar para actualizar configuración
+async function updatePanelConfigValue(key, value) {
+    try {
+        const response = await fetch('/api/panel-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [key]: value })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            pollingConfig = data.config;
+            showNotification('Configuración actualizada. Reiniciando polling...', 'success');
+            
+            // Reiniciar polling con nueva configuración
+            startPolling();
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error updating panel config:', error);
+        showNotification('Error de conexión', 'danger');
+    }
+}
+
+// ==================== GESTIÓN DE MUNDOS ====================
+
+let pendingWorldSwitch = null;
+let currentEditingWorld = null;
+let currentBackupsWorld = null;
+
+// Cargar lista de mundos
+async function loadWorlds() {
+    try {
+        const response = await fetch('/api/worlds');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderWorldsGrid(data.worlds, data.active_world);
+        } else {
+            showWorldsError('Error al cargar mundos: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error loading worlds:', error);
+        showWorldsError('Error de conexión al cargar mundos');
+    }
+}
+
+// Renderizar grid de mundos
+function renderWorldsGrid(worlds, activeWorldSlug) {
+    const grid = document.getElementById('worldsGrid');
+    
+    if (!worlds || worlds.length === 0) {
+        grid.innerHTML = `
+            <div class="col-12 text-center text-muted">
+                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                <p class="mt-2">No hay mundos creados</p>
+                <button class="btn btn-primary" onclick="showCreateWorldModal()">
+                    <i class="bi bi-plus-circle"></i> Crear Primer Mundo
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = worlds.map(world => createWorldCard(world, world.slug === activeWorldSlug)).join('');
+}
+
+// Crear tarjeta de mundo
+function createWorldCard(world, isActive) {
+    const gamemodeBadges = {
+        'survival': 'bg-success',
+        'creative': 'bg-info',
+        'adventure': 'bg-warning',
+        'spectator': 'bg-secondary'
+    };
+    
+    const difficultyBadges = {
+        'peaceful': 'bg-success',
+        'easy': 'bg-info',
+        'normal': 'bg-warning',
+        'hard': 'bg-danger'
+    };
+    
+    const lastPlayed = world.last_played ? 
+        new Date(world.last_played).toLocaleString('es-ES') : 
+        'Nunca jugado';
+    
+    return `
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 ${isActive ? 'border-success border-2' : ''}">
+                <div class="card-header d-flex justify-content-between align-items-center ${isActive ? 'bg-success bg-opacity-10' : ''}">
+                    <h5 class="mb-0">
+                        ${escapeHtml(world.name)}
+                        ${isActive ? '<span class="badge bg-success ms-2">Activo</span>' : ''}
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            ${!isActive ? `
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); activateWorld('${world.slug}', '${escapeHtml(world.name)}')">
+                                    <i class="bi bi-play-circle me-2"></i>Activar
+                                </a>
+                            </li>` : ''}
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); editWorld('${world.slug}')">
+                                    <i class="bi bi-gear me-2"></i>Configurar
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); duplicateWorld('${world.slug}', '${escapeHtml(world.name)}')">
+                                    <i class="bi bi-files me-2"></i>Duplicar
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); backupWorld('${world.slug}')">
+                                    <i class="bi bi-save me-2"></i>Backup
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            ${!isActive ? `
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); deleteWorld('${world.slug}', '${escapeHtml(world.name)}')">
+                                    <i class="bi bi-trash me-2"></i>Eliminar
+                                </a>
+                            </li>` : ''}
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">${escapeHtml(world.description || 'Sin descripción')}</p>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge ${gamemodeBadges[world.gamemode] || 'bg-secondary'}">
+                            <i class="bi bi-controller me-1"></i>${world.gamemode}
+                        </span>
+                        <span class="badge ${difficultyBadges[world.difficulty] || 'bg-secondary'}">
+                            <i class="bi bi-signal me-1"></i>${world.difficulty}
+                        </span>
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-hdd me-1"></i>${world.size_mb} MB
+                        </span>
+                        ${world.player_count > 0 ? `
+                        <span class="badge bg-info">
+                            <i class="bi bi-people me-1"></i>${world.player_count} jugadores
+                        </span>` : ''}
+                    </div>
+                    
+                    <div class="text-muted small">
+                        <i class="bi bi-clock me-1"></i>
+                        Última vez: ${lastPlayed}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm ${isActive ? 'btn-success' : 'btn-primary'} w-100" 
+                            onclick="activateWorld('${world.slug}', '${escapeHtml(world.name)}')"
+                            ${isActive ? 'disabled' : ''}>
+                        <i class="bi ${isActive ? 'bi-check-circle' : 'bi-play-circle'} me-2"></i>
+                        ${isActive ? 'Mundo Activo' : 'Activar Mundo'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Mostrar modal de crear mundo
+function showCreateWorldModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createWorldModal'));
+    document.getElementById('createWorldForm').reset();
+    document.getElementById('createWorldError').classList.add('d-none');
+    modal.show();
+}
+
+// Enviar formulario de crear mundo
+async function submitCreateWorld() {
+    const form = document.getElementById('createWorldForm');
+    const errorDiv = document.getElementById('createWorldError');
+    const formData = new FormData(form);
+    
+    const data = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        template: formData.get('template'),
+        seed: formData.get('seed'),
+        gamemode: formData.get('gamemode'),
+        difficulty: formData.get('difficulty')
+    };
+    
+    // Validación
+    if (!data.name) {
+        errorDiv.textContent = 'El nombre del mundo es requerido';
+        errorDiv.classList.remove('d-none');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/worlds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('createWorldModal')).hide();
+            
+            // Mostrar notificación de éxito
+            showNotification('Mundo creado correctamente', 'success');
+            
+            // Recargar lista de mundos
+            loadWorlds();
+        } else {
+            errorDiv.textContent = result.error || 'Error al crear mundo';
+            errorDiv.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error creating world:', error);
+        errorDiv.textContent = 'Error de conexión al crear mundo';
+        errorDiv.classList.remove('d-none');
+    }
+}
+
+// Activar mundo
+async function activateWorld(slug, name) {
+    // Guardar datos para confirmar después
+    pendingWorldSwitch = slug;
+    
+    // Actualizar nombre en el modal
+    document.getElementById('targetWorldName').textContent = name;
+    
+    // Cargar configuración de backups para actualizar el checkbox
+    try {
+        const response = await fetch('/api/backup-config');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('createBackupBeforeSwitch').checked = data.config.auto_backup_enabled;
+        }
+    } catch (error) {
+        console.error('Error loading backup config:', error);
+    }
+    
+    // Mostrar modal de confirmación
+    const modal = new bootstrap.Modal(document.getElementById('confirmSwitchModal'));
+    modal.show();
+}
+
+// Confirmar cambio de mundo
+async function confirmSwitchWorld() {
+    const slug = pendingWorldSwitch;
+    const createBackup = document.getElementById('createBackupBeforeSwitch').checked;
+    
+    if (!slug) return;
+    
+    try {
+        showNotification('Cambiando de mundo...', 'info');
+        
+        const response = await fetch(`/api/worlds/${slug}/activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ create_backup: createBackup })
+        });
+        
+        const data = await response.json();
+        
+        // Cerrar modal
+        bootstrap.Modal.getInstance(document.getElementById('confirmSwitchModal')).hide();
+        
+        if (data.success) {
+            showNotification('Mundo activado correctamente. El servidor se está reiniciando...', 'success');
+            
+            // Recargar mundos después de 3 segundos
+            setTimeout(() => {
+                loadWorlds();
+                loadServerStatus();
+            }, 3000);
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error activating world:', error);
+        showNotification('Error de conexión al activar mundo', 'danger');
+    }
+}
+
+// Editar configuración del mundo
+async function editWorld(slug) {
+    currentEditingWorld = slug;
+    
+    try {
+        const response = await fetch(`/api/worlds/${slug}/config`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Renderizar configuración
+            const contentDiv = document.getElementById('worldConfigContent');
+            const properties = data.properties;
+            
+            contentDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Modo de Juego</label>
+                        <select class="form-control" name="gamemode">
+                            <option value="survival" ${properties.gamemode === 'survival' ? 'selected' : ''}>Survival</option>
+                            <option value="creative" ${properties.gamemode === 'creative' ? 'selected' : ''}>Creative</option>
+                            <option value="adventure" ${properties.gamemode === 'adventure' ? 'selected' : ''}>Adventure</option>
+                            <option value="spectator" ${properties.gamemode === 'spectator' ? 'selected' : ''}>Spectator</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Dificultad</label>
+                        <select class="form-control" name="difficulty">
+                            <option value="peaceful" ${properties.difficulty === 'peaceful' ? 'selected' : ''}>Peaceful</option>
+                            <option value="easy" ${properties.difficulty === 'easy' ? 'selected' : ''}>Easy</option>
+                            <option value="normal" ${properties.difficulty === 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="hard" ${properties.difficulty === 'hard' ? 'selected' : ''}>Hard</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">PvP</label>
+                        <select class="form-control" name="pvp">
+                            <option value="true" ${properties.pvp === 'true' ? 'selected' : ''}>Activado</option>
+                            <option value="false" ${properties.pvp === 'false' ? 'selected' : ''}>Desactivado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Máximo de Jugadores</label>
+                        <input type="number" class="form-control" name="max-players" value="${properties['max-players'] || 20}">
+                    </div>
+                </div>
+            `;
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('editWorldConfigModal'));
+            modal.show();
+        } else {
+            showNotification('Error al cargar configuración: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        console.error('Error loading world config:', error);
+        showNotification('Error de conexión al cargar configuración', 'danger');
+    }
+}
+
+// Guardar configuración del mundo
+async function saveWorldConfig() {
+    if (!currentEditingWorld) return;
+    
+    const form = document.getElementById('editWorldConfigForm');
+    const formData = new FormData(form);
+    const properties = {};
+    
+    for (let [key, value] of formData.entries()) {
+        properties[key] = value;
+    }
+    
+    try {
+        const response = await fetch(`/api/worlds/${currentEditingWorld}/config`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ properties })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editWorldConfigModal')).hide();
+            showNotification('Configuración guardada correctamente', 'success');
+            loadWorlds();
+        } else {
+            showNotification('Error: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        console.error('Error saving world config:', error);
+        showNotification('Error de conexión al guardar configuración', 'danger');
+    }
+}
+
+// Duplicar mundo
+async function duplicateWorld(slug, originalName) {
+    const newName = prompt(`Ingresa el nombre para el duplicado de "${originalName}":`, `${originalName} (Copia)`);
+    
+    if (!newName) return;
+    
+    try {
+        showNotification('Duplicando mundo...', 'info');
+        
+        const response = await fetch(`/api/worlds/${slug}/duplicate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_name: newName })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Mundo duplicado correctamente', 'success');
+            loadWorlds();
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error duplicating world:', error);
+        showNotification('Error de conexión al duplicar mundo', 'danger');
+    }
+}
+
+// Crear backup del mundo
+async function backupWorld(slug) {
+    try {
+        // Buscar información del mundo
+        const worldsResponse = await fetch('/api/worlds');
+        const worldsData = await worldsResponse.json();
+        const world = worldsData.worlds.find(w => w.slug === slug);
+        
+        if (!world) {
+            showNotification('Mundo no encontrado', 'danger');
+            return;
+        }
+        
+        // Mostrar modal de backups
+        showWorldBackupsModal(slug, world.name);
+        
+    } catch (error) {
+        console.error('Error loading backups:', error);
+        showNotification('Error al cargar backups', 'danger');
+    }
+}
+
+// Mostrar modal de backups de un mundo
+async function showWorldBackupsModal(slug, worldName) {
+    currentBackupsWorld = slug;
+    
+    // Actualizar título del modal
+    document.getElementById('backupsWorldName').textContent = worldName;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('worldBackupsModal'));
+    modal.show();
+    
+    // Cargar lista de backups
+    await loadWorldBackups(slug);
+}
+
+// Cargar lista de backups de un mundo
+async function loadWorldBackups(slug) {
+    try {
+        const response = await fetch(`/api/worlds/${slug}/backups`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar estadísticas
+            document.getElementById('totalBackupsCount').textContent = data.total_count;
+            document.getElementById('totalBackupsSize').textContent = data.total_size_mb + ' MB';
+            
+            // Renderizar lista
+            renderWorldBackupsList(data.backups);
+        } else {
+            showBackupsError(data.error || 'Error al cargar backups');
+        }
+    } catch (error) {
+        console.error('Error loading backups:', error);
+        showBackupsError('Error de conexión al cargar backups');
+    }
+}
+
+// Renderizar lista de backups
+function renderWorldBackupsList(backups) {
+    const container = document.getElementById('worldBackupsList');
+    
+    if (backups.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No hay backups disponibles para este mundo.
+                <br><small>Crea tu primer backup usando el botón de arriba.</small>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    
+    backups.forEach(backup => {
+        const date = new Date(backup.created_at);
+        const dateStr = date.toLocaleString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const typeClass = backup.type === 'auto' ? 'bg-info' : 'bg-primary';
+        const typeText = backup.type === 'auto' ? 'Automático' : 'Manual';
+        
+        html += `
+            <div class="list-group-item bg-dark border-secondary">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            <i class="bi bi-archive"></i> ${escapeHtml(backup.description || 'Backup')}
+                            <span class="badge ${typeClass} ms-2">${typeText}</span>
+                        </h6>
+                        <p class="mb-1 text-muted small">
+                            <i class="bi bi-calendar"></i> ${dateStr}
+                            <span class="ms-3"><i class="bi bi-hdd"></i> ${backup.size_mb} MB</span>
+                        </p>
+                        <small class="text-muted">${escapeHtml(backup.filename)}</small>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-success" onclick="restoreWorldBackup('${backup.filename}', '${escapeHtml(backup.description || 'este backup')}')">
+                            <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteWorldBackup('${backup.filename}', '${escapeHtml(backup.description || 'este backup')}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Crear backup desde el modal
+async function createWorldBackupFromModal() {
+    if (!currentBackupsWorld) return;
+    
+    const description = prompt('Descripción del backup (opcional):');
+    if (description === null) return; // Usuario canceló
+    
+    try {
+        showNotification('Creando backup...', 'info');
+        
+        const response = await fetch(`/api/worlds/${currentBackupsWorld}/backup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                description: description || ''
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Backup creado correctamente', 'success');
+            // Recargar lista de backups
+            await loadWorldBackups(currentBackupsWorld);
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        showNotification('Error de conexión al crear backup', 'danger');
+    }
+}
+
+// Restaurar backup de mundo
+async function restoreWorldBackup(filename, description) {
+    const confirmed = confirm(`¿Restaurar desde "${description}"?\n\nADVERTENCIA: Esto reemplazará el mundo actual. Se creará un backup de seguridad automáticamente.`);
+    if (!confirmed) return;
+    
+    try {
+        showNotification('Restaurando backup...', 'info');
+        
+        const response = await fetch(`/api/worlds/${currentBackupsWorld}/restore`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                backup_filename: filename
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Mundo restaurado correctamente', 'success');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('worldBackupsModal'));
+            if (modal) modal.hide();
+            
+            // Recargar lista de mundos
+            loadWorlds();
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error restoring backup:', error);
+        showNotification('Error de conexión al restaurar backup', 'danger');
+    }
+}
+
+// Eliminar backup de mundo
+async function deleteWorldBackup(filename, description) {
+    const confirmed = confirm(`¿Eliminar el backup "${description}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmed) return;
+    
+    try {
+        showNotification('Eliminando backup...', 'info');
+        
+        const response = await fetch(`/api/backups/${filename}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Backup eliminado correctamente', 'success');
+            // Recargar lista de backups
+            await loadWorldBackups(currentBackupsWorld);
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error deleting backup:', error);
+        showNotification('Error de conexión al eliminar backup', 'danger');
+    }
+}
+
+// Mostrar error en lista de backups
+function showBackupsError(message) {
+    const container = document.getElementById('worldBackupsList');
+    container.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> ${escapeHtml(message)}
+        </div>
+    `;
+}
+
+// Eliminar mundo
+async function deleteWorld(slug, name) {
+    const confirmed = confirm(`¿Estás seguro de eliminar el mundo "${name}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmed) return;
+    
+    const createBackup = confirm('¿Deseas crear un backup antes de eliminar?');
+    
+    try {
+        showNotification('Eliminando mundo...', 'info');
+        
+        const response = await fetch(`/api/worlds/${slug}?backup=${createBackup}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Mundo eliminado correctamente', 'success');
+            loadWorlds();
+        } else {
+            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error deleting world:', error);
+        showNotification('Error de conexión al eliminar mundo', 'danger');
+    }
+}
+
+// Mostrar error en grid de mundos
+function showWorldsError(message) {
+    const grid = document.getElementById('worldsGrid');
+    grid.innerHTML = `
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> ${escapeHtml(message)}
+            </div>
+        </div>
+    `;
+}
+
+// Función auxiliar para escapar HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Cargar mundos cuando se abre la sección
+const originalShowSection = window.showSection;
+window.showSection = function(section) {
+    if (originalShowSection) {
+        originalShowSection(section);
+    }
+    
+    // Si se abre la sección de mundos, cargarlos
+    if (section === 'worlds') {
+        loadWorlds();
+    }
+};
+

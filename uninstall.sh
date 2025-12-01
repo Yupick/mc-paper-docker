@@ -35,8 +35,8 @@ read -p "¿Deseas eliminar también los datos del mundo y configuraciones (s/n)?
 
 if [[ "$delete_data" =~ ^[sS]$ ]]; then
     echo ""
-    echo "Eliminando carpetas: worlds/, plugins/, resourcepacks/, logs/, config/"
-    sudo rm -rf worlds plugins resourcepacks logs config plugins_backup
+    echo "Eliminando carpetas: worlds/, plugins/, resourcepacks/, logs/, config/, backups/"
+    sudo rm -rf worlds plugins resourcepacks logs config plugins_backup backups
     echo "✅ Datos eliminados"
 else
     echo ""
@@ -52,10 +52,13 @@ echo ""
 if [[ ! "$delete_data" =~ ^[sS]$ ]]; then
     echo "Los datos del servidor se mantienen en las carpetas:"
     echo "  - ./worlds/ (mundos y datos del servidor)"
+    echo "  - ./backups/worlds/ (backups de mundos)"
     echo "  - ./plugins/"
     echo "  - ./resourcepacks/"
     echo "  - ./logs/"
-    echo "  - ./config/server.properties"
+    echo "  - ./config/ (server.properties y configuraciones del panel)"
+    echo "  - ./docs/ (documentación)"
+    echo "  - ./web/ (código del panel web)"
     echo ""
 fi
 

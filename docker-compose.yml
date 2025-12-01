@@ -11,9 +11,12 @@ services:
       - "25575:25575/tcp"  # Puerto RCON
     volumes:
       - ./worlds:/server/worlds
+      - ./worlds/active/world:/server/world
+      - ./worlds/active/world_nether:/server/world_nether
+      - ./worlds/active/world_the_end:/server/world_the_end
+      - ./worlds/active/server.properties:/server/server.properties
       - ./plugins:/server/plugins
       - ./resourcepacks:/server/resourcepacks
-      - ./config/server.properties:/server/server.properties
       - ./logs:/server/logs
     environment:
       - EULA=TRUE
