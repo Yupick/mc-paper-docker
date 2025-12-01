@@ -5,10 +5,149 @@ echo "Creando servidor Minecraft Paper"
 echo "========================================="
 
 echo ""
-echo "[1/5] Creando directorios necesarios..."
+echo "[1/6] Creando directorios necesarios..."
 mkdir -p worlds plugins resourcepacks config logs backups/worlds
 
-# Crear archivos de configuración del panel si no existen
+# Verificar si existe estructura multi-mundo
+if [ -L "worlds/active" ]; then
+    echo "  ✅ Estructura multi-mundo detectada (symlink activo)"
+    ACTIVE_WORLD=$(readlink worlds/active)
+    echo "     → Mundo activo: $ACTIVE_WORLD"
+    
+    # Verificar que el symlink apunta a un directorio existente
+    if [ ! -d "worlds/active" ]; then
+        echo "  ⚠️  El symlink 'worlds/active' apunta a un directorio inexistente: $ACTIVE_WORLD"
+        echo "     Creando directorio de mundo por defecto..."
+        mkdir -p "worlds/world"
+        rm -f "worlds/active"
+        ln -sf "world" "worlds/active"
+        echo "  ✅ Symlink reparado: worlds/active -> world"
+    fi
+elif [ -d "worlds/active" ]; then
+    echo "  ⚠️  'worlds/active' es un directorio (debería ser symlink)"
+    echo "     Convirtiendo a estructura multi-mundo..."
+    
+    # Respaldar directorio actual
+    if [ -n "$(ls -A worlds/active 2>/dev/null)" ]; then
+        mv "worlds/active" "worlds/world"
+        echo "  ✅ Mundo movido: worlds/active → worlds/world"
+    else
+        rm -rf "worlds/active"
+        mkdir -p "worlds/world"
+    fi
+    
+    # Crear symlink
+    ln -sf "world" "worlds/active"
+    echo "  ✅ Symlink creado: worlds/active -> world"
+else
+    echo "  ℹ️  Creando estructura multi-mundo inicial..."
+    mkdir -p "worlds/world"
+    ln -sf "world" "worlds/active"
+    echo "  ✅ Estructura creada: worlds/active -> world"
+fi
+
+# Verificar y crear server.properties en el mundo activo
+ACTIVE_PROPERTIES="worlds/active/server.properties"
+if [ ! -f "$ACTIVE_PROPERTIES" ]; then
+    echo "  ℹ️  Creando server.properties para el mundo activo..."
+    
+    # Crear server.properties con configuración por defecto
+    cat > "$ACTIVE_PROPERTIES" << 'EOF'
+#Minecraft server properties
+enable-jmx-monitoring=false
+rcon.port=25575
+level-seed=
+gamemode=survival
+enable-command-block=false
+enable-query=false
+enable-rcon=true
+generator-settings={}
+enforce-secure-profile=true
+level-name=world
+motd=A Minecraft Server - Java & Bedrock
+query.port=25565
+pvp=true
+generate-structures=true
+max-chained-neighbor-updates=1000000
+difficulty=easy
+network-compression-threshold=256
+max-tick-time=60000
+require-resource-pack=false
+use-native-transport=true
+max-players=20
+online-mode=true
+enable-status=true
+allow-flight=false
+initial-enabled-packs=vanilla
+broadcast-rcon-to-ops=true
+view-distance=10
+server-ip=
+resource-pack-prompt=
+allow-nether=true
+server-port=25565
+sync-chunk-writes=true
+op-permission-level=4
+prevent-proxy-connections=false
+hide-online-players=false
+resource-pack=
+entity-broadcast-range-percentage=100
+simulation-distance=10
+rcon.password=minecraft123
+player-idle-timeout=0
+force-gamemode=false
+rate-limit=0
+hardcore=false
+white-list=false
+broadcast-console-to-ops=true
+spawn-npcs=true
+spawn-animals=true
+function-permission-level=2
+initial-disabled-packs=
+level-type=minecraft\:normal
+text-filtering-config=
+spawn-monsters=true
+enforce-whitelist=false
+spawn-protection=16
+resource-pack-sha1=
+max-world-size=29999984
+EOF
+    echo "  ✅ server.properties creado en: $ACTIVE_PROPERTIES"
+else
+    echo "  ✅ server.properties ya existe en: $ACTIVE_PROPERTIES"
+fi
+
+# Verificar permisos del archivo server.properties
+if [ -f "$ACTIVE_PROPERTIES" ]; then
+    # Aplicar permisos de escritura
+    chmod 664 "$ACTIVE_PROPERTIES" 2>/dev/null || sudo chmod 664 "$ACTIVE_PROPERTIES"
+    
+    # Verificar si es escribible
+    if [ ! -w "$ACTIVE_PROPERTIES" ]; then
+        echo "  ⚠️  Advertencia: server.properties no es escribible"
+        echo "     Intentando corregir permisos..."
+        sudo chown $(id -u):$(id -g) "$ACTIVE_PROPERTIES" 2>/dev/null
+        sudo chmod 664 "$ACTIVE_PROPERTIES" 2>/dev/null
+        
+        if [ -w "$ACTIVE_PROPERTIES" ]; then
+            echo "  ✅ Permisos corregidos"
+        else
+            echo "  ❌ No se pudieron corregir los permisos automáticamente"
+            echo "     Ejecuta: sudo chown $(id -u):$(id -g) $ACTIVE_PROPERTIES"
+        fi
+    fi
+fi
+
+# Verificar directorios de mundos (world, world_nether, world_the_end)
+for world_dir in "world" "world_nether" "world_the_end"; do
+    WORLD_PATH="worlds/active/$world_dir"
+    if [ ! -d "$WORLD_PATH" ]; then
+        mkdir -p "$WORLD_PATH"
+        echo "  ✅ Directorio creado: $WORLD_PATH"
+    fi
+done
+
+echo ""
+echo "[2/6] Creando archivos de configuración del panel..."
 if [ ! -f config/backup_config.json ]; then
     cat > config/backup_config.json << 'EOF'
 {
@@ -99,7 +238,7 @@ EOF
 fi
 
 echo ""
-echo "[2/5] Descargando plugins..."
+echo "[3/6] Descargando plugins..."
 echo "Descargando últimas versiones de: GeyserMC, Floodgate, ViaVersion, ViaBackwards, ViaRewind"
 
 # Descargar GeyserMC
@@ -147,7 +286,7 @@ curl -L -o plugins/ViaRewind.jar "$VIAREWIND_URL" 2>/dev/null
 echo "    ✅ ViaRewind descargado ($(ls -lh plugins/ViaRewind.jar 2>/dev/null | awk '{print $5}'))"
 
 echo ""
-echo "[3/5] Construyendo imagen Docker..."
+echo "[4/6] Construyendo imagen Docker..."
 sudo docker-compose build
 
 if [ $? -ne 0 ]; then
@@ -156,7 +295,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[4/5] Levantando contenedor..."
+echo "[5/6] Levantando contenedor..."
 sudo docker-compose up -d
 
 if [ $? -ne 0 ]; then
@@ -165,7 +304,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[5/5] Esperando a que el servidor inicie..."
+echo "[6/6] Esperando a que el servidor inicie..."
 sleep 5
 
 echo ""

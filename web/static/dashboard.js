@@ -181,6 +181,27 @@ function loadDashboard() {
     loadServerStatus();
     loadLogs();
     loadTPS();
+    loadActiveWorldDashboard();
+}
+
+function loadActiveWorldDashboard() {
+    fetch('/api/worlds/active')
+        .then(r => r.json())
+        .then(data => {
+            const worldNameEl = document.getElementById('activeWorldNameDashboard');
+            if (worldNameEl && data.success && data.world) {
+                worldNameEl.textContent = data.world.name;
+            } else if (worldNameEl) {
+                worldNameEl.textContent = 'Desconocido';
+            }
+        })
+        .catch(e => {
+            console.error('Error loading active world:', e);
+            const worldNameEl = document.getElementById('activeWorldNameDashboard');
+            if (worldNameEl) {
+                worldNameEl.textContent = 'Error';
+            }
+        });
 }
 
 function loadServerStatus() {
@@ -299,6 +320,19 @@ function loadServerProperties() {
             document.getElementById('server-properties').value = data.content;
             parseQuickConfig(data.content);
         });
+    
+    // Cargar mundo activo
+    fetch('/api/config/server-properties-parsed')
+        .then(r => r.json())
+        .then(data => {
+            if (data.active_world) {
+                const worldNameEl = document.getElementById('activeWorldName');
+                if (worldNameEl) {
+                    worldNameEl.textContent = data.active_world;
+                }
+            }
+        })
+        .catch(e => console.error('Error loading active world:', e));
 }
 
 function parseQuickConfig(content) {
@@ -1109,11 +1143,114 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar seguridad de contraseña después de cargar dashboard
     setTimeout(() => checkPasswordSecurity(), 1000);
     
-    // Cargar configuración del panel y configurar intervalos dinámicos
-    loadPanelConfig();
+// Cargar configuración del panel y configurar intervalos dinámicos
+loadPanelConfig();
+
+// Configurar observador de cambios en RCON para grey-out
+setInterval(updateRconUiState, 1000);
 });
 
-// ==================== CONFIGURACIÓN DE PANEL Y POLLING ====================
+// ==================== GREY-OUT RCON UI ====================
+
+function updateRconUiState() {
+    const rconEnabled = pollingConfig.rcon_enabled;
+    
+    // Botones de consola
+    const consoleButtons = document.querySelectorAll('#section-console button');
+    consoleButtons.forEach(btn => {
+        if (!rconEnabled) {
+            btn.disabled = true;
+            btn.classList.add('disabled');
+            btn.title = 'RCON deshabilitado en configuración';
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+            btn.title = '';
+        }
+    });
+    
+    // Input de consola
+    const consoleInput = document.getElementById('console-command');
+    if (consoleInput) {
+        consoleInput.disabled = !rconEnabled;
+    }
+    
+    // Botones de acciones de jugadores (kick, ban, gamemode)
+    const playerActionButtons = document.querySelectorAll('#section-players button');
+    playerActionButtons.forEach(btn => {
+        if (btn.onclick && btn.onclick.toString().includes('Player')) {
+            if (!rconEnabled) {
+                btn.disabled = true;
+                btn.classList.add('disabled');
+                btn.title = 'RCON deshabilitado';
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('disabled');
+                btn.title = '';
+            }
+        }
+    });
+    
+    // Selector de gamemode
+    const gamemodeSelects = document.querySelectorAll('#section-players select');
+    gamemodeSelects.forEach(select => {
+        select.disabled = !rconEnabled;
+    });
+    
+    // Botón de enviar chat
+    const chatButtons = document.querySelectorAll('#section-players button');
+    chatButtons.forEach(btn => {
+        if (btn.textContent.includes('Enviar')) {
+            btn.disabled = !rconEnabled;
+        }
+    });
+    
+    // Input de chat
+    const chatInput = document.getElementById('chat-message');
+    if (chatInput) {
+        chatInput.disabled = !rconEnabled;
+        if (!rconEnabled) {
+            chatInput.placeholder = 'RCON deshabilitado - No se pueden enviar mensajes';
+        } else {
+            chatInput.placeholder = 'Enviar mensaje a todos los jugadores...';
+        }
+    }
+    
+    // Botón de reload plugins
+    const reloadBtn = document.querySelector('button[onclick="reloadPlugins()"]');
+    if (reloadBtn) {
+        reloadBtn.disabled = !rconEnabled;
+    }
+    
+    // Agregar overlay visual si RCON está deshabilitado
+    const consoleSections = ['section-console'];
+    consoleSections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            let overlay = section.querySelector('.rcon-disabled-overlay');
+            
+            if (!rconEnabled) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.className = 'rcon-disabled-overlay';
+                    overlay.innerHTML = `
+                        <div class="alert alert-warning text-center">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>RCON Deshabilitado</strong><br>
+                            <small>Activa RCON en Configuración → Rendimiento del Panel</small>
+                        </div>
+                    `;
+                    overlay.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 999; display: flex; align-items: center; justify-content: center; border-radius: 16px;';
+                    section.style.position = 'relative';
+                    section.appendChild(overlay);
+                }
+                overlay.style.display = 'flex';
+            } else if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+    });
+}// ==================== CONFIGURACIÓN DE PANEL Y POLLING ====================
 
 // Variables de control de polling
 let pollingIntervals = {
@@ -1129,7 +1266,9 @@ let pollingConfig = {
     tps_interval: 10000,
     pause_when_hidden: true,
     enable_cache: true,
-    cache_ttl: 3000
+    cache_ttl: 3000,
+    rcon_enabled: true,
+    rcon_polling_enabled: false
 };
 
 let isPageVisible = true;
@@ -1251,11 +1390,15 @@ function updatePollingConfigUI() {
     const logsSelect = document.getElementById('logsInterval');
     const tpsSelect = document.getElementById('tpsInterval');
     const pauseToggle = document.getElementById('pauseWhenHidden');
+    const rconEnabledToggle = document.getElementById('rconEnabled');
+    const rconPollingToggle = document.getElementById('rconPollingEnabled');
     
     if (refreshSelect) refreshSelect.value = pollingConfig.refresh_interval;
     if (logsSelect) logsSelect.value = pollingConfig.logs_interval;
     if (tpsSelect) tpsSelect.value = pollingConfig.tps_interval;
     if (pauseToggle) pauseToggle.checked = pollingConfig.pause_when_hidden;
+    if (rconEnabledToggle) rconEnabledToggle.checked = !!pollingConfig.rcon_enabled;
+    if (rconPollingToggle) rconPollingToggle.checked = !!pollingConfig.rcon_polling_enabled;
     
     // Actualizar estado inicial
     updatePollingStatusUI();
@@ -1280,6 +1423,19 @@ async function updateTpsInterval() {
 async function togglePauseWhenHidden() {
     const enabled = document.getElementById('pauseWhenHidden').checked;
     await updatePanelConfigValue('pause_when_hidden', enabled);
+}
+
+// Toggles RCON flags
+async function toggleRconEnabled() {
+    const enabled = document.getElementById('rconEnabled').checked;
+    await updatePanelConfigValue('rcon_enabled', enabled);
+    // Actualizar inmediatamente el estado de la UI
+    updateRconUiState();
+}
+
+async function toggleRconPolling() {
+    const enabled = document.getElementById('rconPollingEnabled').checked;
+    await updatePanelConfigValue('rcon_polling_enabled', enabled);
 }
 
 // Función auxiliar para actualizar configuración
@@ -1380,7 +1536,7 @@ function createWorldCard(world, isActive) {
                         ${isActive ? '<span class="badge bg-success ms-2">Activo</span>' : ''}
                     </h5>
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-sm btn-dark" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-three-dots-vertical"></i>
                         </button>
                         <ul class="dropdown-menu">
@@ -1472,7 +1628,8 @@ async function submitCreateWorld() {
         template: formData.get('template'),
         seed: formData.get('seed'),
         gamemode: formData.get('gamemode'),
-        difficulty: formData.get('difficulty')
+        difficulty: formData.get('difficulty'),
+        motd: formData.get('motd')
     };
     
     // Validación
@@ -1496,7 +1653,7 @@ async function submitCreateWorld() {
             bootstrap.Modal.getInstance(document.getElementById('createWorldModal')).hide();
             
             // Mostrar notificación de éxito
-            showNotification('Mundo creado correctamente', 'success');
+            showToast('Mundo creado correctamente', 'success');
             
             // Recargar lista de mundos
             loadWorlds();
@@ -1538,13 +1695,19 @@ async function activateWorld(slug, name) {
 
 // Confirmar cambio de mundo
 async function confirmSwitchWorld() {
+    console.log('confirmSwitchWorld called');
     const slug = pendingWorldSwitch;
     const createBackup = document.getElementById('createBackupBeforeSwitch').checked;
     
-    if (!slug) return;
+    console.log('Switching to world:', slug, 'with backup:', createBackup);
+    
+    if (!slug) {
+        console.error('No slug defined for world switch');
+        return;
+    }
     
     try {
-        showNotification('Cambiando de mundo...', 'info');
+        showToast('Cambiando de mundo...', 'info');
         
         const response = await fetch(`/api/worlds/${slug}/activate`, {
             method: 'POST',
@@ -1553,24 +1716,31 @@ async function confirmSwitchWorld() {
         });
         
         const data = await response.json();
+        console.log('World switch response:', data);
         
         // Cerrar modal
-        bootstrap.Modal.getInstance(document.getElementById('confirmSwitchModal')).hide();
+        const modalElement = document.getElementById('confirmSwitchModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
         
         if (data.success) {
-            showNotification('Mundo activado correctamente. El servidor se está reiniciando...', 'success');
+            showToast('Mundo activado correctamente. El servidor se está reiniciando...', 'success');
             
             // Recargar mundos después de 3 segundos
             setTimeout(() => {
                 loadWorlds();
                 loadServerStatus();
+                // Actualizar mundo activo en dashboard
+                loadActiveWorldDashboard();
             }, 3000);
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error activating world:', error);
-        showNotification('Error de conexión al activar mundo', 'danger');
+        showToast('Error de conexión al activar mundo', 'error');
     }
 }
 
@@ -1617,6 +1787,11 @@ async function editWorld(slug) {
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Máximo de Jugadores</label>
                         <input type="number" class="form-control" name="max-players" value="${properties['max-players'] || 20}">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">MOTD (Mensaje del Día)</label>
+                                            <input type="text" class="form-control" name="motd" value="${properties['motd'] || 'A Minecraft Server'}" maxlength="59">
+                                            <small class="text-muted">Este mensaje aparece en la lista de servidores de Minecraft</small>
+                                        </div>
                     </div>
                 </div>
             `;
@@ -1625,11 +1800,11 @@ async function editWorld(slug) {
             const modal = new bootstrap.Modal(document.getElementById('editWorldConfigModal'));
             modal.show();
         } else {
-            showNotification('Error al cargar configuración: ' + data.error, 'danger');
+            showToast('Error al cargar configuración: ' + data.error, 'error');
         }
     } catch (error) {
         console.error('Error loading world config:', error);
-        showNotification('Error de conexión al cargar configuración', 'danger');
+        showToast('Error de conexión al cargar configuración', 'error');
     }
 }
 
@@ -1656,10 +1831,10 @@ async function saveWorldConfig() {
         
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('editWorldConfigModal')).hide();
-            showNotification('Configuración guardada correctamente', 'success');
+            showToast('Configuración guardada correctamente', 'success');
             loadWorlds();
         } else {
-            showNotification('Error: ' + data.error, 'danger');
+            showToast('Error: ' + data.error, 'error');
         }
     } catch (error) {
         console.error('Error saving world config:', error);
@@ -1674,7 +1849,7 @@ async function duplicateWorld(slug, originalName) {
     if (!newName) return;
     
     try {
-        showNotification('Duplicando mundo...', 'info');
+        showToast('Duplicando mundo...', 'info');
         
         const response = await fetch(`/api/worlds/${slug}/duplicate`, {
             method: 'POST',
@@ -1685,14 +1860,14 @@ async function duplicateWorld(slug, originalName) {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Mundo duplicado correctamente', 'success');
+            showToast('Mundo duplicado correctamente', 'success');
             loadWorlds();
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error duplicating world:', error);
-        showNotification('Error de conexión al duplicar mundo', 'danger');
+        showToast('Error de conexión al duplicar mundo', 'error');
     }
 }
 
@@ -1705,7 +1880,7 @@ async function backupWorld(slug) {
         const world = worldsData.worlds.find(w => w.slug === slug);
         
         if (!world) {
-            showNotification('Mundo no encontrado', 'danger');
+            showToast('Mundo no encontrado', 'error');
             return;
         }
         
@@ -1714,7 +1889,7 @@ async function backupWorld(slug) {
         
     } catch (error) {
         console.error('Error loading backups:', error);
-        showNotification('Error al cargar backups', 'danger');
+        showToast('Error al cargar backups', 'error');
     }
 }
 
@@ -1823,7 +1998,7 @@ async function createWorldBackupFromModal() {
     if (description === null) return; // Usuario canceló
     
     try {
-        showNotification('Creando backup...', 'info');
+        showToast('Creando backup...', 'info');
         
         const response = await fetch(`/api/worlds/${currentBackupsWorld}/backup`, {
             method: 'POST',
@@ -1838,15 +2013,15 @@ async function createWorldBackupFromModal() {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Backup creado correctamente', 'success');
+            showToast('Backup creado correctamente', 'success');
             // Recargar lista de backups
             await loadWorldBackups(currentBackupsWorld);
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error creating backup:', error);
-        showNotification('Error de conexión al crear backup', 'danger');
+        showToast('Error de conexión al crear backup', 'error');
     }
 }
 
@@ -1856,7 +2031,7 @@ async function restoreWorldBackup(filename, description) {
     if (!confirmed) return;
     
     try {
-        showNotification('Restaurando backup...', 'info');
+        showToast('Restaurando backup...', 'info');
         
         const response = await fetch(`/api/worlds/${currentBackupsWorld}/restore`, {
             method: 'POST',
@@ -1871,7 +2046,7 @@ async function restoreWorldBackup(filename, description) {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Mundo restaurado correctamente', 'success');
+            showToast('Mundo restaurado correctamente', 'success');
             
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('worldBackupsModal'));
@@ -1880,11 +2055,11 @@ async function restoreWorldBackup(filename, description) {
             // Recargar lista de mundos
             loadWorlds();
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error restoring backup:', error);
-        showNotification('Error de conexión al restaurar backup', 'danger');
+        showToast('Error de conexión al restaurar backup', 'error');
     }
 }
 
@@ -1894,7 +2069,7 @@ async function deleteWorldBackup(filename, description) {
     if (!confirmed) return;
     
     try {
-        showNotification('Eliminando backup...', 'info');
+        showToast('Eliminando backup...', 'info');
         
         const response = await fetch(`/api/backups/${filename}`, {
             method: 'DELETE'
@@ -1903,15 +2078,15 @@ async function deleteWorldBackup(filename, description) {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Backup eliminado correctamente', 'success');
+            showToast('Backup eliminado correctamente', 'success');
             // Recargar lista de backups
             await loadWorldBackups(currentBackupsWorld);
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error deleting backup:', error);
-        showNotification('Error de conexión al eliminar backup', 'danger');
+        showToast('Error de conexión al eliminar backup', 'error');
     }
 }
 
@@ -1933,7 +2108,7 @@ async function deleteWorld(slug, name) {
     const createBackup = confirm('¿Deseas crear un backup antes de eliminar?');
     
     try {
-        showNotification('Eliminando mundo...', 'info');
+        showToast('Eliminando mundo...', 'info');
         
         const response = await fetch(`/api/worlds/${slug}?backup=${createBackup}`, {
             method: 'DELETE'
@@ -1942,14 +2117,14 @@ async function deleteWorld(slug, name) {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Mundo eliminado correctamente', 'success');
+            showToast('Mundo eliminado correctamente', 'success');
             loadWorlds();
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error deleting world:', error);
-        showNotification('Error de conexión al eliminar mundo', 'danger');
+        showToast('Error de conexión al eliminar mundo', 'error');
     }
 }
 

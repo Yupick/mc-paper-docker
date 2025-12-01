@@ -9,9 +9,30 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+from threading import Lock
+from time import time
 import docker
 from models.world_manager import WorldManager
 from services.backup_service import BackupService
+def _load_panel_config():
+    try:
+        config_file = os.path.join(CONFIG_DIR, 'panel_config.json')
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    # Valores por defecto
+    return {
+        'refresh_interval': 10000,
+        'logs_interval': 15000,
+        'tps_interval': 30000,
+        'pause_when_hidden': True,
+        'enable_cache': True,
+        'cache_ttl': 5000,
+        'rcon_enabled': True,
+        'rcon_polling_enabled': False,
+    }
 
 # Cargar variables de entorno
 load_dotenv()
@@ -24,7 +45,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # /ruta/
 MINECRAFT_DIR = os.getenv('MINECRAFT_DIR', BASE_DIR)  # Si no hay .env, usa ruta relativa
 PLUGINS_DIR = os.path.join(MINECRAFT_DIR, 'plugins')
 CONFIG_DIR = os.path.join(MINECRAFT_DIR, 'config')
-SERVER_PROPERTIES = os.path.join(CONFIG_DIR, 'server.properties')
+# SERVER_PROPERTIES apunta al mundo activo (worlds/active/server.properties)
+SERVER_PROPERTIES = os.path.join(MINECRAFT_DIR, 'worlds', 'active', 'server.properties')
 WHITELIST_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'whitelist.json')
 BLACKLIST_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'banned-players.json')
 OPS_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'ops.json')
@@ -47,10 +69,49 @@ login_manager.login_view = 'login'
 
 # Cliente Docker
 try:
+    # Intentar primero con configuración por defecto
     docker_client = docker.from_env()
+    # Verificar que funciona
+    docker_client.ping()
 except Exception as e:
-    docker_client = None
-    print(f"Error conectando con Docker: {e}")
+    try:
+        # Intentar con socket Unix explícito (triple barra)
+        docker_client = docker.DockerClient(base_url='unix:///var/run/docker.sock')
+        docker_client.ping()
+    except Exception as e2:
+        docker_client = None
+        print(f"Error conectando con Docker:")
+        print(f"  - docker.from_env(): {e}")
+        print(f"  - unix socket: {e2}")
+        print(f"  Ejecuta: sudo usermod -aG docker $USER && newgrp docker")
+
+# Sistema de caché para reducir llamadas RCON
+class RCONCache:
+    def __init__(self):
+        self.cache = {}
+        self.lock = Lock()
+        self.default_ttl = 5  # 5 segundos por defecto
+    
+    def get(self, key, ttl=None):
+        """Obtiene valor de caché si no ha expirado"""
+        with self.lock:
+            if key in self.cache:
+                value, timestamp, cache_ttl = self.cache[key]
+                if time() - timestamp < (ttl or cache_ttl):
+                    return value
+        return None
+    
+    def set(self, key, value, ttl=None):
+        """Guarda valor en caché"""
+        with self.lock:
+            self.cache[key] = (value, time(), ttl or self.default_ttl)
+    
+    def clear(self):
+        """Limpia toda la caché"""
+        with self.lock:
+            self.cache.clear()
+
+rcon_cache = RCONCache()
 
 # Usuario simple (en producción usar base de datos)
 class User(UserMixin):
@@ -62,11 +123,23 @@ def load_user(user_id):
     return User(user_id)
 
 # Función helper para ejecutar comandos RCON
-def execute_rcon_command(container, command):
+def execute_rcon_command(container, command, use_cache=False, cache_ttl=5):
     """Ejecuta un comando RCON en el contenedor de Minecraft"""
+    # Usar caché si está habilitada
+    if use_cache:
+        cache_key = f"rcon:{command}"
+        cached = rcon_cache.get(cache_key, cache_ttl)
+        if cached is not None:
+            return cached
+    
     # mcrcon sintaxis: mcrcon -H localhost -P 25575 -p password "command"
     rcon_password = os.getenv('RCON_PASSWORD', 'minecraft123')
     exec_result = container.exec_run(f'mcrcon -H localhost -P 25575 -p {rcon_password} "{command}"')
+    
+    # Guardar en caché si está habilitada
+    if use_cache:
+        rcon_cache.set(cache_key, exec_result, cache_ttl)
+    
     return exec_result
 
 # Rutas de autenticación
@@ -507,7 +580,14 @@ def get_server_properties_parsed():
                         key, value = line.split('=', 1)
                         properties[key.strip()] = value.strip()
         
-        return jsonify({'properties': properties})
+        # Obtener mundo activo
+        active_world = world_manager.get_active_world()
+        world_name = active_world.metadata.get('name', 'Desconocido') if active_world else 'Desconocido'
+        
+        return jsonify({
+            'properties': properties,
+            'active_world': world_name
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -560,22 +640,27 @@ def get_players():
         if docker_client:
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
-                # Ejecutar comando list en el servidor
-                exec_result = execute_rcon_command(container, 'list')
-                if exec_result.exit_code == 0:
-                    output = exec_result.output.decode('utf-8')
-                    # Parsear salida: "There are X of a max of Y players online: player1, player2"
-                    match = re.search(r'There are (\d+) of a max of (\d+) players online:?\s*(.*)', output)
-                    if match:
-                        online_count = int(match.group(1))
-                        max_players = int(match.group(2))
-                        players_str = match.group(3).strip()
-                        players = [p.strip() for p in players_str.split(',')] if players_str else []
-                        return jsonify({
-                            'online': online_count,
-                            'max': max_players,
-                            'players': players
-                        })
+                cfg = _load_panel_config()
+                rcon_enabled = cfg.get('rcon_enabled', True)
+                rcon_polling = cfg.get('rcon_polling_enabled', True)
+
+                if rcon_enabled and rcon_polling:
+                    # Ejecutar comando list con caché de 10 segundos
+                    exec_result = execute_rcon_command(container, 'list', use_cache=True, cache_ttl=10)
+                    if exec_result.exit_code == 0:
+                        output = exec_result.output.decode('utf-8')
+                        # Parsear salida: "There are X of a max of Y players online: player1, player2"
+                        match = re.search(r'There are (\d+) of a max of (\d+) players online:?\s*(.*)', output)
+                        if match:
+                            online_count = int(match.group(1))
+                            max_players = int(match.group(2))
+                            players_str = match.group(3).strip()
+                            players = [p.strip() for p in players_str.split(',')] if players_str else []
+                            return jsonify({
+                                'online': online_count,
+                                'max': max_players,
+                                'players': players
+                            })
                 
                 # Si RCON no está disponible, intentar leer del log
                 logs = container.logs(tail=500).decode('utf-8')
@@ -606,6 +691,9 @@ def execute_command():
             return jsonify({'success': False, 'error': 'Comando vacío'}), 400
         
         if docker_client:
+            cfg = _load_panel_config()
+            if not cfg.get('rcon_enabled', True):
+                return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
                 # Ejecutar comando con mcrcon
@@ -645,6 +733,9 @@ def kick_player():
             return jsonify({'success': False, 'error': 'Nombre de jugador requerido'}), 400
         
         if docker_client:
+            cfg = _load_panel_config()
+            if not cfg.get('rcon_enabled', True):
+                return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
                 command = f'kick {player} {reason}'
@@ -672,6 +763,9 @@ def ban_player():
             return jsonify({'success': False, 'error': 'Nombre de jugador requerido'}), 400
         
         if docker_client:
+            cfg = _load_panel_config()
+            if not cfg.get('rcon_enabled', True):
+                return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
                 command = f'ban {player} {reason}'
@@ -699,6 +793,9 @@ def change_gamemode():
             return jsonify({'success': False, 'error': 'Nombre de jugador requerido'}), 400
         
         if docker_client:
+            cfg = _load_panel_config()
+            if not cfg.get('rcon_enabled', True):
+                return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
                 command = f'gamemode {gamemode} {player}'
@@ -857,6 +954,9 @@ def update_all_plugins():
 def reload_plugins():
     try:
         if docker_client:
+            cfg = _load_panel_config()
+            if not cfg.get('rcon_enabled', True):
+                return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
                 # Ejecutar comando reload con PlugMan si está instalado, sino con reload estándar
@@ -898,8 +998,8 @@ def get_plugins_detailed():
                     author = 'Desconocido'
                     status = 'Activo'
                     
-                    # Si el servidor está corriendo, obtener info de plugins
-                    if docker_client:
+                    # Si el servidor está corriendo y RCON habilitado, obtener info de plugins
+                    if docker_client and _load_panel_config().get('rcon_enabled', True):
                         try:
                             container = docker_client.containers.get(CONTAINER_NAME)
                             if container.status == 'running':
@@ -1040,8 +1140,30 @@ def get_tps():
         if docker_client:
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
-                # Ejecutar comando tps
-                exec_result = execute_rcon_command(container, 'tps')
+                cfg = _load_panel_config()
+                if (not cfg.get('rcon_enabled', True)) or (not cfg.get('rcon_polling_enabled', True)):
+                    # Si el polling RCON está deshabilitado, devolver valor en caché si existe, o por defecto
+                    cached = rcon_cache.get('rcon:tps', ttl=60)
+                    if cached is not None and hasattr(cached, 'exit_code'):
+                        try:
+                            output = cached.output.decode('utf-8')
+                            match = re.search(r'(\d+\.?\d*),?\s*(\d+\.?\d*),?\s*(\d+\.?\d*)', output)
+                            if match:
+                                return jsonify({
+                                    'tps_1m': float(match.group(1)),
+                                    'tps_5m': float(match.group(2)),
+                                    'tps_15m': float(match.group(3)),
+                                    'raw': output,
+                                    'cached': True
+                                })
+                        except Exception:
+                            pass
+                    return jsonify({'tps_1m': 20.0, 'tps_5m': 20.0, 'tps_15m': 20.0, 'raw': 'RCON polling disabled', 'cached': True})
+                # Ejecutar comando tps con caché de 30 segundos
+                # Esto reduce DRÁSTICAMENTE las llamadas RCON
+                exec_result = execute_rcon_command(container, 'tps', use_cache=True, cache_ttl=30)
+                # Guardar bajo clave fija para posible uso offline
+                rcon_cache.set('rcon:tps', exec_result, ttl=60)
                 
                 if exec_result.exit_code == 0:
                     output = exec_result.output.decode('utf-8')
@@ -1102,10 +1224,13 @@ def say_message():
             return jsonify({'success': False, 'error': 'Mensaje vacío'}), 400
         
         if docker_client:
+            cfg = _load_panel_config()
+            if not cfg.get('rcon_enabled', True):
+                return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
             if container.status == 'running':
                 command = f'say {message}'
-                exec_result = container.exec_run(f'rcon-cli {command}')
+                exec_result = execute_rcon_command(container, command)
                 
                 return jsonify({
                     'success': exec_result.exit_code == 0,
@@ -1286,6 +1411,7 @@ def create_world():
         difficulty = data.get('difficulty', 'normal')
         description = data.get('description', '')
         tags = data.get('tags', [])
+        motd = data.get('motd', '')
         
         # Crear mundo
         world = world_manager.create_world(
@@ -1295,7 +1421,8 @@ def create_world():
             gamemode=gamemode,
             difficulty=difficulty,
             description=description,
-            tags=tags
+            tags=tags,
+            motd=motd
         )
         
         return jsonify({
@@ -1341,8 +1468,12 @@ def activate_world(slug):
         if server_was_running:
             try:
                 # Enviar comando de guardado y apagado
-                execute_rcon_command(container, 'save-all')
-                execute_rcon_command(container, 'stop')
+                try:
+                    execute_rcon_command(container, 'save-all')
+                    execute_rcon_command(container, 'stop')
+                except Exception:
+                    # Si RCON está deshabilitado o falla, intentaremos detener vía Docker
+                    pass
                 
                 # Esperar a que se detenga (máximo 60 segundos)
                 import time
@@ -1351,6 +1482,10 @@ def activate_world(slug):
                     if container.status != 'running':
                         break
                     time.sleep(1)
+                # Si aún sigue corriendo, forzar stop por Docker
+                container.reload()
+                if container.status == 'running':
+                    container.stop(timeout=30)
                 
             except Exception as e:
                 print(f"Error al detener servidor: {e}")
@@ -1684,7 +1819,9 @@ def get_panel_config():
             'tps_interval': 10000,
             'pause_when_hidden': True,
             'enable_cache': True,
-            'cache_ttl': 3000
+            'cache_ttl': 3000,
+            'rcon_enabled': True,
+            'rcon_polling_enabled': False
         }
         
         if os.path.exists(config_file):
@@ -1750,6 +1887,12 @@ def update_panel_config():
                 return jsonify({'success': False, 'error': 'cache_ttl debe estar entre 1000 y 30000 ms'}), 400
             config['cache_ttl'] = ttl
         
+        # Flags RCON
+        if 'rcon_enabled' in data:
+            config['rcon_enabled'] = bool(data['rcon_enabled'])
+        if 'rcon_polling_enabled' in data:
+            config['rcon_polling_enabled'] = bool(data['rcon_polling_enabled'])
+        
         # Guardar configuración
         os.makedirs(CONFIG_DIR, exist_ok=True)
         with open(config_file, 'w') as f:
@@ -1763,6 +1906,26 @@ def update_panel_config():
         
     except ValueError as e:
         return jsonify({'success': False, 'error': 'Valor inválido'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# API: Obtener mundo activo
+@app.route('/api/worlds/active')
+@login_required
+def get_active_world_info():
+    """Obtener información del mundo activo"""
+    try:
+        active_world = world_manager.get_active_world()
+        if active_world:
+            return jsonify({
+                'success': True,
+                'world': active_world.to_dict()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No hay mundo activo'
+            }), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

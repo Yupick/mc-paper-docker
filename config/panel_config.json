@@ -1,8 +1,10 @@
 {
-  "refresh_interval": 5000,
-  "logs_interval": 10000,
-  "tps_interval": 10000,
+  "refresh_interval": 30000,
+  "logs_interval": 60000,
+  "tps_interval": 60000,
   "pause_when_hidden": true,
   "enable_cache": true,
-  "cache_ttl": 3000
+  "cache_ttl": 5000,
+  "rcon_enabled": true,
+  "rcon_polling_enabled": false
 }

@@ -311,7 +311,7 @@ POST   /api/server/command
    - Resolución de problemas
    - Preguntas frecuentes (15+ FAQs)
 
-3. **../PERFORMANCE_OPTIMIZATION.md** (nuevo - 300+ líneas)
+3. **PERFORMANCE_OPTIMIZATION.md** (nuevo - 300+ líneas)
    - Problema del polling excesivo
    - Solución con polling dinámico
    - Page Visibility API explicada
@@ -321,7 +321,7 @@ POST   /api/server/command
    - Recomendaciones por tipo de servidor
    - Detalles técnicos
 
-4. **../BACKUP_SYSTEM.md** (existente - 400+ líneas)
+4. **BACKUP_SYSTEM.md** (existente - 400+ líneas)
    - Sistema completo documentado
    - Estructura de archivos
    - API endpoints
@@ -329,7 +329,7 @@ POST   /api/server/command
    - Ejemplos de uso
    - Troubleshooting
 
-5. **../BACKUP_CONFIG.md** (existente - 200+ líneas)
+5. **BACKUP_CONFIG.md** (existente - 200+ líneas)
    - Implementación de auto-backup
    - UI detallada
    - API endpoints

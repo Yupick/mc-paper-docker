@@ -129,7 +129,7 @@ class WorldManager:
         return self.get_world(slug)
     
     def create_world(self, name, template="vanilla", seed="", gamemode="survival", 
-                    difficulty="normal", description="", tags=None):
+                    difficulty="normal", description="", tags=None, motd=None):
         """
         Crear nuevo mundo
         
@@ -141,6 +141,7 @@ class WorldManager:
             difficulty: Dificultad
             description: Descripción del mundo
             tags: Lista de etiquetas
+                        motd: Mensaje del día (MOTD)
             
         Returns:
             World: Mundo creado o None si falla
@@ -190,7 +191,7 @@ class WorldManager:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
         
         # Crear server.properties base
-        self._create_server_properties(world_path, gamemode, difficulty, seed, template)
+        self._create_server_properties(world_path, gamemode, difficulty, seed, template, motd)
         
         # Copiar template si existe
         if template != "vanilla":
@@ -203,6 +204,9 @@ class WorldManager:
                     else:
                         shutil.copy2(item, world_path / item.name)
         
+        # Asegurar estructura de dimensiones requerida
+        self._ensure_world_structure(world_path)
+        
         # Actualizar configuración
         self.config['worlds'].append({
             "slug": slug,
@@ -214,13 +218,14 @@ class WorldManager:
         
         return World(slug, str(self.worlds_base_path))
     
-    def _create_server_properties(self, world_path, gamemode, difficulty, seed, level_type):
+        def _create_server_properties(self, world_path, gamemode, difficulty, seed, level_type, motd=None):
         """Crear archivo server.properties para el mundo"""
         properties = {
             "gamemode": gamemode,
             "difficulty": difficulty,
             "level-seed": seed,
             "level-type": "minecraft:normal" if level_type == "vanilla" else f"minecraft:{level_type}",
+                        "motd": motd or "A Minecraft Server",
             "pvp": "true",
             "spawn-monsters": "true",
             "spawn-animals": "true",
@@ -238,6 +243,11 @@ class WorldManager:
         with open(server_properties_file, 'w', encoding='utf-8') as f:
             for key, value in properties.items():
                 f.write(f"{key}={value}\n")
+
+    def _ensure_world_structure(self, world_path: Path):
+        """Asegura que existan las carpetas de dimensiones requeridas."""
+        for sub in ("world", "world_nether", "world_the_end"):
+            (world_path / sub).mkdir(parents=True, exist_ok=True)
     
     def delete_world(self, slug, create_backup=True):
         """
@@ -295,11 +305,17 @@ class WorldManager:
         if current_active and current_active.slug == slug:
             raise ValueError(f"El mundo {slug} ya está activo")
         
-        # Actualizar symlink
-        if self.active_symlink.exists():
-            self.active_symlink.unlink()
+        # Asegurar estructura del mundo destino
+        self._ensure_world_structure(target_world.path)
+
+        # Actualizar symlink de forma robusta
+        try:
+            if self.active_symlink.is_symlink() or self.active_symlink.exists():
+                self.active_symlink.unlink()
+        except FileNotFoundError:
+            pass
         
-        # Crear nuevo symlink (relativo)
+        # Crear nuevo symlink (relativo) apuntando al slug
         self.active_symlink.symlink_to(slug)
         
         # Actualizar configuración
@@ -359,6 +375,9 @@ class WorldManager:
         # Copiar directorio completo
         new_world_path = self.worlds_base_path / new_slug
         shutil.copytree(source_world.path, new_world_path)
+
+        # Asegurar estructura de dimensiones requerida
+        self._ensure_world_structure(new_world_path)
         
         # Actualizar metadata
         new_world = World(new_slug, str(self.worlds_base_path))

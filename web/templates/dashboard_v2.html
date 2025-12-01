@@ -416,7 +416,13 @@
         
         <!-- Dashboard Section -->
         <div class="content-section active" id="section-dashboard">
-            <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard del Servidor</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard del Servidor</h2>
+                <div class="alert alert-info mb-0 py-2 px-3">
+                    <i class="bi bi-globe2"></i> <strong>Mundo Activo:</strong> 
+                    <span id="activeWorldNameDashboard">Cargando...</span>
+                </div>
+            </div>
             
             <!-- Server Status -->
             <div class="row">
@@ -544,7 +550,13 @@
 
         <!-- Configuration Section -->
         <div class="content-section" id="section-config">
-            <h2 class="mb-4"><i class="bi bi-gear"></i> Configuración del Servidor</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-gear"></i> Configuración del Servidor</h2>
+                <div class="alert alert-info mb-0 py-2 px-3">
+                    <i class="bi bi-globe2"></i> <strong>Mundo Activo:</strong> 
+                    <span id="activeWorldName">Cargando...</span>
+                </div>
+            </div>
             
             <!-- Configuración de Rendimiento del Panel -->
             <div class="card mb-3">
@@ -617,6 +629,33 @@
                                 <i class="bi bi-check-circle"></i> <strong>Estado:</strong> 
                                 <span id="pollingStatus">Activo</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="rconEnabled" onchange="toggleRconEnabled()">
+                                <label class="form-check-label" for="rconEnabled">
+                                    <strong>RCON habilitado</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Desactiva completamente RCON (comandos, chat, acciones de jugadores)
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="rconPollingEnabled" onchange="toggleRconPolling()">
+                                <label class="form-check-label" for="rconPollingEnabled">
+                                    <strong>Polling RCON (TPS/Jugadores)</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Cuando está desactivado, el panel usa caché/valores por defecto para TPS y jugadores
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -1088,6 +1127,13 @@
                                     <option value="easy">Easy (Fácil)</option>
                                     <option value="normal" selected>Normal</option>
                                     <option value="hard">Hard (Difícil)</option>
+
+                                                        <div class="mb-3">
+                                                            <label for="worldMotd" class="form-label">MOTD (Mensaje del Día)</label>
+                                                            <input type="text" class="form-control" id="worldMotd" name="motd"
+                                                                   placeholder="Ej: ¡Bienvenido a mi servidor!" maxlength="59">
+                                                            <div class="form-text">Este mensaje aparece en la lista de servidores de Minecraft (máximo 59 caracteres)</div>
+                                                        </div>
                                 </select>
                             </div>
                         </div>
