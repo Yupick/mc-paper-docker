@@ -158,7 +158,7 @@ function showSection(sectionName) {
             loadFilesTree();
             break;
         case 'worlds':
-            loadWorldsSection();
+            loadWorlds();
             break;
         case 'backups':
             loadBackupsSection();
