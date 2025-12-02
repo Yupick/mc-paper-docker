@@ -218,14 +218,14 @@ class WorldManager:
         
         return World(slug, str(self.worlds_base_path))
     
-        def _create_server_properties(self, world_path, gamemode, difficulty, seed, level_type, motd=None):
+    def _create_server_properties(self, world_path, gamemode, difficulty, seed, level_type, motd=None):
         """Crear archivo server.properties para el mundo"""
         properties = {
             "gamemode": gamemode,
             "difficulty": difficulty,
             "level-seed": seed,
             "level-type": "minecraft:normal" if level_type == "vanilla" else f"minecraft:{level_type}",
-                        "motd": motd or "A Minecraft Server",
+            "motd": motd or "A Minecraft Server",
             "pvp": "true",
             "spawn-monsters": "true",
             "spawn-animals": "true",
