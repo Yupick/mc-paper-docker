@@ -53,7 +53,7 @@ OPS_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'ops.json')
 BACKUP_DIR = os.path.join(MINECRAFT_DIR, 'backups')
 WORLDS_DIR = os.path.join(MINECRAFT_DIR, 'worlds')
 BACKUP_WORLDS_DIR = os.path.join(BACKUP_DIR, 'worlds')
-CONTAINER_NAME = os.getenv('DOCKER_CONTAINER_NAME', 'mc-paper')
+CONTAINER_NAME = os.getenv('DOCKER_CONTAINER_NAME', 'minecraft-paper')
 
 app.config['UPLOAD_FOLDER'] = PLUGINS_DIR
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size

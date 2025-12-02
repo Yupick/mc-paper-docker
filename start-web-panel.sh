@@ -197,7 +197,7 @@ ADMIN_PASSWORD_HASH=$PASSWORD_HASH
 ADMIN_PASSWORD=$DEFAULT_PASSWORD
 
 # Nombre del contenedor Docker
-DOCKER_CONTAINER_NAME=mc-paper
+DOCKER_CONTAINER_NAME=minecraft-paper
 EOF
     
     echo "✅ Archivo .env creado"

@@ -125,7 +125,7 @@ function toggleTheme() {
     icon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars';
 }
 
-function showSection(sectionName) {
+function showSection(sectionName, evt) {
     // Ocultar todas las secciones
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
@@ -138,7 +138,17 @@ function showSection(sectionName) {
     document.querySelectorAll('.sidebar-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.target.closest('.sidebar-item').classList.add('active');
+    
+    // Si hay evento, actualizar el elemento activo
+    if (evt && evt.target) {
+        evt.target.closest('.sidebar-item').classList.add('active');
+    } else {
+        // Fallback: buscar por data attribute o sectionName
+        const targetItem = document.querySelector(`.sidebar-item[onclick*="'${sectionName}'"]`);
+        if (targetItem) {
+            targetItem.classList.add('active');
+        }
+    }
     
     // Cargar datos según la sección
     switch(sectionName) {
@@ -716,8 +726,10 @@ function loadFileContent(path, name) {
             // Highlight seleccionado
             document.querySelectorAll('.file-item').forEach(item => {
                 item.classList.remove('selected');
+                if (item.textContent.includes(name)) {
+                    item.classList.add('selected');
+                }
             });
-            event.target.closest('.file-item').classList.add('selected');
         });
 }
 
@@ -841,19 +853,19 @@ async function toggleAutoBackup() {
         
         if (data.success) {
             updateAutoBackupLabel(enabled);
-            showNotification(
+            showToast(
                 enabled ? 'Backups automáticos activados' : 'Backups automáticos desactivados',
                 'success'
             );
         } else {
             // Revertir toggle en caso de error
             toggle.checked = !enabled;
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error toggling auto backup:', error);
         toggle.checked = !enabled;
-        showNotification('Error de conexión', 'danger');
+        showToast('Error de conexión', 'error');
     }
 }
 
@@ -876,13 +888,13 @@ async function updateBackupRetention() {
         const data = await response.json();
         
         if (data.success) {
-            showNotification(`Se conservarán los últimos ${retentionCount} backups automáticos`, 'success');
+            showToast(`Se conservarán los últimos ${retentionCount} backups automáticos`, 'success');
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error updating retention:', error);
-        showNotification('Error de conexión', 'danger');
+        showToast('Error de conexión', 'error');
     }
 }
 
@@ -1451,16 +1463,16 @@ async function updatePanelConfigValue(key, value) {
         
         if (data.success) {
             pollingConfig = data.config;
-            showNotification('Configuración actualizada. Reiniciando polling...', 'success');
+            showToast('Configuración actualizada. Reiniciando polling...', 'success');
             
             // Reiniciar polling con nueva configuración
             startPolling();
         } else {
-            showNotification('Error: ' + (data.error || 'Error desconocido'), 'danger');
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     } catch (error) {
         console.error('Error updating panel config:', error);
-        showNotification('Error de conexión', 'danger');
+        showToast('Error de conexión', 'error');
     }
 }
 
@@ -1838,7 +1850,7 @@ async function saveWorldConfig() {
         }
     } catch (error) {
         console.error('Error saving world config:', error);
-        showNotification('Error de conexión al guardar configuración', 'danger');
+        showToast('Error de conexión al guardar configuración', 'error');
     }
 }
 
