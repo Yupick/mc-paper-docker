@@ -13,6 +13,7 @@ from threading import Lock
 from time import time
 import docker
 from models.world_manager import WorldManager
+from models.rpg_manager import RPGManager
 from services.backup_service import BackupService
 def _load_panel_config():
     try:
@@ -58,9 +59,10 @@ CONTAINER_NAME = os.getenv('DOCKER_CONTAINER_NAME', 'minecraft-paper')
 app.config['UPLOAD_FOLDER'] = PLUGINS_DIR
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
-# Inicializar WorldManager y BackupService
+# Inicializar WorldManager, BackupService y RPGManager
 world_manager = WorldManager(WORLDS_DIR)
 backup_service = BackupService(WORLDS_DIR, BACKUP_WORLDS_DIR)
+rpg_manager = RPGManager()
 
 # Login manager
 login_manager = LoginManager()
@@ -1493,6 +1495,10 @@ def create_world():
         tags = data.get('tags', [])
         motd = data.get('motd', '')
         
+        # Parámetros RPG
+        is_rpg = data.get('isRPG', False)
+        rpg_config = data.get('rpgConfig', None)
+        
         # Crear mundo
         world = world_manager.create_world(
             name=name,
@@ -1502,7 +1508,9 @@ def create_world():
             difficulty=difficulty,
             description=description,
             tags=tags,
-            motd=motd
+            motd=motd,
+            is_rpg=is_rpg,
+            rpg_config=rpg_config
         )
         
         return jsonify({
@@ -2008,6 +2016,187 @@ def get_active_world_info():
             }), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# API RPG - Endpoints para integración con MMORPG Plugin
+# ============================================================================
+
+@app.route('/api/worlds/<slug>/rpg/status')
+@login_required
+def get_world_rpg_status(slug):
+    """Obtiene el estado RPG de un mundo específico"""
+    try:
+        status = rpg_manager.get_rpg_status(slug)
+        
+        if status is None:
+            return jsonify({
+                'success': False,
+                'message': 'El mundo no tiene modo RPG activado o no se encontraron datos'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/players')
+@login_required
+def get_world_rpg_players(slug):
+    """Obtiene los datos de jugadores RPG de un mundo"""
+    try:
+        players = rpg_manager.get_players_data(slug)
+        
+        if players is None:
+            return jsonify({
+                'success': False,
+                'message': 'No se encontraron datos de jugadores RPG'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'players': players
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/summary')
+@login_required
+def get_world_rpg_summary(slug):
+    """Obtiene un resumen completo del estado RPG de un mundo"""
+    try:
+        summary = rpg_manager.get_rpg_summary(slug)
+        
+        if summary is None:
+            return jsonify({
+                'success': False,
+                'message': 'El mundo no tiene modo RPG activado'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'summary': summary
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/worlds')
+@login_required
+def list_rpg_worlds():
+    """Lista todos los mundos con modo RPG activado"""
+    try:
+        rpg_worlds = rpg_manager.list_rpg_worlds()
+        
+        return jsonify({
+            'success': True,
+            'worlds': rpg_worlds,
+            'count': len(rpg_worlds)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/quests')
+@login_required
+def get_rpg_quests():
+    """Obtiene todas las quests registradas"""
+    try:
+        quests_file = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data', 'quests.json')
+        if os.path.exists(quests_file):
+            with open(quests_file, 'r') as f:
+                data = json.load(f)
+                return jsonify({'success': True, 'quests': data.get('quests', [])})
+        return jsonify({'success': True, 'quests': []})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/npcs')
+@login_required
+def get_rpg_npcs():
+    """Obtiene todos los NPCs registrados"""
+    try:
+        npcs_file = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data', 'npcs.json')
+        if os.path.exists(npcs_file):
+            with open(npcs_file, 'r') as f:
+                data = json.load(f)
+                return jsonify({'success': True, 'npcs': data.get('npcs', [])})
+        return jsonify({'success': True, 'npcs': []})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/quest/create', methods=['POST'])
+@login_required
+def create_rpg_quest():
+    """Crea una nueva quest via API"""
+    try:
+        quest_data = request.json
+        api_folder = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'api')
+        os.makedirs(api_folder, exist_ok=True)
+        
+        commands_file = os.path.join(api_folder, 'commands.json')
+        commands = {'createQuest': quest_data}
+        
+        with open(commands_file, 'w') as f:
+            json.dump(commands, f, indent=2)
+        
+        return jsonify({'success': True, 'message': 'Quest creada (se aplicará en 5 segundos)'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/quest/<quest_id>', methods=['DELETE'])
+@login_required
+def delete_rpg_quest(quest_id):
+    """Elimina una quest via API"""
+    try:
+        api_folder = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'api')
+        os.makedirs(api_folder, exist_ok=True)
+        
+        commands_file = os.path.join(api_folder, 'commands.json')
+        commands = {'deleteQuest': quest_id}
+        
+        with open(commands_file, 'w') as f:
+            json.dump(commands, f, indent=2)
+        
+        return jsonify({'success': True, 'message': 'Quest eliminada'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/npc/create', methods=['POST'])
+@login_required
+def create_rpg_npc():
+    """Crea un nuevo NPC via API"""
+    try:
+        npc_data = request.json
+        api_folder = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'api')
+        os.makedirs(api_folder, exist_ok=True)
+        
+        commands_file = os.path.join(api_folder, 'commands.json')
+        commands = {'createNPC': npc_data}
+        
+        with open(commands_file, 'w') as f:
+            json.dump(commands, f, indent=2)
+        
+        return jsonify({'success': True, 'message': 'NPC creado (se aplicará en 5 segundos)'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/npc/<npc_id>', methods=['DELETE'])
+@login_required
+def delete_rpg_npc(npc_id):
+    """Elimina un NPC via API"""
+    try:
+        api_folder = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'api')
+        os.makedirs(api_folder, exist_ok=True)
+        
+        commands_file = os.path.join(api_folder, 'commands.json')
+        commands = {'deleteNPC': npc_id}
+        
+        with open(commands_file, 'w') as f:
+            json.dump(commands, f, indent=2)
+        
+        return jsonify({'success': True, 'message': 'NPC eliminado'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

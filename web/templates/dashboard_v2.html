@@ -392,6 +392,10 @@
                 <i class="bi bi-globe2"></i>
                 <span>Mundos</span>
             </div>
+            <div class="sidebar-item d-none" id="sidebar-rpg" onclick="showSection('rpg', event)">
+                <i class="bi bi-controller"></i>
+                <span>RPG</span>
+            </div>
             <div class="sidebar-item" onclick="showSection('backups', event)">
                 <i class="bi bi-archive"></i>
                 <span>Backups</span>
@@ -1064,6 +1068,27 @@
             </div>
         </div>
 
+        <!-- RPG Section -->
+        <div class="content-section" id="section-rpg">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-controller"></i> Panel RPG
+                </h2>
+                <div>
+                    <span class="badge bg-primary" id="rpg-world-name">Cargando...</span>
+                </div>
+            </div>
+            
+            <div id="rpg-content">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Cargando datos RPG...</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Modal: Crear Mundo -->
@@ -1136,6 +1161,68 @@
                             <input type="text" class="form-control" id="worldMotd" name="motd"
                                    placeholder="Ej: ¡Bienvenido a mi servidor!" maxlength="59">
                             <div class="form-text">Este mensaje aparece en la lista de servidores de Minecraft (máximo 59 caracteres)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary bg-opacity-10">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-controller me-2"></i>
+                                        Modo RPG
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="worldIsRPG" name="isRPG">
+                                        <label class="form-check-label" for="worldIsRPG">
+                                            <strong>Activar modo MMORPG</strong>
+                                        </label>
+                                    </div>
+                                    <div class="form-text mt-2">
+                                        Habilita características RPG como clases, quests, NPCs y economía.
+                                        Requiere el plugin MMORPG instalado.
+                                    </div>
+                                    
+                                    <div id="rpgConfigOptions" class="mt-3 d-none">
+                                        <hr>
+                                        <h6 class="mb-3">Características RPG</h6>
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgClasses" checked>
+                                                    <label class="form-check-label" for="rpgClasses">
+                                                        Sistema de Clases
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgQuests" checked>
+                                                    <label class="form-check-label" for="rpgQuests">
+                                                        Sistema de Quests
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgNPCs" checked>
+                                                    <label class="form-check-label" for="rpgNPCs">
+                                                        NPCs
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgEconomy" checked>
+                                                    <label class="form-check-label" for="rpgEconomy">
+                                                        Economía
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="createWorldError" class="alert alert-danger d-none"></div>
@@ -1313,5 +1400,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/dashboard.js?v=2.0.1"></script>
+    <script src="/static/rpg.js?v=1.0.0"></script>
 </body>
 </html>

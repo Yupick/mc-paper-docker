@@ -226,7 +226,7 @@ class World:
         # Actualizar tamaño antes de retornar
         size = self.get_size()
         
-        return {
+        world_dict = {
             'slug': self.slug,
             'name': self.metadata.get('name', self.slug),
             'description': self.metadata.get('description', ''),
@@ -240,8 +240,20 @@ class World:
             'dimensions': self.get_dimensions(),
             'player_count': self.get_player_count(),
             'settings': self.metadata.get('settings', {}),
-            'tags': self.metadata.get('tags', [])
+            'tags': self.metadata.get('tags', []),
+            'isRPG': self.metadata.get('isRPG', False)
         }
+        
+        # Añadir configuración RPG si está activado
+        if world_dict['isRPG']:
+            world_dict['rpgConfig'] = self.metadata.get('rpgConfig', {
+                'classesEnabled': True,
+                'questsEnabled': True,
+                'npcsEnabled': True,
+                'economyEnabled': True
+            })
+        
+        return world_dict
     
     def __repr__(self):
         return f"<World slug='{self.slug}' name='{self.metadata.get('name', 'Unknown')}'>"

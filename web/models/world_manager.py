@@ -129,7 +129,8 @@ class WorldManager:
         return self.get_world(slug)
     
     def create_world(self, name, template="vanilla", seed="", gamemode="survival", 
-                    difficulty="normal", description="", tags=None, motd=None):
+                    difficulty="normal", description="", tags=None, motd=None, 
+                    is_rpg=False, rpg_config=None):
         """
         Crear nuevo mundo
         
@@ -141,7 +142,9 @@ class WorldManager:
             difficulty: Dificultad
             description: Descripción del mundo
             tags: Lista de etiquetas
-                        motd: Mensaje del día (MOTD)
+            motd: Mensaje del día (MOTD)
+            is_rpg: Si el mundo tiene modo RPG activado
+            rpg_config: Configuración RPG (dict con classesEnabled, questsEnabled, etc)
             
         Returns:
             World: Mundo creado o None si falla
@@ -183,8 +186,13 @@ class WorldManager:
                 "view_distance": 10,
                 "max_players": 20
             },
-            "tags": tags or []
+            "tags": tags or [],
+            "isRPG": is_rpg
         }
+        
+        # Añadir configuración RPG si está activado
+        if is_rpg and rpg_config:
+            metadata["rpgConfig"] = rpg_config
         
         metadata_file = world_path / "metadata.json"
         with open(metadata_file, 'w', encoding='utf-8') as f:

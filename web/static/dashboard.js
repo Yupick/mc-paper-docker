@@ -182,6 +182,9 @@ function showSection(sectionName, evt) {
         case 'stats':
             loadStatsSection();
             break;
+        case 'rpg':
+            loadRPGSection();
+            break;
     }
 }
 
@@ -201,6 +204,21 @@ function loadActiveWorldDashboard() {
             const worldNameEl = document.getElementById('activeWorldNameDashboard');
             if (worldNameEl && data.success && data.world) {
                 worldNameEl.textContent = data.world.name;
+                
+                // Verificar si el mundo activo es RPG
+                if (data.world.isRPG) {
+                    // Mostrar pestaña RPG
+                    const sidebarRPG = document.getElementById('sidebar-rpg');
+                    if (sidebarRPG) {
+                        sidebarRPG.classList.remove('d-none');
+                    }
+                } else {
+                    // Ocultar pestaña RPG
+                    const sidebarRPG = document.getElementById('sidebar-rpg');
+                    if (sidebarRPG) {
+                        sidebarRPG.classList.add('d-none');
+                    }
+                }
             } else if (worldNameEl) {
                 worldNameEl.textContent = 'Desconocido';
             }
@@ -1220,6 +1238,16 @@ loadPanelConfig();
 
 // Configurar observador de cambios en RCON para grey-out
 setInterval(updateRconUiState, 1000);
+
+// Configurar toggle de opciones RPG en modal de crear mundo
+document.getElementById('worldIsRPG')?.addEventListener('change', function(e) {
+    const rpgOptions = document.getElementById('rpgConfigOptions');
+    if (e.target.checked) {
+        rpgOptions.classList.remove('d-none');
+    } else {
+        rpgOptions.classList.add('d-none');
+    }
+});
 });
 
 // ==================== GREY-OUT RCON UI ====================
@@ -1701,8 +1729,19 @@ async function submitCreateWorld() {
         seed: formData.get('seed'),
         gamemode: formData.get('gamemode'),
         difficulty: formData.get('difficulty'),
-        motd: formData.get('motd')
+        motd: formData.get('motd'),
+        isRPG: document.getElementById('worldIsRPG').checked
     };
+    
+    // Si isRPG está activado, incluir configuración RPG
+    if (data.isRPG) {
+        data.rpgConfig = {
+            classesEnabled: document.getElementById('rpgClasses').checked,
+            questsEnabled: document.getElementById('rpgQuests').checked,
+            npcsEnabled: document.getElementById('rpgNPCs').checked,
+            economyEnabled: document.getElementById('rpgEconomy').checked
+        };
+    }
     
     // Validación
     if (!data.name) {
@@ -2231,4 +2270,38 @@ window.showSection = function(section) {
         loadWorlds();
     }
 };
+
+// ==================== RPG SECTION ====================
+
+async function loadRPGSection() {
+    // Detener refresh anterior si existe
+    stopRPGRefresh();
+    
+    // Obtener mundo activo
+    try {
+        const response = await fetch('/api/worlds/active');
+        const data = await response.json();
+        
+        if (!data.success || !data.world) {
+            showRPGError('No hay un mundo activo');
+            return;
+        }
+        
+        const worldSlug = data.world.slug;
+        const worldName = data.world.name;
+        
+        // Actualizar nombre del mundo en el header
+        const worldNameBadge = document.getElementById('rpg-world-name');
+        if (worldNameBadge) {
+            worldNameBadge.textContent = worldName;
+        }
+        
+        // Iniciar sección RPG
+        await initRPGSection(worldSlug);
+        
+    } catch (error) {
+        console.error('Error loading RPG section:', error);
+        showRPGError('Error al cargar datos del mundo activo');
+    }
+}
 

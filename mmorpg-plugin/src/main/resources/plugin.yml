@@ -1,0 +1,42 @@
+name: MMORPGPlugin
+version: '1.0.0'
+main: com.nightslayer.mmorpg.MMORPGPlugin
+api-version: '1.21'
+author: NightSlayer
+description: Plugin MMORPG con sistema de clases, quests, NPCs y economía
+
+commands:
+  rpg:
+    description: Comando principal del plugin RPG
+    usage: /<command> [help|status|class|quest]
+    permission: mmorpg.use
+  class:
+    description: Gestionar tu clase de personaje
+    usage: /<command> [info|choose|skills]
+    permission: mmorpg.class
+  quest:
+    description: Ver y gestionar tus quests
+    usage: /<command> [list|start|abandon|info]
+    permission: mmorpg.quest
+
+permissions:
+  mmorpg.*:
+    description: Acceso completo al plugin MMORPG
+    default: op
+    children:
+      mmorpg.use: true
+      mmorpg.class: true
+      mmorpg.quest: true
+      mmorpg.admin: true
+  mmorpg.use:
+    description: Uso básico del plugin
+    default: true
+  mmorpg.class:
+    description: Usar sistema de clases
+    default: true
+  mmorpg.quest:
+    description: Usar sistema de quests
+    default: true
+  mmorpg.admin:
+    description: Comandos de administración
+    default: op
