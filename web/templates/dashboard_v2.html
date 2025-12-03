@@ -1127,15 +1127,15 @@
                                     <option value="easy">Easy (Fácil)</option>
                                     <option value="normal" selected>Normal</option>
                                     <option value="hard">Hard (Difícil)</option>
-
-                                                        <div class="mb-3">
-                                                            <label for="worldMotd" class="form-label">MOTD (Mensaje del Día)</label>
-                                                            <input type="text" class="form-control" id="worldMotd" name="motd"
-                                                                   placeholder="Ej: ¡Bienvenido a mi servidor!" maxlength="59">
-                                                            <div class="form-text">Este mensaje aparece en la lista de servidores de Minecraft (máximo 59 caracteres)</div>
-                                                        </div>
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="worldMotd" class="form-label">MOTD (Mensaje del Día)</label>
+                            <input type="text" class="form-control" id="worldMotd" name="motd"
+                                   placeholder="Ej: ¡Bienvenido a mi servidor!" maxlength="59">
+                            <div class="form-text">Este mensaje aparece en la lista de servidores de Minecraft (máximo 59 caracteres)</div>
                         </div>
 
                         <div id="createWorldError" class="alert alert-danger d-none"></div>
@@ -1237,18 +1237,18 @@
                     <!-- Estadísticas de backups -->
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <div class="card bg-dark border-secondary">
-                                <div class="card-body">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
                                     <small class="text-muted">Total de Backups</small>
-                                    <h4 class="mb-0" id="totalBackupsCount">0</h4>
+                                    <h4 class="mb-0 text-primary" id="totalBackupsCount">0</h4>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="card bg-dark border-secondary">
-                                <div class="card-body">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
                                     <small class="text-muted">Espacio Utilizado</small>
-                                    <h4 class="mb-0" id="totalBackupsSize">0 MB</h4>
+                                    <h4 class="mb-0 text-success" id="totalBackupsSize">0 MB</h4>
                                 </div>
                             </div>
                         </div>

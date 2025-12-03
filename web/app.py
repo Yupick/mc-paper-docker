@@ -948,6 +948,86 @@ def update_all_plugins():
 # - /api/backup/delete -> /api/backups/<backup_filename>
 # - /api/backup/restore -> /api/worlds/<slug>/restore
 
+# ==== Endpoints legacy de Backups para compatibilidad con UI ====
+
+@app.route('/api/backup/list')
+@login_required
+def legacy_backup_list():
+    """Listar todos los backups (sin filtro por mundo) para compatibilidad con UI antigua."""
+    try:
+        backups = backup_service.list_backups()
+        # Adaptar al formato esperado por dashboard.js (backups: name, date, size_mb)
+        items = []
+        for b in backups:
+            items.append({
+                'name': b.get('filename'),
+                'date': b.get('created_at'),
+                'size_mb': b.get('size_mb', 0)
+            })
+        return jsonify({'backups': items})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/backup/create', methods=['POST'])
+@login_required
+def legacy_backup_create():
+    """Crear backup completo del servidor (todos los mundos)."""
+    try:
+        # Obtener lista de mundos y crear un backup por cada uno
+        summary = world_manager.get_worlds_summary()
+        created = []
+        for w in summary.get('worlds', []):
+            info = backup_service.create_backup(w.get('slug'), auto=False, description='Backup completo (legacy)')
+            created.append(info.get('filename'))
+        msg = f'Backups creados correctamente: {len(created)} mundos respaldados'
+        return jsonify({'success': True, 'message': msg, 'created': created})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error al crear backup: {str(e)}'}), 500
+
+@app.route('/api/backup/delete', methods=['POST'])
+@login_required
+def legacy_backup_delete():
+    """Eliminar backup por nombre (compatibilidad)."""
+    try:
+        name = request.json.get('name')
+        if not name:
+            return jsonify({'success': False, 'error': 'Nombre de backup requerido'}), 400
+        backup_service.delete_backup(name)
+        return jsonify({'success': True, 'message': 'Backup eliminado'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/backup/restore', methods=['POST'])
+@login_required
+def legacy_backup_restore():
+    """Restaurar backup (requiere especificar mundo destino)."""
+    try:
+        data = request.get_json() or {}
+        name = data.get('name')
+        target_world = data.get('target_world')
+        if not name or not target_world:
+            return jsonify({'success': False, 'message': 'name y target_world requeridos'}), 400
+        # Validar que el mundo destino existe y NO esté activo
+        active_world = world_manager.get_active_world()
+        if active_world and active_world.slug == target_world:
+            return jsonify({'success': False, 'message': 'No se puede restaurar sobre el mundo activo'}), 400
+        backup_service.restore_backup(name, target_world_slug=target_world)
+        return jsonify({'success': True, 'message': 'Backup restaurado correctamente'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error al restaurar backup: {str(e)}'}), 500
+
+@app.route('/api/backup/download/<filename>')
+@login_required
+def legacy_backup_download(filename):
+    """Descargar archivo de backup."""
+    try:
+        file_path = os.path.join(BACKUP_WORLDS_DIR, filename)
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'Backup no encontrado'}), 404
+        return send_file(file_path, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # API: Reload de plugins
 @app.route('/api/plugins/reload', methods=['POST'])
 @login_required

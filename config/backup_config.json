@@ -1,4 +1,4 @@
 {
-  "auto_backup_enabled": false,
-  "retention_count": 3
+  "auto_backup_enabled": true,
+  "retention_count": 5
 }

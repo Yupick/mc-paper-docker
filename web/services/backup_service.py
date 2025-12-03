@@ -71,19 +71,52 @@ class BackupService:
         
         # Comprimir mundo
         try:
-            # Usar tar para crear el backup
-            # -czf: crear, comprimir con gzip, archivo
-            # -C: cambiar al directorio antes de comprimir
-            result = subprocess.run(
-                [
-                    'tar', '-czf', str(backup_path),
-                    '-C', str(self.worlds_base_path),
-                    world_slug
-                ],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            # Intentar crear el backup dentro del contenedor Docker para evitar problemas de permisos
+            # Requiere que el contenedor tenga montado /server/worlds y /backups/worlds
+            container_name = os.getenv('DOCKER_CONTAINER_NAME', 'minecraft-paper')
+            backup_created = False
+            
+            try:
+                import docker
+                docker_client = docker.from_env()
+                docker_client.ping()
+                container = docker_client.containers.get(container_name)
+                
+                # Comando tar dentro del contenedor
+                # Esto evita problemas de permisos ya que el contenedor ejecuta como el usuario correcto
+                tar_cmd = (
+                    f"tar -czf /backups/worlds/{backup_name} "
+                    f"-C /server/worlds {world_slug}"
+                )
+                exec_res = container.exec_run(tar_cmd, demux=False)
+                
+                if exec_res.exit_code == 0:
+                    backup_created = True
+                else:
+                    # Si falla, imprimir el error y hacer fallback
+                    error_output = exec_res.output.decode('utf-8', errors='ignore') if exec_res.output else ''
+                    print(f"Warning: Docker tar failed: {error_output}. Falling back to local tar.")
+                    
+            except Exception as e:
+                # Si no hay Docker o falla la conexión, hacer fallback al tar local
+                print(f"Warning: Docker not available for backup ({e}). Using local tar.")
+            
+            # Fallback: tar local con mitigaciones de permisos
+            if not backup_created:
+                subprocess.run(
+                    [
+                        'tar',
+                        '--ignore-failed-read',
+                        '--exclude', '*/level.dat',
+                        '--exclude', '*/level.dat_old',
+                        '-czf', str(backup_path),
+                        '-C', str(self.worlds_base_path),
+                        world_slug
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
             
             # Obtener tamaño del backup
             backup_size_bytes = backup_path.stat().st_size
@@ -109,12 +142,10 @@ class BackupService:
             # Limpiar backups antiguos si es automático
             if auto:
                 # Leer configuración de retención
-                import os
                 config_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), '../config/backup_config.json')
                 retention_count = 5  # Default
                 try:
                     if os.path.exists(config_file):
-                        import json
                         with open(config_file, 'r') as f:
                             config = json.load(f)
                             retention_count = config.get('retention_count', 5)

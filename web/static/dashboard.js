@@ -954,17 +954,31 @@ function createBackup() {
 }
 
 function restoreBackup(name) {
-    if (confirm(`¿Restaurar desde ${name}?\n\nADVERTENCIA: Esto reemplazará los mundos actuales. Se creará un backup automático antes de restaurar.`)) {
-        showToast('Restaurando backup... El servidor será reiniciado.', 'info');
+    // Extraer el slug del mundo del nombre del backup (formato: slug_tipo_timestamp.tar.gz)
+    const worldSlug = name.split('_')[0];
+    
+    if (!worldSlug) {
+        showToast('No se puede determinar el mundo de origen. Usa el menú de cada mundo para restaurar.', 'error');
+        return;
+    }
+    
+    if (confirm(`¿Restaurar "${name}" al mundo "${worldSlug}"?\n\nADVERTENCIA: Esto reemplazará el mundo actual. Se creará un backup de seguridad automáticamente.\n\nNOTA: El mundo no debe estar activo.`)) {
+        showToast('Restaurando backup...', 'info');
         fetch('/api/backup/restore', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ 
+                name: name,
+                target_world: worldSlug 
+            })
         })
         .then(r => r.json())
         .then(data => {
             showToast(data.message, data.success ? 'success' : 'error');
             loadBackupsSection();
+        })
+        .catch(error => {
+            showToast('Error de conexión al restaurar backup', 'error');
         });
     }
 }
@@ -1084,6 +1098,9 @@ function loadStatsSection() {
         .then(data => {
             initStatsCharts(data.history);
         });
+
+    // También cargar y mostrar uso actual de CPU/Memoria en gráficas dedicadas
+    renderCurrentCpuMemoryCharts();
 }
 
 function initStatsCharts(history) {
@@ -1139,6 +1156,49 @@ function initStatsCharts(history) {
             }
         }
     });
+}
+
+// Renderizar gráficas actuales de CPU y Memoria
+async function renderCurrentCpuMemoryCharts() {
+    try {
+        const r = await fetch('/api/server/status');
+        const s = await r.json();
+        if (!s || !s.running) return;
+
+        const cpuCtx = document.getElementById('cpuChart');
+        const memCtx = document.getElementById('memoryChart');
+
+        if (cpuChart) cpuChart.destroy();
+        if (memoryChart) memoryChart.destroy();
+
+        // CPU: doughnut con porcentaje actual
+        cpuChart = new Chart(cpuCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Usado', 'Libre'],
+                datasets: [{
+                    data: [s.cpu_percent, Math.max(0, 100 - s.cpu_percent)],
+                    backgroundColor: ['#667eea', '#e2e8f0']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // Memoria: doughnut con porcentaje actual
+        memoryChart = new Chart(memCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Usado', 'Libre'],
+                datasets: [{
+                    data: [s.memory_percent, Math.max(0, 100 - s.memory_percent)],
+                    backgroundColor: ['#48bb78', '#e2e8f0']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    } catch (e) {
+        console.error('Error rendering CPU/Mem charts:', e);
+    }
 }
 
 // ==================== INITIALIZATION ====================
@@ -1972,7 +2032,7 @@ function renderWorldBackupsList(backups) {
         const typeText = backup.type === 'auto' ? 'Automático' : 'Manual';
         
         html += `
-            <div class="list-group-item bg-dark border-secondary">
+            <div class="list-group-item border-secondary">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
                         <h6 class="mb-1">
