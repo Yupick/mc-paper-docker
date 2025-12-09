@@ -128,6 +128,78 @@
           "identifier": "IRON_PICKAXE"
         }
       ]
+    },
+    {
+      "id": "defeat_boss_dragon",
+      "name": "El Dragón Corrupto",
+      "description": "El reino ha sido maldito. Derrota al Dragón Corrupto para salvarnos.",
+      "requiredLevel": 18,
+      "npcGiver": "npc_quest_master",
+      "difficulty": "LEGENDARY",
+      "repeatable": false,
+      "cooldown": 0,
+      "objectives": [
+        {
+          "id": "kill_corrupted_dragon",
+          "type": "KILL",
+          "target": "Dragón Corrupto",
+          "required": 1,
+          "description": "Derrota 1 Dragón Corrupto"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "EXPERIENCE",
+          "amount": 5000
+        },
+        {
+          "type": "MONEY",
+          "amount": 2000
+        },
+        {
+          "type": "ITEM",
+          "amount": 1,
+          "identifier": "DIAMOND"
+        },
+        {
+          "type": "CLASS_SKILL_POINT",
+          "amount": 10
+        }
+      ]
+    },
+    {
+      "id": "merchant_iron_trade",
+      "name": "Comerciante de Hierro",
+      "description": "Ayuda al Comerciante de Hierro a obtener nuevos suministros",
+      "requiredLevel": 4,
+      "npcGiver": "merchant_iron",
+      "difficulty": "MEDIUM",
+      "repeatable": true,
+      "cooldown": 86400000,
+      "objectives": [
+        {
+          "id": "deliver_iron_ore",
+          "type": "COLLECT",
+          "target": "Mineral de Hierro",
+          "required": 32,
+          "description": "Recolecta 32 Mineral de Hierro"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "EXPERIENCE",
+          "amount": 200
+        },
+        {
+          "type": "MONEY",
+          "amount": 300
+        },
+        {
+          "type": "ITEM",
+          "amount": 8,
+          "identifier": "IRON_INGOT"
+        }
+      ]
     }
   ]
 }

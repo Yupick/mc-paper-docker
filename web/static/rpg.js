@@ -2,11 +2,18 @@
  * rpg.js - Gestión de interfaz RPG en el panel web
  */
 
-// Estado global RPG
+// Estado global RPG con separación local/universal
 const rpgState = {
     currentWorldSlug: null,
     summary: null,
-    refreshInterval: null
+    refreshInterval: null,
+    npcs_local: [],
+    npcs_universal: [],
+    quests_local: [],
+    quests_universal: [],
+    mobs_local: [],
+    mobs_universal: [],
+    currentTab: 'overview'
 };
 
 /**
@@ -17,6 +24,9 @@ async function initRPGSection(worldSlug) {
     
     // Cargar datos iniciales
     await refreshRPGData();
+    await loadNPCs();
+    await loadQuests();
+    await loadMobs();
     
     // Configurar actualización automática cada 10 segundos
     if (rpgState.refreshInterval) {
@@ -52,7 +62,11 @@ async function refreshRPGData() {
         
         if (data.success) {
             rpgState.summary = data.summary;
-            renderRPGDashboard(data.summary);
+            // Solo renderizar si no hay tabs creadas aún
+            const existingTabs = document.getElementById('rpgTabs');
+            if (!existingTabs) {
+                renderRPGDashboard(data.summary);
+            }
         } else {
             showRPGError(data.message || 'Error al cargar datos RPG');
         }
@@ -86,55 +100,302 @@ function renderRPGDashboard(summary) {
         return;
     }
     
-    // Renderizar dashboard completo
+    // Renderizar dashboard completo con tabs
     container.innerHTML = `
-        <div class="row g-4">
-            <!-- Configuración RPG -->
-            <div class="col-md-6">
-                <div class="card border-primary h-100">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-gear-fill me-2"></i>
-                            Configuración RPG
-                        </h5>
+        <!-- Tabs de navegación -->
+        <ul class="nav nav-tabs mb-4" id="rpgTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" 
+                        type="button" role="tab" onclick="switchRPGTab('overview')">
+                    <i class="bi bi-speedometer2"></i> Resumen
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="npcs-tab" data-bs-toggle="tab" data-bs-target="#npcs" 
+                        type="button" role="tab" onclick="switchRPGTab('npcs')">
+                    <i class="bi bi-person-badge"></i> NPCs
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="quests-tab" data-bs-toggle="tab" data-bs-target="#quests" 
+                        type="button" role="tab" onclick="switchRPGTab('quests')">
+                    <i class="bi bi-journal-text"></i> Quests
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="mobs-tab" data-bs-toggle="tab" data-bs-target="#mobs" 
+                        type="button" role="tab" onclick="switchRPGTab('mobs')">
+                    <i class="bi bi-bug"></i> Mobs Custom
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="players-tab" data-bs-toggle="tab" data-bs-target="#players-rpg" 
+                        type="button" role="tab" onclick="switchRPGTab('players')">
+                    <i class="bi bi-people"></i> Jugadores
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pets-tab" data-bs-toggle="tab" data-bs-target="#pets" 
+                        type="button" role="tab" onclick="switchRPGTab('pets')">
+                    <i class="bi bi-egg-fill"></i> Mascotas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="bestiary-tab" data-bs-toggle="tab" data-bs-target="#bestiary" 
+                        type="button" role="tab" onclick="switchRPGTab('bestiary')">
+                    <i class="bi bi-book"></i> Bestiario
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="achievements-tab" data-bs-toggle="tab" data-bs-target="#achievements" 
+                        type="button" role="tab" onclick="switchRPGTab('achievements')">
+                    <i class="bi bi-trophy"></i> Logros
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ranks-tab" data-bs-toggle="tab" data-bs-target="#ranks" 
+                        type="button" role="tab" onclick="switchRPGTab('ranks')">
+                    <i class="bi bi-award"></i> Rangos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="invasions-tab" data-bs-toggle="tab" data-bs-target="#invasions" 
+                        type="button" role="tab" onclick="switchRPGTab('invasions')">
+                    <i class="bi bi-shield-exclamation"></i> Invasiones
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="kills-tab" data-bs-toggle="tab" data-bs-target="#kills" 
+                        type="button" role="tab" onclick="switchRPGTab('kills')">
+                    <i class="bi bi-crosshair"></i> Kills
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="respawn-tab" data-bs-toggle="tab" data-bs-target="#respawn" 
+                        type="button" role="tab" onclick="switchRPGTab('respawn')">
+                    <i class="bi bi-arrow-repeat"></i> Respawn
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Contenido de tabs -->
+        <div class="tab-content" id="rpgTabContent">
+            <!-- Tab: Resumen -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card border-primary h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Configuración RPG</h5>
+                            </div>
+                            <div class="card-body">
+                                ${renderRPGConfig(config)}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-success h-100">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Estado del Servidor</h5>
+                            </div>
+                            <div class="card-body">
+                                ${renderRPGStatus(status)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tab: Mascotas -->
+            <div class="tab-pane fade" id="pets" role="tabpanel">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="bi bi-egg-fill me-2"></i>
+                            <strong>Mascotas y Monturas</strong>
+                        </div>
+                        <span class="badge bg-light text-success">Nuevo</span>
                     </div>
                     <div class="card-body">
-                        ${renderRPGConfig(config)}
+                        <p class="text-muted mb-3">
+                            Gestiona tus mascotas, evoluciones y monturas en el panel dedicado.
+                        </p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-success" href="/pets">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Abrir panel de Mascotas
+                            </a>
+                            <a class="btn btn-outline-success" href="/api/rpg/pets/list" target="_blank">
+                                <i class="bi bi-list-ul me-1"></i> Ver JSON de mascotas
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Estado del Servidor -->
-            <div class="col-md-6">
-                <div class="card border-success h-100">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-activity me-2"></i>
-                            Estado del Servidor
-                        </h5>
+            <!-- Tab: NPCs -->
+            <div class="tab-pane fade" id="npcs" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Gestión de NPCs</h5>
+                        <div>
+                            <button class="btn btn-success" onclick="showCreateNPCModal()">
+                                <i class="bi bi-plus-circle"></i> Crear NPC
+                            </button>
+                            <button class="btn btn-primary" onclick="loadNPCs()">
+                                <i class="bi bi-arrow-clockwise"></i> Refrescar
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
-                        ${renderRPGStatus(status)}
+                        <div id="npcs-list">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2 text-muted">Cargando NPCs...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Jugadores RPG -->
-            <div class="col-12">
+            <!-- Tab: Quests -->
+            <div class="tab-pane fade" id="quests" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Gestión de Quests</h5>
+                        <div>
+                            <button class="btn btn-success" onclick="showCreateQuestModal()">
+                                <i class="bi bi-plus-circle"></i> Crear Quest
+                            </button>
+                            <button class="btn btn-primary" onclick="loadQuests()">
+                                <i class="bi bi-arrow-clockwise"></i> Refrescar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="quests-list">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2 text-muted">Cargando Quests...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Mobs -->
+            <div class="tab-pane fade" id="mobs" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-bug me-2"></i>Mobs Personalizados</h5>
+                        <div>
+                            <button class="btn btn-success" onclick="showCreateMobModal()">
+                                <i class="bi bi-plus-circle"></i> Crear Mob
+                            </button>
+                            <button class="btn btn-primary" onclick="loadMobs()">
+                                <i class="bi bi-arrow-clockwise"></i> Refrescar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="mobs-list">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2 text-muted">Cargando Mobs...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Jugadores -->
+            <div class="tab-pane fade" id="players-rpg" role="tabpanel">
                 <div class="card border-info">
                     <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-people-fill me-2"></i>
-                            Jugadores Activos
-                        </h5>
+                        <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Jugadores Activos</h5>
                     </div>
                     <div class="card-body">
                         ${renderRPGPlayers(players)}
                     </div>
                 </div>
             </div>
+            
+            <!-- Tab: Bestiario -->
+            <div class="tab-pane fade" id="bestiary" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-gradient">
+                        <h5 class="mb-0"><i class="bi bi-book me-2"></i>Sistema de Bestiario</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <iframe src="/bestiary" style="width: 100%; height: 800px; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Achievements -->
+            <div class="tab-pane fade" id="achievements" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-gradient">
+                        <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Sistema de Logros</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <iframe src="/achievements" style="width: 100%; height: 900px; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Ranks/Titles -->
+            <div class="tab-pane fade" id="ranks" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-gradient">
+                        <h5 class="mb-0"><i class="bi bi-award me-2"></i>Sistema de Rangos</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <iframe src="/ranks" style="width: 100%; height: 900px; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Invasions -->
+            <div class="tab-pane fade" id="invasions" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-gradient">
+                        <h5 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>Sistema de Invasiones</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <iframe src="/invasions" style="width: 100%; height: 900px; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Kills -->
+            <div class="tab-pane fade" id="kills" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="bi bi-crosshair me-2"></i>Estadísticas de Kills</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Panel de estadísticas de kills por jugador (próximamente)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Respawn -->
+            <div class="tab-pane fade" id="respawn" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Sistema de Respawn</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Panel de configuración de respawn automático (próximamente)</p>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
+    
+    // Cargar listas iniciales
+    renderNPCsList();
+    renderQuestsList();
+    renderMobsList();
 }
 
 /**
@@ -314,3 +575,1235 @@ async function checkIfRPGWorld(worldSlug) {
         return false;
     }
 }
+
+/**
+ * Cambia de tab en el panel RPG
+ */
+function switchRPGTab(tab) {
+    rpgState.currentTab = tab;
+    if (tab === 'npcs') {
+        loadNPCs();
+    } else if (tab === 'quests') {
+        loadQuests();
+    } else if (tab === 'mobs') {
+        loadMobs();
+    }
+}
+
+// ==================== GESTIÓN DE NPCs ====================
+
+/**
+ * Carga la lista de NPCs desde el servidor
+ */
+async function loadNPCs() {
+    try {
+        const response = await fetch('/api/rpg/npcs');
+        const data = await response.json();
+        
+        if (data.success) {
+            rpgState.npcs_local = data.npcs_local || [];
+            rpgState.npcs_universal = data.npcs_universal || [];
+            renderNPCsList();
+        } else {
+            showToast('Error al cargar NPCs: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al cargar NPCs:', error);
+        showToast('Error de conexión al cargar NPCs', 'error');
+    }
+}
+
+/**
+ * Renderiza la lista de NPCs (separados por scope: local y universal)
+ */
+function renderNPCsList() {
+    const container = document.getElementById('npcs-list');
+    if (!container) return;
+    
+    const totalNPCs = rpgState.npcs_local.length + rpgState.npcs_universal.length;
+    
+    if (totalNPCs === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay NPCs registrados. Crea uno con el botón "Crear NPC".
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    // Sección de NPCs locales (del mundo actual)
+    if (rpgState.npcs_local.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-pin-map"></i> NPCs Locales (Este Mundo)
+                    <span class="badge bg-info">${rpgState.npcs_local.length}</span>
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Ubicación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rpgState.npcs_local.map(npc => `
+                                <tr>
+                                    <td><code>${npc.id || 'N/A'}</code></td>
+                                    <td><strong>${npc.name || 'Sin nombre'}</strong></td>
+                                    <td>
+                                        <span class="badge bg-primary">${npc.type || 'Unknown'}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            ${npc.location ? `X: ${npc.location.x}, Y: ${npc.location.y}, Z: ${npc.location.z}` : 'Sin ubicación'}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick='editNPC(${JSON.stringify(npc)}, "local")'>
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteNPC('${npc.id}', 'local')">
+                                            <i class="bi bi-trash"></i> Borrar
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Sección de NPCs universales (compartidos)
+    if (rpgState.npcs_universal.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-globe"></i> NPCs Globales (Compartidos)
+                    <span class="badge bg-success">${rpgState.npcs_universal.length}</span>
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Ubicación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rpgState.npcs_universal.map(npc => `
+                                <tr>
+                                    <td><code>${npc.id || 'N/A'}</code></td>
+                                    <td><strong>${npc.name || 'Sin nombre'}</strong></td>
+                                    <td>
+                                        <span class="badge bg-success">${npc.type || 'Unknown'}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            ${npc.location ? `X: ${npc.location.x}, Y: ${npc.location.y}, Z: ${npc.location.z}` : 'Sin ubicación'}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick='editNPC(${JSON.stringify(npc)}, "universal")'>
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteNPC('${npc.id}', 'universal')">
+                                            <i class="bi bi-trash"></i> Borrar
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Muestra el modal para crear un NPC
+ */
+function showCreateNPCModal() {
+    // Crear modal dinámicamente
+    const modalHTML = `
+        <div class="modal fade" id="createNPCModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Crear Nuevo NPC</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createNPCForm">
+                            <div class="mb-3">
+                                <label class="form-label">Alcance *</label>
+                                <select class="form-select" id="npc-scope" required>
+                                    <option value="local" selected>Local - Solo para este mundo</option>
+                                    <option value="universal">Universal - Compartido en todos los mundos</option>
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Elige dónde guardar este NPC
+                                </small>
+                            </div>
+                            <hr>
+                            <div class="mb-3">
+                                <label class="form-label">ID del NPC *</label>
+                                <input type="text" class="form-control" id="npc-id" required placeholder="ej: blacksmith_1">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Identificador único en minúsculas, sin espacios (usar guión bajo)
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="npc-name" required placeholder="ej: Herrero Aldeano">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Nombre que verán los jugadores sobre el NPC
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tipo *</label>
+                                <select class="form-select" id="npc-type" required>
+                                    <option value="MERCHANT">Comerciante - Vende/Compra items</option>
+                                    <option value="TRAINER">Entrenador - Enseña habilidades</option>
+                                    <option value="QUEST_GIVER">Quest Giver - Da misiones</option>
+                                    <option value="GUARD">Guardia - Protector de zona</option>
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Define el rol y comportamiento del NPC
+                                </small>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">X</label>
+                                    <input type="number" class="form-control" id="npc-x" value="0" step="0.1">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Y</label>
+                                    <input type="number" class="form-control" id="npc-y" value="64" step="0.1">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Z</label>
+                                    <input type="number" class="form-control" id="npc-z" value="0" step="0.1">
+                                </div>
+                            </div>
+                            <small class="text-muted mb-3 d-block">
+                                <i class="bi bi-info-circle"></i> Coordenadas del spawn del NPC en el mundo
+                            </small>
+                            <div class="mb-3">
+                                <label class="form-label">Diálogo</label>
+                                <textarea class="form-control" id="npc-dialogue" rows="3" 
+                                          placeholder="¡Bienvenido, aventurero!"></textarea>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Mensaje que mostrará el NPC al interactuar con él
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="submitCreateNPC()">
+                            <i class="bi bi-check-circle"></i> Crear NPC
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal anterior si existe
+    const oldModal = document.getElementById('createNPCModal');
+    if (oldModal) oldModal.remove();
+    
+    // Añadir y mostrar nuevo modal
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = new bootstrap.Modal(document.getElementById('createNPCModal'));
+    modal.show();
+}
+
+/**
+ * Envía el formulario de creación de NPC
+ */
+async function submitCreateNPC() {
+    const npcData = {
+        id: document.getElementById('npc-id').value,
+        name: document.getElementById('npc-name').value,
+        type: document.getElementById('npc-type').value,
+        scope: document.getElementById('npc-scope').value,
+        location: {
+            x: parseFloat(document.getElementById('npc-x').value),
+            y: parseFloat(document.getElementById('npc-y').value),
+            z: parseFloat(document.getElementById('npc-z').value)
+        },
+        dialogue: document.getElementById('npc-dialogue').value || '¡Hola!'
+    };
+    
+    try {
+        const response = await fetch('/api/rpg/npc/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(npcData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('NPC guardado correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createNPCModal')).hide();
+            setTimeout(() => loadNPCs(), 500);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al guardar NPC:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+/**
+ * Edita un NPC existente
+ */
+function editNPC(npc, scope = 'local') {
+    // Similar a crear pero con datos precargados
+    showCreateNPCModal();
+    setTimeout(() => {
+        document.getElementById('npc-id').value = npc.id;
+        document.getElementById('npc-id').disabled = true;
+        document.getElementById('npc-name').value = npc.name;
+        document.getElementById('npc-type').value = npc.type;
+        document.getElementById('npc-scope').value = scope;
+        if (npc.location) {
+            document.getElementById('npc-x').value = npc.location.x;
+            document.getElementById('npc-y').value = npc.location.y;
+            document.getElementById('npc-z').value = npc.location.z;
+        }
+        document.getElementById('npc-dialogue').value = npc.dialogue || '';
+        
+        // Cambiar título del modal
+        document.querySelector('#createNPCModal .modal-title').innerHTML = 
+            '<i class="bi bi-pencil"></i> Editar NPC';
+    }, 100);
+}
+
+/**
+ * Elimina un NPC
+ */
+async function deleteNPC(npcId, scope = 'local') {
+    if (!confirm(`¿Eliminar el NPC "${npcId}"?`)) return;
+    
+    try {
+        const response = await fetch(`/api/rpg/npc/${npcId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('NPC eliminado correctamente', 'success');
+            setTimeout(() => loadNPCs(), 500);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar NPC:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+// ==================== GESTIÓN DE QUESTS ====================
+
+/**
+ * Carga la lista de quests desde el servidor
+ */
+async function loadQuests() {
+    try {
+        const response = await fetch('/api/rpg/quests');
+        const data = await response.json();
+        
+        if (data.success) {
+            rpgState.quests_local = data.quests_local || [];
+            rpgState.quests_universal = data.quests_universal || [];
+            renderQuestsList();
+        } else {
+            showToast('Error al cargar Quests: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al cargar Quests:', error);
+        showToast('Error de conexión al cargar Quests', 'error');
+    }
+}
+
+/**
+ * Renderiza la lista de quests (separadas por scope: local y universal)
+ */
+function renderQuestsList() {
+    const container = document.getElementById('quests-list');
+    if (!container) return;
+    
+    const totalQuests = rpgState.quests_local.length + rpgState.quests_universal.length;
+    
+    if (totalQuests === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay Quests registradas. Crea una con el botón "Crear Quest".
+            </div>
+        `;
+        return;
+    }
+    
+    const difficultyColors = {
+        'EASY': 'success',
+        'MEDIUM': 'warning',
+        'HARD': 'danger',
+        'LEGENDARY': 'dark'
+    };
+    
+    let html = '';
+    
+    // Sección de Quests locales
+    if (rpgState.quests_local.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-pin-map"></i> Quests Locales (Este Mundo)
+                    <span class="badge bg-info">${rpgState.quests_local.length}</span>
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Dificultad</th>
+                                <th>Recompensas</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rpgState.quests_local.map(quest => `
+                                <tr>
+                                    <td><code>${quest.id || 'N/A'}</code></td>
+                                    <td><strong>${quest.name || 'Sin nombre'}</strong></td>
+                                    <td>
+                                        <span class="badge bg-${difficultyColors[quest.difficulty] || 'secondary'}">
+                                            ${quest.difficulty || 'Unknown'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            ${quest.rewards ? 
+                                                `${quest.rewards.xp || 0} XP, ${quest.rewards.money || 0} monedas` : 
+                                                'Sin recompensas'}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick='editQuest(${JSON.stringify(quest)}, "local")'>
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteQuest('${quest.id}', 'local')">
+                                            <i class="bi bi-trash"></i> Borrar
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Sección de Quests universales
+    if (rpgState.quests_universal.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-globe"></i> Quests Globales (Compartidas)
+                    <span class="badge bg-success">${rpgState.quests_universal.length}</span>
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Dificultad</th>
+                                <th>Recompensas</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rpgState.quests_universal.map(quest => `
+                                <tr>
+                                    <td><code>${quest.id || 'N/A'}</code></td>
+                                    <td><strong>${quest.name || 'Sin nombre'}</strong></td>
+                                    <td>
+                                        <span class="badge bg-${difficultyColors[quest.difficulty] || 'secondary'}">
+                                            ${quest.difficulty || 'Unknown'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            ${quest.rewards ? 
+                                                `${quest.rewards.xp || 0} XP, ${quest.rewards.money || 0} monedas` : 
+                                                'Sin recompensas'}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick='editQuest(${JSON.stringify(quest)}, "universal")'>
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteQuest('${quest.id}', 'universal')">
+                                            <i class="bi bi-trash"></i> Borrar
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Muestra el modal para crear una quest
+ */
+function showCreateQuestModal() {
+    const modalHTML = `
+        <div class="modal fade" id="createQuestModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Crear Nueva Quest</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createQuestForm">
+                            <div class="mb-3">
+                                <label class="form-label">Alcance *</label>
+                                <select class="form-select" id="quest-scope" required>
+                                    <option value="local" selected>Local - Solo para este mundo</option>
+                                    <option value="universal">Universal - Compartida en todos los mundos</option>
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Elige dónde guardar esta quest
+                                </small>
+                            </div>
+                            <hr>
+                            <div class="mb-3">
+                                <label class="form-label">ID de la Quest *</label>
+                                <input type="text" class="form-control" id="quest-id" required 
+                                       placeholder="ej: fetch_water">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Identificador único en minúsculas, sin espacios (usar guión bajo)
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="quest-name" required 
+                                       placeholder="ej: Busca Agua para el Pueblo">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Título de la quest que verán los jugadores
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Descripción</label>
+                                <textarea class="form-control" id="quest-description" rows="3"
+                                          placeholder="El pueblo necesita agua fresca..."></textarea>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Descripción detallada de la misión y su historia
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Dificultad *</label>
+                                <select class="form-select" id="quest-difficulty" required>
+                                    <option value="EASY">Fácil - Para principiantes</option>
+                                    <option value="MEDIUM">Media - Requiere experiencia</option>
+                                    <option value="HARD">Difícil - Desafío avanzado</option>
+                                    <option value="LEGENDARY">Legendaria - Extrema dificultad</option>
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Define el nivel de dificultad y recompensas recomendadas
+                                </small>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">XP Recompensa</label>
+                                    <input type="number" class="form-control" id="quest-xp" value="100">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Experiencia otorgada al completar
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Dinero Recompensa</label>
+                                    <input type="number" class="form-control" id="quest-money" value="50">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Monedas otorgadas al completar
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">NPC Asignado (ID)</label>
+                                <input type="text" class="form-control" id="quest-npc" 
+                                       placeholder="ej: villager_chief">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> ID del NPC que da esta quest (opcional, debe existir previamente)
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="submitCreateQuest()">
+                            <i class="bi bi-check-circle"></i> Crear Quest
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const oldModal = document.getElementById('createQuestModal');
+    if (oldModal) oldModal.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = new bootstrap.Modal(document.getElementById('createQuestModal'));
+    modal.show();
+}
+
+/**
+ * Envía el formulario de creación de quest
+ */
+async function submitCreateQuest() {
+    const questData = {
+        id: document.getElementById('quest-id').value,
+        name: document.getElementById('quest-name').value,
+        description: document.getElementById('quest-description').value || '',
+        difficulty: document.getElementById('quest-difficulty').value,
+        scope: document.getElementById('quest-scope').value,
+        rewards: {
+            xp: parseInt(document.getElementById('quest-xp').value) || 0,
+            money: parseInt(document.getElementById('quest-money').value) || 0
+        },
+        npcId: document.getElementById('quest-npc').value || null,
+        objectives: [
+            {
+                type: 'COLLECT',
+                target: 'WATER_BUCKET',
+                amount: 1,
+                description: 'Recoge 1 cubo de agua'
+            }
+        ]
+    };
+    
+    try {
+        const response = await fetch('/api/rpg/quest/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(questData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Quest guardada correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createQuestModal')).hide();
+            setTimeout(() => loadQuests(), 500);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al guardar Quest:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+/**
+ * Edita una quest existente
+ */
+function editQuest(quest, scope = 'local') {
+    showCreateQuestModal();
+    setTimeout(() => {
+        document.getElementById('quest-id').value = quest.id;
+        document.getElementById('quest-id').disabled = true;
+        document.getElementById('quest-name').value = quest.name;
+        document.getElementById('quest-description').value = quest.description || '';
+        document.getElementById('quest-difficulty').value = quest.difficulty;
+        document.getElementById('quest-scope').value = scope;
+        if (quest.rewards) {
+            document.getElementById('quest-xp').value = quest.rewards.xp || 0;
+            document.getElementById('quest-money').value = quest.rewards.money || 0;
+        }
+        document.getElementById('quest-npc').value = quest.npcId || '';
+        
+        document.querySelector('#createQuestModal .modal-title').innerHTML = 
+            '<i class="bi bi-pencil"></i> Editar Quest';
+    }, 100);
+}
+
+/**
+ * Elimina una quest
+ */
+async function deleteQuest(questId, scope = 'local') {
+    if (!confirm(`¿Eliminar la quest "${questId}"?`)) return;
+    
+    try {
+        const response = await fetch(`/api/rpg/quest/${questId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Quest eliminada correctamente', 'success');
+            setTimeout(() => loadQuests(), 500);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar Quest:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+// ==================== GESTIÓN DE MOBS ====================
+
+/**
+ * Carga la lista de Mobs desde el servidor
+ */
+async function loadMobs() {
+    try {
+        const response = await fetch('/api/rpg/mobs');
+        const data = await response.json();
+        
+        if (data.success) {
+            rpgState.mobs_local = data.mobs_local || [];
+            rpgState.mobs_universal = data.mobs_universal || [];
+            renderMobsList();
+        } else {
+            showToast('Error al cargar mobs: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al cargar Mobs:', error);
+        showToast('Error de conexión al cargar mobs', 'error');
+    }
+}
+
+/**
+ * Renderiza la lista de mobs en el panel (separados por scope: local y universal)
+ */
+function renderMobsList() {
+    const container = document.getElementById('mobs-list');
+    
+    const totalMobs = (rpgState.mobs_local ? rpgState.mobs_local.length : 0) + (rpgState.mobs_universal ? rpgState.mobs_universal.length : 0);
+    
+    if (totalMobs === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No hay mobs personalizados creados.
+                <br>Crea tu primer mob usando el botón "Crear Mob".
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    // Sección de mobs locales
+    if (rpgState.mobs_local && rpgState.mobs_local.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-pin-map"></i> Mobs Locales (Este Mundo)
+                    <span class="badge bg-info">${rpgState.mobs_local.length}</span>
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Level</th>
+                                <th>Health</th>
+                                <th>Damage</th>
+                                <th>Boss</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rpgState.mobs_local.map(mob => `
+                                <tr>
+                                    <td><code>${mob.id}</code></td>
+                                    <td><strong>${mob.displayName}</strong></td>
+                                    <td><span class="badge bg-secondary">${mob.entityType}</span></td>
+                                    <td><span class="badge bg-primary">Lv ${mob.level}</span></td>
+                                    <td><span class="text-danger">${mob.health} HP</span></td>
+                                    <td><span class="text-warning">${mob.damage} DMG</span></td>
+                                    <td>${mob.isBoss ? '<span class="badge bg-danger">BOSS</span>' : '<span class="badge bg-success">Normal</span>'}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick='editMob(${JSON.stringify(mob).replace(/'/g, "&#39;")}, "local")'>
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteMob('${mob.id}', 'local')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Sección de mobs universales
+    if (rpgState.mobs_universal && rpgState.mobs_universal.length > 0) {
+        html += `
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-globe"></i> Mobs Globales (Compartidos)
+                    <span class="badge bg-success">${rpgState.mobs_universal.length}</span>
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Level</th>
+                                <th>Health</th>
+                                <th>Damage</th>
+                                <th>Boss</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rpgState.mobs_universal.map(mob => `
+                                <tr>
+                                    <td><code>${mob.id}</code></td>
+                                    <td><strong>${mob.displayName}</strong></td>
+                                    <td><span class="badge bg-secondary">${mob.entityType}</span></td>
+                                    <td><span class="badge bg-primary">Lv ${mob.level}</span></td>
+                                    <td><span class="text-danger">${mob.health} HP</span></td>
+                                    <td><span class="text-warning">${mob.damage} DMG</span></td>
+                                    <td>${mob.isBoss ? '<span class="badge bg-danger">BOSS</span>' : '<span class="badge bg-success">Normal</span>'}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick='editMob(${JSON.stringify(mob).replace(/'/g, "&#39;")}, "universal")'>
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteMob('${mob.id}', 'universal')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Muestra el modal para crear un nuevo mob
+ */
+function showCreateMobModal() {
+    const modalHtml = `
+        <div class="modal fade" id="createMobModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="mob-form-title">
+                            <i class="bi bi-bug"></i> Crear Mob Personalizado
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createMobForm" onsubmit="submitCreateMob(event)">
+                            <input type="hidden" id="mob-edit-id">
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="mob-id" class="form-label">ID del Mob *</label>
+                                    <input type="text" class="form-control" id="mob-id" required 
+                                           pattern="[a-z0-9_]+" placeholder="ej: boss_dragon">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Identificador único en minúsculas, sin espacios (usar guión bajo)
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="mob-name" class="form-label">Nombre Visible *</label>
+                                    <input type="text" class="form-control" id="mob-name" required 
+                                           placeholder="ej: Dragón Ancestral">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Nombre que aparecerá sobre el mob en el juego
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="mob-type" class="form-label">Tipo de Entidad *</label>
+                                    <select class="form-select" id="mob-type" required>
+                                        <option value="">Seleccionar tipo...</option>
+                                        <option value="ZOMBIE">ZOMBIE - Muerto viviente</option>
+                                        <option value="SKELETON">SKELETON - Esqueleto</option>
+                                        <option value="SPIDER">SPIDER - Araña</option>
+                                        <option value="CREEPER">CREEPER - Creeper</option>
+                                        <option value="ENDERMAN">ENDERMAN - Enderman</option>
+                                        <option value="BLAZE">BLAZE - Blaze</option>
+                                        <option value="WITHER_SKELETON">WITHER_SKELETON - Esqueleto Wither</option>
+                                        <option value="PIGLIN">PIGLIN - Piglin</option>
+                                        <option value="HOGLIN">HOGLIN - Hoglin</option>
+                                        <option value="ENDER_DRAGON">ENDER_DRAGON - Dragón del End</option>
+                                        <option value="WITHER">WITHER - Wither</option>
+                                    </select>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Tipo base de entidad de Minecraft que será personalizado
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="mob-level" class="form-label">Nivel *</label>
+                                    <input type="number" class="form-control" id="mob-level" required 
+                                           min="1" max="100" value="1">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Nivel del mob (1-100), afecta dificultad y recompensas
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="mob-health" class="form-label">Salud (HP) *</label>
+                                    <input type="number" class="form-control" id="mob-health" required 
+                                           min="1" step="0.5" value="20">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Puntos de vida totales (1 corazón = 2 HP)
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="mob-damage" class="form-label">Daño *</label>
+                                    <input type="number" class="form-control" id="mob-damage" required 
+                                           min="0" step="0.5" value="2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Daño por ataque (1 corazón = 2 puntos)
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="mob-defense" class="form-label">Defensa *</label>
+                                    <input type="number" class="form-control" id="mob-defense" required 
+                                           min="0" step="0.5" value="0">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Reducción de daño recibido (armadura)
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="mob-xp" class="form-label">XP Recompensa *</label>
+                                    <input type="number" class="form-control" id="mob-xp" required 
+                                           min="0" value="10">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Experiencia otorgada al jugador al derrotarlo
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="mob-boss" class="form-label">¿Es un Boss?</label>
+                                    <select class="form-select" id="mob-boss">
+                                        <option value="false">No - Mob Normal</option>
+                                        <option value="true">Sí - Boss (barra de salud superior)</option>
+                                    </select>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Los bosses muestran barra de salud en la parte superior
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="mob-spawn" class="form-label">Ubicación de Spawn</label>
+                                <input type="text" class="form-control" id="mob-spawn" 
+                                       placeholder="ej: world,100,64,200 o dejar vacío">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Formato: nombreMundo,X,Y,Z (opcional, se puede spawnear con comando)
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Scope - ¿Dónde guardar este Mob?</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="mob-scope" id="mob-scope-local" value="local" checked>
+                                    <label class="btn btn-outline-info" for="mob-scope-local">
+                                        <i class="bi bi-pin-map"></i> Local (Este Mundo)
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="mob-scope" id="mob-scope-universal" value="universal">
+                                    <label class="btn btn-outline-success" for="mob-scope-universal">
+                                        <i class="bi bi-globe"></i> Global (Compartido)
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle"></i> 
+                                    <strong>Local:</strong> Solo en este mundo | 
+                                    <strong>Global:</strong> Disponible en todos los mundos
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Drops (Botín) - Formato: ITEM,minCant,maxCant,probabilidad%</label>
+                                <div id="mob-drops-container">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control mob-drop" 
+                                               placeholder="ej: DIAMOND,1,3,50">
+                                        <button type="button" class="btn btn-success" onclick="addMobDrop()">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> Items que puede soltar. Probabilidad en % (0-100). Añade múltiples drops con el botón +
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" form="createMobForm" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Crear Mob
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Eliminar modal previo si existe
+    const existingModal = document.getElementById('createMobModal');
+    if (existingModal) existingModal.remove();
+    
+    // Añadir nuevo modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Resetear formulario y establecer valores por defecto
+    document.getElementById('mob-form-title').textContent = 'Crear Nuevo Mob';
+    document.getElementById('mob-id').value = '';
+    document.getElementById('mob-id').disabled = false;
+    document.getElementById('mob-edit-id').value = '';
+    document.getElementById('mob-name').value = '';
+    document.getElementById('mob-type').value = '';
+    document.getElementById('mob-level').value = '1';
+    document.getElementById('mob-health').value = '20';
+    document.getElementById('mob-damage').value = '2';
+    document.getElementById('mob-defense').value = '0';
+    document.getElementById('mob-xp').value = '10';
+    document.getElementById('mob-boss').value = 'false';
+    document.getElementById('mob-spawn').value = '';
+    
+    // Resetear scope a local por defecto
+    const scopeLocal = document.getElementById('mob-scope-local');
+    if (scopeLocal) scopeLocal.checked = true;
+    
+    // Resetear drops
+    const dropsContainer = document.getElementById('mob-drops-container');
+    dropsContainer.innerHTML = `
+        <div class="input-group mb-2">
+            <input type="text" class="form-control mob-drop" 
+                   placeholder="ej: DIAMOND,1,3,50">
+            <button type="button" class="btn btn-success" onclick="addMobDrop()">
+                <i class="bi bi-plus"></i>
+            </button>
+        </div>
+    `;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('createMobModal'));
+    modal.show();
+}
+
+/**
+ * Añade un campo adicional de drop
+ */
+function addMobDrop() {
+    const container = document.getElementById('mob-drops-container');
+    const newDrop = `
+        <div class="input-group mb-2">
+            <input type="text" class="form-control mob-drop" 
+                   placeholder="ej: EMERALD,2,5,30">
+            <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', newDrop);
+}
+
+/**
+ * Envía el formulario de creación de mob
+ */
+async function submitCreateMob(event) {
+    event.preventDefault();
+    
+    // Recopilar drops
+    const dropInputs = document.querySelectorAll('.mob-drop');
+    const drops = [];
+    dropInputs.forEach(input => {
+        if (input.value.trim()) {
+            drops.push(input.value.trim());
+        }
+    });
+    
+    // Determinar scope seleccionado
+    const scopeLocal = document.getElementById('mob-scope-local');
+    const scopeUniversal = document.getElementById('mob-scope-universal');
+    let scope = 'local';
+    if (scopeUniversal && scopeUniversal.checked) {
+        scope = 'universal';
+    }
+    
+    const mobData = {
+        id: document.getElementById('mob-id').value,
+        displayName: document.getElementById('mob-name').value,
+        entityType: document.getElementById('mob-type').value,
+        level: parseInt(document.getElementById('mob-level').value),
+        health: parseFloat(document.getElementById('mob-health').value),
+        damage: parseFloat(document.getElementById('mob-damage').value),
+        defense: parseFloat(document.getElementById('mob-defense').value),
+        xpReward: parseInt(document.getElementById('mob-xp').value),
+        isBoss: document.getElementById('mob-boss').value === 'true',
+        spawnLocation: document.getElementById('mob-spawn').value || null,
+        drops: drops,
+        scope: scope
+    };
+    
+    console.log('Creando mob:', mobData);
+    
+    try {
+        const response = await fetch('/api/rpg/mob/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mobData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Mob creado correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createMobModal')).hide();
+            setTimeout(() => loadMobs(), 1000);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al crear Mob:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+/**
+ * Edita un mob existente
+ */
+function editMob(mob, scope) {
+    showCreateMobModal();
+    setTimeout(() => {
+        document.getElementById('mob-id').value = mob.id;
+        document.getElementById('mob-id').disabled = true;
+        document.getElementById('mob-edit-id').value = mob.id;
+        document.getElementById('mob-name').value = mob.displayName;
+        document.getElementById('mob-type').value = mob.entityType;
+        document.getElementById('mob-level').value = mob.level;
+        document.getElementById('mob-health').value = mob.health;
+        document.getElementById('mob-damage').value = mob.damage;
+        document.getElementById('mob-defense').value = mob.defense;
+        document.getElementById('mob-xp').value = mob.xpReward;
+        document.getElementById('mob-boss').value = mob.isBoss.toString();
+        document.getElementById('mob-spawn').value = mob.spawnLocation || '';
+        
+        // Establecer el scope correcto
+        const scopeLocal = document.getElementById('mob-scope-local');
+        const scopeUniversal = document.getElementById('mob-scope-universal');
+        if (scope === 'universal') {
+            if (scopeUniversal) scopeUniversal.checked = true;
+        } else {
+            if (scopeLocal) scopeLocal.checked = true;
+        }
+        
+        // Cargar drops
+        const dropsContainer = document.getElementById('mob-drops-container');
+        dropsContainer.innerHTML = '';
+        if (mob.drops && mob.drops.length > 0) {
+            mob.drops.forEach((drop, index) => {
+                const dropHtml = `
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control mob-drop" value="${drop}">
+                        <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+                dropsContainer.insertAdjacentHTML('beforeend', dropHtml);
+            });
+        } else {
+            addMobDrop();
+        }
+        
+        document.querySelector('#createMobModal .modal-title').innerHTML = 
+            '<i class="bi bi-pencil"></i> Editar Mob';
+    }, 100);
+}
+
+/**
+ * Elimina un mob
+ */
+async function deleteMob(mobId, scope) {
+    if (!confirm(`¿Eliminar el mob "${mobId}"?`)) return;
+    
+    try {
+        const response = await fetch(`/api/rpg/mob/${mobId}?scope=${scope}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Mob eliminado correctamente', 'success');
+            setTimeout(() => loadMobs(), 1000);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar Mob:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+

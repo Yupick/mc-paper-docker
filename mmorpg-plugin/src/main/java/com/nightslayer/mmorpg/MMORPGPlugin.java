@@ -4,14 +4,28 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.nightslayer.mmorpg.api.RPGAdminAPI;
 import com.nightslayer.mmorpg.database.DatabaseManager;
+import com.nightslayer.mmorpg.bestiary.BestiaryManager;
+import com.nightslayer.mmorpg.achievements.AchievementManager;
 import com.nightslayer.mmorpg.classes.ClassManager;
 import com.nightslayer.mmorpg.commands.ClassCommand;
 import com.nightslayer.mmorpg.commands.QuestCommand;
+import com.nightslayer.mmorpg.crafting.CraftingManager;
+import com.nightslayer.mmorpg.enchanting.EnchantmentManager;
+import com.nightslayer.mmorpg.pets.PetManager;
 import com.nightslayer.mmorpg.economy.EconomyManager;
 import com.nightslayer.mmorpg.economy.ShopManager;
+import com.nightslayer.mmorpg.events.EventManager;
+import com.nightslayer.mmorpg.dungeons.DungeonManager;
 import com.nightslayer.mmorpg.i18n.LanguageManager;
+import com.nightslayer.mmorpg.invasions.InvasionManager;
+import com.nightslayer.mmorpg.items.ItemManager;
+import com.nightslayer.mmorpg.listeners.MobDeathListener;
+import com.nightslayer.mmorpg.mobs.MobManager;
+import com.nightslayer.mmorpg.ranks.RankManager;
+import com.nightslayer.mmorpg.respawn.RespawnManager;
 import com.nightslayer.mmorpg.npcs.NPCManager;
 import com.nightslayer.mmorpg.quests.QuestManager;
+import com.nightslayer.mmorpg.squads.SquadManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.World;
 
@@ -24,9 +38,24 @@ public class MMORPGPlugin extends JavaPlugin {
     private Gson gson;
     private WorldRPGManager worldRPGManager;
     private DataManager dataManager;
+    private PathResolver pathResolver;
+    private DataInitializer dataInitializer;
     private ClassManager classManager;
     private NPCManager npcManager;
+    private MobManager mobManager;
+    private ItemManager itemManager;
     private QuestManager questManager;
+    private BestiaryManager bestiaryManager;
+    private AchievementManager achievementManager;
+    private RankManager rankManager;
+    private InvasionManager invasionManager;
+    private EventManager eventManager;
+    private DungeonManager dungeonManager;
+    private SquadManager squadManager;
+    private CraftingManager craftingManager;
+    private EnchantmentManager enchantmentManager;
+    private PetManager petManager;
+    private RespawnManager respawnManager;
     private EconomyManager economyManager;
     private ShopManager shopManager;
     private RPGAdminAPI adminAPI;
@@ -56,11 +85,29 @@ public class MMORPGPlugin extends JavaPlugin {
         databaseManager = new DatabaseManager(this);
         worldRPGManager = new WorldRPGManager(this);
         dataManager = new DataManager(this);
+        
+        // Inicializar resolvedores de rutas
+        pathResolver = new PathResolver(this);
+        dataInitializer = new DataInitializer(this, pathResolver);
+        
         economyManager = new EconomyManager(this);
         classManager = new ClassManager(this);
         shopManager = new ShopManager(this, economyManager);
         npcManager = new NPCManager(this);
+        mobManager = new MobManager(this);
+        itemManager = new ItemManager(this);
+        bestiaryManager = new BestiaryManager(this);
+        achievementManager = new AchievementManager(this);
+        rankManager = new RankManager(this, achievementManager);
+        invasionManager = new InvasionManager(this);
+        eventManager = new EventManager(this, mobManager, economyManager);
+        dungeonManager = new DungeonManager(this, mobManager, economyManager);
+        squadManager = new SquadManager(this);
+        craftingManager = new CraftingManager(this);
+        enchantmentManager = new EnchantmentManager(this);
+        petManager = new PetManager(this);
         questManager = new QuestManager(this, classManager);
+        respawnManager = new RespawnManager(this, mobManager);
         adminAPI = new RPGAdminAPI(this);
         
         // Detectar mundos RPG
@@ -73,6 +120,9 @@ public class MMORPGPlugin extends JavaPlugin {
         
         // Registrar eventos de NPCs
         getServer().getPluginManager().registerEvents(npcManager, this);
+        
+        // Registrar listener de muerte de mobs custom
+        getServer().getPluginManager().registerEvents(new MobDeathListener(this, mobManager, itemManager, bestiaryManager, achievementManager, invasionManager, eventManager), this);
         
         // Iniciar sincronización con panel web
         startWebPanelSync();
@@ -109,6 +159,47 @@ public class MMORPGPlugin extends JavaPlugin {
         if (npcManager != null) {
             npcManager.despawnAll();
             npcManager.saveAll();
+        }
+        
+        // Detener respawn manager
+        if (respawnManager != null) {
+            respawnManager.shutdown();
+        }
+
+        if (bestiaryManager != null) {
+            bestiaryManager.saveAll();
+        }
+
+        if (achievementManager != null) {
+            achievementManager.saveAll();
+        }
+
+        if (rankManager != null) {
+            rankManager.saveAll();
+        }
+
+        if (invasionManager != null) {
+            invasionManager.shutdown();
+        }
+
+        if (eventManager != null) {
+            eventManager.shutdown();
+        }
+
+        if (dungeonManager != null) {
+            dungeonManager.shutdown();
+        }
+
+        if (squadManager != null) {
+            squadManager.shutdown();
+        }
+
+        if (craftingManager != null) {
+            craftingManager.shutdown();
+        }
+
+        if (enchantmentManager != null) {
+            enchantmentManager.shutdown();
         }
         
         getLogger().info("MMORPGPlugin deshabilitado correctamente!");
@@ -220,6 +311,18 @@ public class MMORPGPlugin extends JavaPlugin {
         return npcManager;
     }
     
+    public MobManager getMobManager() {
+        return mobManager;
+    }
+    
+    public RespawnManager getRespawnManager() {
+        return respawnManager;
+    }
+    
+    public ItemManager getItemManager() {
+        return itemManager;
+    }
+    
     public QuestManager getQuestManager() {
         return questManager;
     }
@@ -242,5 +345,57 @@ public class MMORPGPlugin extends JavaPlugin {
     
     public DatabaseManager getDatabaseManager() {
         return databaseManager;
+    }
+
+    public BestiaryManager getBestiaryManager() {
+        return bestiaryManager;
+    }
+
+    public AchievementManager getAchievementManager() {
+        return achievementManager;
+    }
+
+    public RankManager getRankManager() {
+        return rankManager;
+    }
+
+    public InvasionManager getInvasionManager() {
+        return invasionManager;
+    }
+
+    public EventManager getEventManager() {
+        return eventManager;
+    }
+
+    public DungeonManager getDungeonManager() {
+        return dungeonManager;
+    }
+
+    public SquadManager getSquadManager() {
+        return squadManager;
+    }
+
+    public CraftingManager getCraftingManager() {
+        return craftingManager;
+    }
+
+    public EnchantmentManager getEnchantmentManager() {
+        return enchantmentManager;
+    }
+
+    public PetManager getPetManager() {
+        return petManager;
+    }
+
+    public DatabaseManager getDatabase() {
+        return databaseManager;
+    }
+    
+    public PathResolver getPathResolver() {
+        return pathResolver;
+    }
+    
+    public DataInitializer getDataInitializer() {
+        return dataInitializer;
     }
 }

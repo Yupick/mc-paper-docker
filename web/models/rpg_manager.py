@@ -9,6 +9,34 @@ class RPGManager:
     
     def __init__(self, plugin_data_path: str = "/home/mkd/contenedores/mc-paper/plugins/MMORPGPlugin/data"):
         self.plugin_data_path = Path(plugin_data_path)
+
+    def _resolve_world_data_dir(self, world_slug: str) -> Path:
+        """Devuelve la carpeta donde el plugin guarda datos para el mundo activo."""
+        # 1) Intentar level-name real (server.properties)
+        server_props = Path("/home/mkd/contenedores/mc-paper/worlds") / world_slug / "server.properties"
+        candidates = []
+        if server_props.exists():
+            try:
+                with open(server_props, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if line.strip().startswith('level-name'):
+                            level_name = line.split('=', 1)[1].strip()
+                            if level_name:
+                                candidates.append(Path(level_name).name)
+                            break
+            except Exception:
+                pass
+
+        # 2) Slug del mundo
+        candidates.append(world_slug)
+
+        # Buscar el primero que exista, si no, devolver el primero como ruta de destino
+        for candidate in candidates:
+            candidate_path = self.plugin_data_path / candidate
+            if candidate_path.exists():
+                return candidate_path
+
+        return self.plugin_data_path / candidates[0]
     
     def get_rpg_status(self, world_slug: str) -> Optional[Dict]:
         """
@@ -20,7 +48,8 @@ class RPGManager:
         Returns:
             Dict con el estado RPG o None si no existe
         """
-        status_file = self.plugin_data_path / world_slug / "status.json"
+        world_dir = self._resolve_world_data_dir(world_slug)
+        status_file = world_dir / "status.json"
         
         if not status_file.exists():
             return None
@@ -42,7 +71,8 @@ class RPGManager:
         Returns:
             Dict con datos de jugadores o None si no existe
         """
-        players_file = self.plugin_data_path / world_slug / "players.json"
+        world_dir = self._resolve_world_data_dir(world_slug)
+        players_file = world_dir / "players.json"
         
         if not players_file.exists():
             return None
@@ -148,4 +178,109 @@ class RPGManager:
                 metadata = json.load(f)
             return metadata.get('isRPG', False)
         except Exception:
+            return False
+
+    def get_data_by_scope(self, world_slug: str, data_type: str, scope: str = 'local') -> Optional[Dict]:
+        """
+        Obtiene datos RPG separados por scope (local, universal, exclusive-local)
+        
+        Args:
+            world_slug: Slug del mundo
+            data_type: Tipo de dato (npcs, quests, mobs, items, players, etc.)
+            scope: 'local' (per-mundo), 'universal' (global), o 'exclusive-local'
+        
+        Returns:
+            Dict con los datos o None si no existen
+        
+        Clasificación:
+            UNIVERSAL: items, mobs_global, npcs_global, quests_global, enchantments_global, pets_global
+            LOCAL: npcs, quests, mobs, pets, enchantments (busca primero local, luego universal)
+            EXCLUSIVE-LOCAL: players, status, invasions, kills, respawn, squads (solo local)
+        """
+        universal_data = {'items', 'mobs_global', 'npcs_global', 'quests_global', 
+                         'enchantments_global', 'pets_global'}
+        hybrid_data = {'npcs', 'quests', 'mobs', 'pets', 'enchantments'}
+        exclusive_local_data = {'players', 'status', 'invasions', 'kills', 'respawn', 'squads'}
+        
+        world_dir = self._resolve_world_data_dir(world_slug)
+        
+        # Resolver ruta según scope
+        if scope == 'universal' or data_type in universal_data:
+            file_path = self.plugin_data_path / f"{data_type}.json"
+        elif scope == 'exclusive-local' or data_type in exclusive_local_data:
+            file_path = world_dir / f"{data_type}.json"
+        else:  # scope == 'local' or hybrid_data
+            local_file = world_dir / f"{data_type}.json"
+            universal_file = self.plugin_data_path / f"{data_type}.json"
+            # Preferir local si existe, sino universal
+            file_path = local_file if local_file.exists() else universal_file
+        
+        if not file_path.exists():
+            return None
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error leyendo {data_type}.json para {world_slug}: {e}")
+            return None
+
+    def read_file(self, world_slug: str, filename: str, scope: str = 'local') -> Optional[Dict]:
+        """
+        Lee un archivo JSON de datos RPG
+        
+        Args:
+            world_slug: Slug del mundo
+            filename: Nombre del archivo (con o sin .json)
+            scope: 'local', 'universal', o 'exclusive-local'
+        
+        Returns:
+            Contenido del archivo o None si no existe
+        """
+        if not filename.endswith('.json'):
+            filename = f"{filename}.json"
+        
+        data_type = filename.replace('.json', '')
+        return self.get_data_by_scope(world_slug, data_type, scope)
+
+    def write_file(self, world_slug: str, filename: str, data: Dict, scope: str = 'local') -> bool:
+        """
+        Escribe un archivo JSON de datos RPG
+        
+        Args:
+            world_slug: Slug del mundo
+            filename: Nombre del archivo (con o sin .json)
+            data: Datos a escribir
+            scope: 'local', 'universal', o 'exclusive-local'
+        
+        Returns:
+            True si se escribió correctamente, False en caso contrario
+        """
+        if not filename.endswith('.json'):
+            filename = f"{filename}.json"
+        
+        universal_data = {'items', 'mobs_global', 'npcs_global', 'quests_global', 
+                         'enchantments_global', 'pets_global'}
+        exclusive_local_data = {'players', 'status', 'invasions', 'kills', 'respawn', 'squads'}
+        
+        data_type = filename.replace('.json', '')
+        world_dir = self._resolve_world_data_dir(world_slug)
+        
+        # Determinar ruta destino
+        if scope == 'universal' or data_type in universal_data:
+            file_path = self.plugin_data_path / filename
+        else:  # local o exclusive-local
+            file_path = world_dir / filename
+        
+        try:
+            # Crear directorio si no existe
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Escribir archivo
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            return True
+        except Exception as e:
+            print(f"Error escribiendo {filename} para {world_slug}: {e}")
             return False

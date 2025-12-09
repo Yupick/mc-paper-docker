@@ -1,5 +1,6 @@
 package com.nightslayer.mmorpg;
 
+import com.nightslayer.mmorpg.commands.MobCommand;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -8,6 +9,7 @@ import org.bukkit.entity.Player;
 public class RPGCommand implements CommandExecutor {
     
     private final MMORPGPlugin plugin;
+    private final MobCommand mobCommand = new MobCommand();
     
     public RPGCommand(MMORPGPlugin plugin) {
         this.plugin = plugin;
@@ -32,6 +34,13 @@ public class RPGCommand implements CommandExecutor {
         if (args.length == 0) {
             showHelp(player);
             return true;
+        }
+        
+        if (args.length > 0 && args[0].equalsIgnoreCase("mob")) {
+            // /rpg mob ...
+            String[] mobArgs = new String[args.length - 1];
+            System.arraycopy(args, 1, mobArgs, 0, mobArgs.length);
+            return mobCommand.onCommand(sender, command, label, mobArgs);
         }
         
         switch (args[0].toLowerCase()) {

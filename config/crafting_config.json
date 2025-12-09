@@ -1,0 +1,11 @@
+{
+  "recipes": [],
+  "crafting_stations": [
+    {
+      "id": "workbench",
+      "name": "Crafting Table",
+      "material": "crafting_table",
+      "enabled": true
+    }
+  ]
+}

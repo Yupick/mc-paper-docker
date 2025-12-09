@@ -1,0 +1,31 @@
+{
+  "events": [
+    {
+      "id": "meteor_shower",
+      "name": "Lluvia de Meteoritos",
+      "type": "natural_disaster",
+      "enabled": true,
+      "frequency_hours": 24,
+      "min_players": 1,
+      "duration_minutes": 10,
+      "rewards": {
+        "experience": 500,
+        "currency": 200
+      }
+    },
+    {
+      "id": "double_exp",
+      "name": "Experiencia Doble",
+      "type": "buff",
+      "enabled": true,
+      "frequency_hours": 72,
+      "duration_minutes": 60,
+      "multiplier": 2.0
+    }
+  ],
+  "settings": {
+    "enable_events": true,
+    "announce_start": true,
+    "announce_end": true
+  }
+}

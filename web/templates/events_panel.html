@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos Temáticos - Panel MMORPG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='events.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-calendar-star me-2"></i>Eventos Temáticos</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="refreshAllBtn">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3" id="eventsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button">
+                            <i class="fas fa-play-circle"></i> Activos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button">
+                            <i class="fas fa-cog"></i> Configuración
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">
+                            <i class="fas fa-history"></i> Historial
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="eventsTabContent">
+                    <!-- TAB: Eventos Activos -->
+                    <div class="tab-pane fade show active" id="active" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-play-circle"></i> Eventos en Curso</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="activeEventsList"></div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-calendar"></i> Eventos Programados</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="scheduledEventsList"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Configuración -->
+                    <div class="tab-pane fade" id="config" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-cog"></i> Configuración de Eventos</h5>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-sm" id="saveConfigBtn">
+                                        <i class="fas fa-save"></i> Guardar
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="loadConfigBtn">
+                                        <i class="fas fa-sync-alt"></i> Recargar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Archivo JSON de Configuración:</label>
+                                    <textarea id="configEditor" class="form-control font-monospace" rows="25"></textarea>
+                                    <small class="text-muted">
+                                        Edita la configuración de eventos en formato JSON.
+                                        Incluye fechas de inicio/fin, mobs especiales, drops exclusivos y recompensas.
+                                    </small>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> Estructura de Evento:</h6>
+                                    <pre class="mb-0 small">{
+  "id": "event_id",
+  "name": "Nombre del Evento",
+  "description": "Descripción",
+  "startDate": "2025-12-20T00:00:00",
+  "endDate": "2025-12-26T23:59:59",
+  "enabled": true,
+  "autoStart": true,
+  "customMobs": [
+    {
+      "mobId": "mob_id",
+      "spawnChance": 0.3,
+      "spawnRadius": 50
+    }
+  ],
+  "exclusiveDrops": [
+    {
+      "itemName": "Item Name",
+      "dropChance": 0.5,
+      "minAmount": 1,
+      "maxAmount": 3
+    }
+  ],
+  "rewards": {
+    "eventCoinsPerKill": 5,
+    "bonusXPMultiplier": 1.5,
+    "bossEventCoins": 100
+  }
+}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Historial -->
+                    <div class="tab-pane fade" id="history" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-history"></i> Historial de Eventos (Últimos 50)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped table-hover" id="historyTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Evento</th>
+                                                <th>Mundo</th>
+                                                <th>Inicio</th>
+                                                <th>Fin</th>
+                                                <th>Duración</th>
+                                                <th>Participantes</th>
+                                                <th>Kills</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historyTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Estadísticas -->
+                    <div class="tab-pane fade" id="stats" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-primary">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalEvents">0</div>
+                                        <div class="stat-label">Total Eventos</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-success">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statCompletedEvents">0</div>
+                                        <div class="stat-label">Completados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-danger">
+                                        <i class="fas fa-skull"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalKills">0</div>
+                                        <div class="stat-label">Mobs Eliminados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-info">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalParticipants">0</div>
+                                        <div class="stat-label">Participantes</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-trophy"></i> Top 10 Jugadores en Eventos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Jugador</th>
+                                                <th>Total Kills</th>
+                                                <th>Monedas de Evento</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topPlayersTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalles de Evento -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-info-circle"></i> Detalles del Evento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="eventDetailsContent"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Iniciar Evento Manual -->
+    <div class="modal fade" id="startEventModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-play"></i> Iniciar Evento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar Evento:</label>
+                        <select class="form-select" id="eventSelect"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mundo:</label>
+                        <input type="text" class="form-control" id="eventWorldInput" value="world" placeholder="world">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="confirmStartEvent">
+                        <i class="fas fa-play"></i> Iniciar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='events.js') }}"></script>
+</body>
+</html>

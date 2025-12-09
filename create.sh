@@ -7,6 +7,7 @@ echo "========================================="
 echo ""
 echo "[1/6] Creando directorios necesarios..."
 mkdir -p worlds plugins resourcepacks config logs backups/worlds
+mkdir -p config/plugin config/plugin-data
 
 # Verificar si existe estructura multi-mundo
 if [ -L "worlds/active" ]; then
@@ -237,8 +238,220 @@ EOF
     echo "✅ Archivo server.properties creado en config/"
 fi
 
+# Crear archivos JSON de configuración base si no existen
+echo "  Verificando archivos de configuración MMORPG..."
+if [ ! -f "config/crafting_config.json" ]; then
+    cat > config/crafting_config.json << 'EOF'
+{
+  "recipes": [],
+  "crafting_stations": [
+    {
+      "id": "workbench",
+      "name": "Crafting Table",
+      "material": "crafting_table",
+      "enabled": true
+    }
+  ]
+}
+EOF
+    echo "    ✅ crafting_config.json creado"
+fi
+
+# Configuración base de encantamientos
+if [ ! -f "config/enchanting_config.json" ]; then
+        cat > config/enchanting_config.json << 'EOF'
+{
+    "stations": [
+        { "id": "altar_basic", "name": "Altar Básico", "max_tier": "UNCOMMON", "success": 90 }
+    ],
+    "rules": {
+        "base_success": 80,
+        "tier_scaling": { "UNCOMMON": 100, "RARE": 90, "EPIC": 80, "LEGENDARY": 70 }
+    }
+}
+EOF
+        echo "    ✅ enchanting_config.json creado"
+fi
+
+# Configuración base de mascotas
+if [ ! -f "config/pets_config.json" ]; then
+        cat > config/pets_config.json << 'EOF'
+{
+    "pet_settings": {
+        "max_pets_per_player": 3
+    },
+    "pets": [
+        {
+            "id": "wolf_pup",
+            "name": "Lobezno",
+            "type": "COMBAT",
+            "rarity": "COMMON",
+            "base_stats": { "health": 20, "damage": 3, "speed": 0.2 },
+            "adoption_cost": 100,
+            "feed_restore_health": 5,
+            "evolution_levels": [ { "stats_multiplier": 1.0 }, { "stats_multiplier": 1.2 } ]
+        }
+    ],
+    "mounts": [
+        {
+            "id": "horse_brown",
+            "name": "Corcel Marrón",
+            "speed": 0.25,
+            "jump": 0.5,
+            "unlock_cost": 250
+        }
+    ]
+}
+EOF
+        echo "    ✅ pets_config.json creado"
+fi
+
+if [ ! -f "config/respawn_config.json" ]; then
+    cat > config/respawn_config.json << 'EOF'
+{
+  "respawn_settings": {
+    "enabled": true,
+    "cooldown_seconds": 5,
+    "message_on_respawn": "Has resucitado"
+  },
+  "respawn_points": {
+    "default": {
+      "world": "world",
+      "x": 0,
+      "y": 64,
+      "z": 0
+    }
+  }
+}
+EOF
+    echo "    ✅ respawn_config.json creado"
+fi
+
 echo ""
-echo "[3/6] Descargando plugins..."
+echo "[3/7] Compilando e instalando plugin MMORPG..."
+
+# Verificar si existe Maven
+if ! command -v mvn &> /dev/null; then
+    echo "  ⚠️  Maven no está instalado"
+    echo "  Instalando Maven..."
+    if [ -x "scripts/install-dependencies.sh" ]; then
+        bash scripts/install-dependencies.sh
+    else
+        echo "  ❌ No se pudo instalar Maven automáticamente"
+        echo "  Por favor, instala Maven manualmente"
+    fi
+fi
+
+# Compilar el plugin MMORPG
+if [ -d "mmorpg-plugin" ]; then
+    echo "  📦 Compilando plugin MMORPG..."
+    cd mmorpg-plugin
+    mvn clean package -q > /dev/null 2>&1
+    COMPILE_STATUS=$?
+    cd ..
+    
+    if [ $COMPILE_STATUS -eq 0 ]; then
+        echo "    ✅ Plugin MMORPG compilado exitosamente"
+        
+        # Copiar JAR al directorio de plugins
+        JAR_FILE="mmorpg-plugin/target/mmorpg-plugin-1.0.0.jar"
+        if [ -f "$JAR_FILE" ]; then
+            cp "$JAR_FILE" plugins/mmorpg-plugin-1.0.0.jar
+            echo "    ✅ JAR copiado a directorio de plugins"
+        else
+            echo "    ❌ No se encontró el archivo JAR compilado"
+        fi
+        
+        # Preparar rutas de configuración y datos en el plugin
+        PLUGIN_DIR="plugins/MMORPGPlugin"
+        DATA_DIR="$PLUGIN_DIR/data"
+        ACTIVE_WORLD=$(readlink worlds/active || echo "world")
+        mkdir -p "$PLUGIN_DIR" "$DATA_DIR" "$DATA_DIR/$ACTIVE_WORLD"
+        echo "    ✅ Directorios del plugin preparados: $PLUGIN_DIR y $DATA_DIR/$ACTIVE_WORLD"
+
+        # Sincronizar configuraciones universales desde config/plugin/ al directorio del plugin
+        UNIVERSAL_CONFIGS=(
+          "achievements_config.json"
+          "bestiary_config.json"
+          "crafting_config.json"
+          "dungeons_config.json"
+          "enchanting_config.json"
+          "enchantments_config.json"
+          "events_config.json"
+          "invasions_config.json"
+          "pets_config.json"
+          "ranks_config.json"
+          "respawn_config.json"
+          "squad_config.json"
+        )
+        for cfg in "${UNIVERSAL_CONFIGS[@]}"; do
+            # Intentar copiar desde config/plugin/ primero (desde .example)
+            if [ -f "config/plugin/$cfg.example" ]; then
+                cp "config/plugin/$cfg.example" "$PLUGIN_DIR/$cfg" 2>/dev/null
+            # Fallback: copiar desde config/ si existe (backwards compatibility)
+            elif [ -f "config/$cfg" ]; then
+                cp "config/$cfg" "$PLUGIN_DIR/$cfg" 2>/dev/null
+            # Último recurso: crear placeholder vacío
+            elif [ ! -f "$PLUGIN_DIR/$cfg" ]; then
+                echo "{}" > "$PLUGIN_DIR/$cfg"
+            fi
+        done
+        echo "    ✅ Configuraciones universales sincronizadas en $PLUGIN_DIR desde config/plugin/"
+
+        # Copiar datos universales desde config/plugin-data/ (Universal scope)
+        GLOBAL_DATA_FILES=(
+          "items.json"
+          "mobs.json"
+          "npcs.json"
+          "quests.json"
+          "pets.json"
+          "enchantments.json"
+        )
+        for data_file in "${GLOBAL_DATA_FILES[@]}"; do
+            TARGET="$DATA_DIR/$data_file"
+            if [ ! -f "$TARGET" ]; then
+                # Intentar copiar desde config/plugin-data/ primero
+                if [ -f "config/plugin-data/$data_file.example" ]; then
+                    cp "config/plugin-data/$data_file.example" "$TARGET" 2>/dev/null
+                else
+                    # Crear vacío como fallback
+                    echo "{}" > "$TARGET"
+                fi
+            fi
+        done
+        echo "    ✅ Datos universales copiados en $DATA_DIR desde config/plugin-data/"
+
+        # Crear datos locales y exclusive-local del mundo activo
+        # Local scope (npcs, quests, mobs, pets, enchantments)
+        for world_file in npcs.json quests.json mobs.json pets.json enchantments.json; do
+            TARGET="$DATA_DIR/$ACTIVE_WORLD/$world_file"
+            if [ ! -f "$TARGET" ]; then
+                echo "{}" > "$TARGET"
+            fi
+        done
+        # Exclusive-local scope (players, status, invasions, kills, respawn, squads, metadata)
+        for world_file in players.json status.json invasions.json kills.json respawn.json squads.json metadata.json; do
+            TARGET="$DATA_DIR/$ACTIVE_WORLD/$world_file"
+            if [ ! -f "$TARGET" ]; then
+                # Arrays para invasions y squads, objects para el resto
+                if [[ "$world_file" =~ ^(invasions|squads)\.json$ ]]; then
+                    echo "[]" > "$TARGET"
+                else
+                    echo "{}" > "$TARGET"
+                fi
+            fi
+        done
+        echo "    ✅ Datos locales y exclusive-local del mundo activo inicializados en $DATA_DIR/$ACTIVE_WORLD"
+    else
+        echo "    ⚠️  Error en compilación del plugin MMORPG"
+        echo "    Se continuará con la instalación sin el plugin"
+    fi
+else
+    echo "  ℹ️  Directorio mmorpg-plugin no encontrado, saltando compilación"
+fi
+
+echo ""
+echo "[4/7] Descargando plugins..."
 echo "Descargando últimas versiones de: GeyserMC, Floodgate, ViaVersion, ViaBackwards, ViaRewind"
 
 # Descargar GeyserMC
@@ -286,8 +499,8 @@ curl -L -o plugins/ViaRewind.jar "$VIAREWIND_URL" 2>/dev/null
 echo "    ✅ ViaRewind descargado ($(ls -lh plugins/ViaRewind.jar 2>/dev/null | awk '{print $5}'))"
 
 echo ""
-echo "[4/6] Construyendo imagen Docker..."
-sudo docker-compose build
+echo "[5/7] Construyendo imagen Docker..."
+sudo docker-compose build minecraft-paper
 
 if [ $? -ne 0 ]; then
     echo "❌ Error al construir la imagen"
@@ -295,8 +508,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[5/6] Levantando contenedor..."
-sudo docker-compose up -d
+echo "[6/7] Levantando contenedor..."
+sudo docker-compose up -d minecraft-paper
 
 if [ $? -ne 0 ]; then
     echo "❌ Error al levantar el contenedor"
@@ -304,8 +517,32 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[6/6] Esperando a que el servidor inicie..."
+echo "[7/7] Esperando a que el servidor inicie..."
 sleep 5
+
+# Verificar si el plugin MMORPG se cargó correctamente
+echo ""
+echo "========================================="
+echo "Verificando plugin MMORPG..."
+echo "========================================="
+sleep 2
+
+if docker ps --format '{{.Names}}' | grep -q "^minecraft-paper$" 2>/dev/null; then
+    if docker exec minecraft-paper test -f /server/plugins/mmorpg-plugin-1.0.0.jar 2>/dev/null; then
+        echo "✅ Plugin MMORPG detectado en el servidor"
+        
+        # Esperar a que el plugin cree sus archivos de configuración
+        echo "   Esperando a que el plugin genere archivos de configuración..."
+        sleep 3
+        
+        if docker exec minecraft-paper test -d /server/plugins/MMORPGPlugin 2>/dev/null; then
+            echo "   ✅ Directorio de configuración del plugin detectado"
+        fi
+    else
+        echo "⚠️  Plugin MMORPG no encontrado en el servidor"
+        echo "   Puedes instalarlo manualmente ejecutando: bash quick-install.sh"
+    fi
+fi
 
 echo ""
 echo "========================================="
@@ -313,6 +550,7 @@ echo "✅ Servidor creado exitosamente"
 echo "========================================="
 echo ""
 echo "Plugins instalados:"
+echo "  - MMORPG Plugin (sistema RPG completo)"
 echo "  - GeyserMC (soporte Bedrock)"
 echo "  - Floodgate (autenticación Bedrock)"
 echo "  - ViaVersion (soporte multi-versión)"

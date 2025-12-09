@@ -1,0 +1,27 @@
+{
+  "respawn": {
+    "enabled": true,
+    "instant_respawn": false,
+    "respawn_delay_seconds": 5,
+    "respawn_location_type": "world_spawn",
+    "maintain_inventory": true,
+    "maintain_experience": false,
+    "experience_loss_percentage": 10,
+    "death_currency_loss": 100
+  },
+  "locations": [
+    {
+      "world": "mmorpg-survival",
+      "x": 0,
+      "y": 64,
+      "z": 0,
+      "yaw": 0,
+      "pitch": 0
+    }
+  ],
+  "settings": {
+    "allow_custom_respawn": true,
+    "show_respawn_countdown": true,
+    "notify_death": true
+  }
+}

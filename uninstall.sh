@@ -24,7 +24,7 @@ sudo docker-compose down 2>/dev/null || echo "⚠️  No hay contenedores corrie
 
 echo ""
 echo "[2/3] Eliminando imagen Docker..."
-sudo docker rmi mc-paper_minecraft 2>/dev/null || echo "⚠️  Imagen no encontrada"
+sudo docker rmi minecraft-paper 2>/dev/null || echo "⚠️  Imagen no encontrada"
 
 echo ""
 echo "[3/3] Limpiando sistema Docker..."
@@ -35,8 +35,9 @@ read -p "¿Deseas eliminar también los datos del mundo y configuraciones (s/n)?
 
 if [[ "$delete_data" =~ ^[sS]$ ]]; then
     echo ""
-    echo "Eliminando carpetas: worlds/, plugins/, resourcepacks/, logs/, config/, backups/"
-    sudo rm -rf worlds plugins resourcepacks logs config plugins_backup backups
+    echo "Eliminando carpetas: worlds/, plugins/, resourcepacks/, logs/, backups/"
+    echo "⏭️  Conservando config/ (contiene archivos de ejemplo del plugin)"
+    sudo rm -rf worlds plugins resourcepacks logs plugins_backup backups
     echo "✅ Datos eliminados"
 else
     echo ""
@@ -56,7 +57,7 @@ if [[ ! "$delete_data" =~ ^[sS]$ ]]; then
     echo "  - ./plugins/"
     echo "  - ./resourcepacks/"
     echo "  - ./logs/"
-    echo "  - ./config/ (server.properties y configuraciones del panel)"
+    echo "  - ./config/ (archivos .example del plugin - esencial para futuras instalaciones)"
     echo "  - ./docs/ (documentación)"
     echo "  - ./web/ (código del panel web)"
     echo ""

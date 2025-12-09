@@ -87,6 +87,25 @@ Gestiona tu servidor Minecraft de forma moderna y eficiente con interfaz web com
 - ✅ **Cache TTL** configurable
 - ✅ **Status UI** (Active/Paused)
 
+### 🎯 Normalización de Estructura de Archivos (FASE 2 - COMPLETADO)
+- ✅ **Centralización de configuraciones** en `config/plugin/`
+- ✅ **Datos universales** (globales) en `plugins/MMORPGPlugin/data/`
+- ✅ **Datos locales por mundo** en `plugins/MMORPGPlugin/data/{mundo}/`
+- ✅ **PathResolver.java** (230 líneas) - Resolución automática de rutas
+- ✅ **DataInitializer.java** (250 líneas) - Auto-inicialización de archivos
+- ✅ **Scope-based data access** - Python y Java sincronizados
+- ✅ **Auto-generación de datos** - Fallback a valores por defecto
+- ✅ **Eliminación de duplicados** - Una única fuente de verdad
+- ✅ **17 archivos .example** - Referencia para configuraciones
+- ✅ **6 datos universales** - items, mobs, npcs, quests, pets, enchantments
+
+### 📁 Reorganización de Directorios (COMPLETADO)
+- ✅ **Raíz limpia** - Solo 7 scripts principales + README
+- ✅ **Carpeta `scripts/`** - 24 scripts de utilidades y mantenimiento
+- ✅ **Carpeta `test/`** - 6 archivos de pruebas y testing
+- ✅ **Carpeta `config/`** - Estructura normalizada con .example
+- ✅ **Carpeta `docs/`** - Toda documentación centralizada
+
 ---
 
 ## 📸 Capturas de Pantalla

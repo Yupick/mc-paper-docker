@@ -18,6 +18,10 @@ commands:
     description: Ver y gestionar tus quests
     usage: /<command> [list|start|abandon|info]
     permission: mmorpg.quest
+  mob:
+    description: Spawnear mobs custom en el mundo
+    usage: /rpg mob spawn <id> [mundo] [x] [y] [z]
+    permission: mmorpg.admin
 
 permissions:
   mmorpg.*:

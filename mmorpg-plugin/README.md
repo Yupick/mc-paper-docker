@@ -1,15 +1,72 @@
-# MMORPG Plugin - Fase 1
+# MMORPG Plugin - Desarrollo Activo 🚀
 
-Plugin de Minecraft Paper 1.21.1 que añade características MMORPG a mundos específicos.
+Plugin de Minecraft Paper 1.21.1 que añade características MMORPG completas.
+
+## 📊 Progreso del Desarrollo
+
+### ✅ FASE 1: SISTEMAS FUNDAMENTALES (100%)
+- ✅ Módulo 1.1: Sistema de Clases y Habilidades
+- ✅ Módulo 1.2: Sistema de Niveles y Progresión
+- ✅ Módulo 1.3: Sistema de Estadísticas
+- ✅ Módulo 1.4: Sistema de Quests
+- ✅ Módulo 1.5: NPCs y Diálogos
+
+### ✅ FASE 2: CONTENIDO Y EVENTOS (100%)
+- ✅ Módulo 2.1: Sistema de Invasiones
+- ✅ Módulo 2.2: Sistema de Eventos Mundiales
+- ✅ Módulo 2.3: Sistema de Mazmorras
+- ✅ Módulo 2.4: Sistema de Escuadras
+
+### 🔄 FASE 3: ECONOMÍA Y CRAFTEO (40%)
+- ✅ Módulo 3.1: Sistema de Crafteo (COMPLETADO)
+- ✅ Módulo 3.2: Encantamientos Personalizados (COMPLETADO) ✨
+- ⏳ Módulo 3.3: Mascotas y Monturas (SIGUIENTE)
+- ⏳ Módulo 3.4: Dungeons Procedurales
+- ⏳ Módulo 3.5: Integración Discord
+
+**Último módulo completado**: Encantamientos Personalizados (12 encantamientos únicos, 4 estaciones, panel web completo)
 
 ## 📋 Descripción
 
-Este plugin permite activar el modo RPG en mundos individuales, añadiendo características como:
+Este plugin añade un sistema MMORPG completo con:
 
-- ✅ Sistema de clases (Fase 1: Básico)
-- ✅ Sistema de quests (Fase 1: Básico)
-- ✅ NPCs (Fase 1: Básico)
-- ✅ Economía (Fase 1: Básico)
+- ✅ **9 Clases Jugables**: Guerrero, Mago, Arquero, Asesino, Paladín, Nigromante, Druida, Monje, Berserker
+- ✅ **Sistema de Habilidades**: 5 habilidades únicas por clase
+- ✅ **Sistema de Niveles**: Progresión hasta nivel 100 con curva exponencial
+- ✅ **Estadísticas RPG**: STR, AGI, INT, VIT, DEX, LUK
+- ✅ **Sistema de Quests**: 50+ misiones con recompensas
+- ✅ **NPCs Interactivos**: Sistema de diálogos y comercio
+- ✅ **Invasiones**: Oleadas de enemigos con recompensas
+- ✅ **Eventos Mundiales**: Boss raids, tesoros, meteoritos
+- ✅ **Mazmorras**: Instancias con dificultades
+- ✅ **Escuadras**: Sistema de guilds con niveles
+- ✅ **Crafteo Avanzado**: 15 recetas RPG con estaciones especializadas
+- ✅ **Encantamientos**: 12 encantamientos únicos en 4 niveles de rareza
+- ✅ **Panel Web**: Interfaz completa con 45+ endpoints API
+- ✅ **Economía**: Sistema de monedas y comercio
+
+## 🎯 Características del Módulo 3.2: Encantamientos
+
+### 12 Encantamientos Únicos
+- **UNCOMMON (2)**: Experience Boost, Coin Finder
+- **RARE (4)**: Flame Burst, Frost Touch, Venom Strike, Shield Bash
+- **EPIC (4)**: Life Steal, Auto-Repair, Critical Master, Thorns Aura
+- **LEGENDARY (2)**: Thunder Strike, Soul Bound
+
+### 4 Estaciones de Encantamiento
+- **Altar Básico**: Hasta UNCOMMON (90% éxito)
+- **Altar Avanzado**: Hasta RARE (80% éxito)
+- **Altar Maestro**: Hasta EPIC (70% éxito)
+- **Altar Legendario**: Todos los niveles (60% éxito)
+
+### Sistema de Mecánicas
+- Tasa de éxito dinámica según rareza
+- Máximo 3 encantamientos por item
+- Costos en monedas y XP escalables
+- Sistema de incompatibilidades
+- Panel web con tema mágico (púrpura/dorado)
+
+Ver documentación completa: `docs/MODULO_3_2_ENCHANTING_COMPLETADO.md`
 
 ## 🏗️ Estructura del Proyecto
 

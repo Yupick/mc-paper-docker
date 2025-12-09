@@ -92,7 +92,7 @@ else
     
     echo ""
     echo "[2/5] Eliminando imagen actual..."
-    sudo docker rmi mc-paper_minecraft 2>/dev/null || echo "⚠️  Imagen no encontrada, continuando..."
+    sudo docker rmi minecraft-paper 2>/dev/null || echo "⚠️  Imagen no encontrada, continuando..."
     
     echo ""
     echo "[3/5] Construyendo nueva imagen (descargando última versión de PaperMC)..."

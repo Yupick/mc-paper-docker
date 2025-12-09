@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  minecraft:
+  minecraft-paper:
     build: .
     container_name: minecraft-paper
     restart: unless-stopped
@@ -18,6 +18,7 @@ services:
       - ./plugins:/server/plugins
       - ./resourcepacks:/server/resourcepacks
       - ./logs:/server/logs
+      - ./config:/server/plugins/MMORPGPlugin
     environment:
       - EULA=TRUE
       - RCON_PASSWORD=minecraft123

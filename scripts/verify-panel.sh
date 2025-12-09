@@ -210,7 +210,7 @@ if command -v docker &> /dev/null; then
         check_warning "Usuario NO tiene permisos de Docker (intenta con sudo o agrega usuario al grupo docker)"
     fi
     
-    if docker ps | grep -q "mc-paper"; then
+    if docker ps | grep -q "minecraft-paper"; then
         check_ok "Contenedor mc-paper está corriendo"
     else
         check_warning "Contenedor mc-paper NO está corriendo"

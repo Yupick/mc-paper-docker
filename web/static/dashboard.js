@@ -190,6 +190,37 @@ function showSection(sectionName, evt) {
 
 // ==================== DASHBOARD ====================
 
+function loadRPGSection() {
+    // Cargar mundo activo y preparar panel RPG
+    fetch('/api/worlds/active')
+        .then(r => r.json())
+        .then(data => {
+            const nameEl = document.getElementById('rpg-world-name');
+            if (!data.success || !data.world) {
+                if (nameEl) nameEl.textContent = 'Desconocido';
+                showRPGError('No hay mundo activo');
+                return;
+            }
+            const world = data.world;
+            if (nameEl) nameEl.textContent = world.name;
+            if (world.isRPG) {
+                // Inicializar sección RPG para el mundo activo
+                if (typeof initRPGSection === 'function') {
+                    initRPGSection(world.slug);
+                }
+            } else {
+                // Mundo activo no es RPG
+                const sidebarRPG = document.getElementById('sidebar-rpg');
+                if (sidebarRPG) sidebarRPG.classList.add('d-none');
+                showRPGError('El mundo activo no tiene modo RPG habilitado');
+            }
+        })
+        .catch(err => {
+            console.error('Error cargando mundo activo para RPG:', err);
+            showRPGError('Error de conexión al cargar datos del mundo');
+        });
+}
+
 function loadDashboard() {
     loadServerStatus();
     loadLogs();
