@@ -1,0 +1,49 @@
+{
+  "enabled": true,
+  "ranks": {
+    "novato": {
+      "name": "Novato",
+      "description": "Primer rango del sistema",
+      "order": 1,
+      "requirements": {
+        "level": 1,
+        "achievementsCompleted": 0
+      },
+      "reward": {
+        "xp": 100,
+        "coins": 50,
+        "title": "Novato"
+      }
+    },
+    "aventurero": {
+      "name": "Aventurero",
+      "description": "Supera los primeros retos",
+      "order": 2,
+      "requirements": {
+        "level": 5,
+        "achievementsCompleted": 1
+      },
+      "reward": {
+        "xp": 500,
+        "coins": 200,
+        "title": "Aventurero",
+        "broadcast": true
+      }
+    },
+    "heroe": {
+      "name": "Heroe",
+      "description": "Jugadores comprometidos con el RPG",
+      "order": 3,
+      "requirements": {
+        "level": 12,
+        "achievementsCompleted": 3
+      },
+      "reward": {
+        "xp": 2000,
+        "coins": 1000,
+        "title": "Heroe",
+        "broadcast": true
+      }
+    }
+  }
+}

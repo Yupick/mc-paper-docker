@@ -1,0 +1,1 @@
+{"squad_system":{"enabled":true,"max_squads":100,"max_squad_size":10,"min_squad_size":2,"squad_level_requirement":5,"economy":{"create_cost":500,"level_up_cost_base":1000,"level_up_cost_multiplier":1.5,"treasury_tax_percent":5}}}
