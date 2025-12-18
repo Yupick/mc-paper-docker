@@ -7,13 +7,29 @@ from typing import Optional, Dict, List
 class RPGManager:
     """Gestiona la integración del plugin MMORPG con el panel web"""
     
-    def __init__(self, plugin_data_path: str = "/home/mkd/contenedores/mc-paper/plugins/MMORPGPlugin/data"):
+    def __init__(self, plugin_data_path: str = None, worlds_base_path: str = None):
+        """
+        Inicializa el RPG Manager
+        
+        Args:
+            plugin_data_path: Ruta al directorio de datos del plugin (ej: /path/plugins/MMORPGPlugin/data)
+            worlds_base_path: Ruta base donde se almacenan los mundos (ej: /path/worlds)
+        """
+        if plugin_data_path is None:
+            # Ruta por defecto (para compatibilidad con código existente)
+            plugin_data_path = "/home/mkd/contenedores/mc-paper/plugins/MMORPGPlugin/data"
+        
+        if worlds_base_path is None:
+            # Ruta por defecto
+            worlds_base_path = "/home/mkd/contenedores/mc-paper/worlds"
+        
         self.plugin_data_path = Path(plugin_data_path)
+        self.worlds_base_path = Path(worlds_base_path)
 
     def _resolve_world_data_dir(self, world_slug: str) -> Path:
         """Devuelve la carpeta donde el plugin guarda datos para el mundo activo."""
         # 1) Intentar level-name real (server.properties)
-        server_props = Path("/home/mkd/contenedores/mc-paper/worlds") / world_slug / "server.properties"
+        server_props = self.worlds_base_path / world_slug / "server.properties"
         candidates = []
         if server_props.exists():
             try:
@@ -95,8 +111,7 @@ class RPGManager:
             Dict con configuración RPG o None si no existe
         """
         # Leer desde el directorio de mundos
-        worlds_path = Path("/home/mkd/contenedores/mc-paper/worlds")
-        metadata_file = worlds_path / world_slug / "metadata.json"
+        metadata_file = self.worlds_base_path / world_slug / "metadata.json"
         
         if not metadata_file.exists():
             return None
@@ -168,7 +183,7 @@ class RPGManager:
         Returns:
             True si el mundo es RPG, False en caso contrario
         """
-        metadata_file = Path("/home/mkd/contenedores/mc-paper/worlds") / world_slug / "metadata.json"
+        metadata_file = self.worlds_base_path / world_slug / "metadata.json"
         
         if not metadata_file.exists():
             return False
