@@ -20,9 +20,11 @@ import com.nightslayer.mmorpg.i18n.LanguageManager;
 import com.nightslayer.mmorpg.invasions.InvasionManager;
 import com.nightslayer.mmorpg.items.ItemManager;
 import com.nightslayer.mmorpg.listeners.MobDeathListener;
+import com.nightslayer.mmorpg.listeners.SpawnListener;
 import com.nightslayer.mmorpg.mobs.MobManager;
 import com.nightslayer.mmorpg.ranks.RankManager;
 import com.nightslayer.mmorpg.respawn.RespawnManager;
+import com.nightslayer.mmorpg.spawns.SpawnManager;
 import com.nightslayer.mmorpg.npcs.NPCManager;
 import com.nightslayer.mmorpg.quests.QuestManager;
 import com.nightslayer.mmorpg.squads.SquadManager;
@@ -56,6 +58,7 @@ public class MMORPGPlugin extends JavaPlugin {
     private EnchantmentManager enchantmentManager;
     private PetManager petManager;
     private RespawnManager respawnManager;
+    private SpawnManager spawnManager;
     private EconomyManager economyManager;
     private ShopManager shopManager;
     private RPGAdminAPI adminAPI;
@@ -112,6 +115,7 @@ public class MMORPGPlugin extends JavaPlugin {
         petManager = new PetManager(this);
         questManager = new QuestManager(this, classManager);
         respawnManager = new RespawnManager(this, mobManager);
+        spawnManager = new SpawnManager(this);
         adminAPI = new RPGAdminAPI(this);
         
         // Detectar mundos RPG
@@ -127,6 +131,9 @@ public class MMORPGPlugin extends JavaPlugin {
         
         // Registrar listener de muerte de mobs custom
         getServer().getPluginManager().registerEvents(new MobDeathListener(this, mobManager, itemManager, bestiaryManager, achievementManager, invasionManager, eventManager), this);
+        
+        // Registrar listener de spawns
+        getServer().getPluginManager().registerEvents(new SpawnListener(this, spawnManager), this);
         
         // Iniciar sincronización con panel web
         startWebPanelSync();
@@ -162,12 +169,18 @@ public class MMORPGPlugin extends JavaPlugin {
         
         if (npcManager != null) {
             npcManager.despawnAll();
-            npcManager.saveAll();
+            // TODO: Guardar NPCs por cada mundo RPG activo
+            // npcManager.saveAll(worldName);
         }
         
         // Detener respawn manager
         if (respawnManager != null) {
             respawnManager.shutdown();
+        }
+        
+        // Detener spawn manager
+        if (spawnManager != null) {
+            spawnManager.shutdown();
         }
 
         if (bestiaryManager != null) {
@@ -239,6 +252,9 @@ public class MMORPGPlugin extends JavaPlugin {
                         // Inicializar archivos de datos del mundo RPG
                         dataInitializer.initializeWorldData(worldFolder.getName());
                         
+                        // Cargar spawns del mundo
+                        spawnManager.loadWorldSpawns(worldFolder.getName());
+                        
                         if (getConfig().getBoolean("plugin.debug", false)) {
                             getLogger().info("Mundo RPG detectado: " + worldFolder.getName());
                         }
@@ -248,6 +264,11 @@ public class MMORPGPlugin extends JavaPlugin {
         }
         
         getLogger().info("Detectados " + rpgWorldsCount + " mundos con modo RPG activado");
+        
+        // Iniciar tarea de respawn de spawns
+        if (rpgWorldsCount > 0) {
+            spawnManager.startRespawnTask();
+        }
     }
     
     /**
@@ -392,6 +413,10 @@ public class MMORPGPlugin extends JavaPlugin {
 
     public PetManager getPetManager() {
         return petManager;
+    }
+    
+    public SpawnManager getSpawnManager() {
+        return spawnManager;
     }
 
     public DatabaseManager getDatabase() {

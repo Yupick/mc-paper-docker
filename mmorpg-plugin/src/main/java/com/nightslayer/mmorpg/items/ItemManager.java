@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.nightslayer.mmorpg.MMORPGPlugin;
+import com.nightslayer.mmorpg.RPGPathResolver;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -16,9 +17,11 @@ import java.util.*;
 
 /**
  * Gestiona items RPG custom con atributos y rarezas
+ * Lee desde: plugins/MMORPGPlugin/data/items.json (universal)
  */
 public class ItemManager {
     private final MMORPGPlugin plugin;
+    private final RPGPathResolver pathResolver;
     private final Map<String, RPGItem> items;
     private final Map<String, Rarity> rarities;
     private final File itemsFile;
@@ -26,16 +29,14 @@ public class ItemManager {
     
     public ItemManager(MMORPGPlugin plugin) {
         this.plugin = plugin;
+        this.pathResolver = plugin.getWorldRPGManager().getPathResolver();
         this.items = new HashMap<>();
         this.rarities = new HashMap<>();
-        this.itemsFile = new File(plugin.getDataFolder(), "data/items.json");
+        this.itemsFile = pathResolver.getUniversalFile("items.json");
         this.gson = new GsonBuilder().setPrettyPrinting().create();
 
-        // Asegurar carpeta y archivo de items
-        File parentDir = itemsFile.getParentFile();
-        if (!parentDir.exists()) {
-            parentDir.mkdirs();
-        }
+        // Asegurar carpeta y archivo de items (universal)
+        pathResolver.ensureUniversalDataDirExists();
         if (!itemsFile.exists()) {
             createDefaultItemsFile();
         }

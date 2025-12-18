@@ -1,0 +1,18 @@
+{
+  "mobs": [
+    {
+      "id": "zombie_warrior",
+      "name": "Guerrero Zombi",
+      "entityType": "ZOMBIE",
+      "level": 5,
+      "health": 100,
+      "damage": 15,
+      "drops": [
+        {
+          "item": "IRON_SWORD",
+          "chance": 0.1
+        }
+      ]
+    }
+  ]
+}

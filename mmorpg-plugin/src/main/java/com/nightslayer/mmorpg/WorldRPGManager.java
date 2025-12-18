@@ -13,19 +13,28 @@ public class WorldRPGManager {
     private final MMORPGPlugin plugin;
     private final Map<String, WorldMetadata> rpgWorlds;
     private final Gson gson;
+    private final RPGPathResolver pathResolver;
     
     public WorldRPGManager(MMORPGPlugin plugin) {
         this.plugin = plugin;
         this.rpgWorlds = new HashMap<>();
         this.gson = plugin.getGson();
+        this.pathResolver = new RPGPathResolver(plugin);
+    }
+    
+    /**
+     * Obtiene el path resolver
+     */
+    public RPGPathResolver getPathResolver() {
+        return pathResolver;
     }
     
     /**
      * Carga la metadata de un mundo desde su archivo metadata.json
      */
-    public WorldMetadata loadWorldMetadata(String worldSlug) {
+    public WorldMetadata loadWorldMetadata(String worldName) {
         String worldsBasePath = plugin.getConfig().getString("worlds.base-path", "/server/worlds");
-        File metadataFile = new File(worldsBasePath + "/" + worldSlug + "/metadata.json");
+        File metadataFile = new File(worldsBasePath + "/" + worldName + "/metadata.json");
         
         if (!metadataFile.exists()) {
             return null;
@@ -35,46 +44,49 @@ public class WorldRPGManager {
             return gson.fromJson(reader, WorldMetadata.class);
         } catch (IOException e) {
             plugin.getLogger().log(Level.WARNING, 
-                "Error al leer metadata de mundo: " + worldSlug, e);
+                "Error al leer metadata de mundo: " + worldName, e);
             return null;
         }
     }
     
     /**
      * Registra un mundo como RPG activo
+     * Crea estructura: worlds/{worldName}/data/ para archivos locales
      */
-    public void registerRPGWorld(String worldSlug, WorldMetadata metadata) {
-        rpgWorlds.put(worldSlug, metadata);
+    public void registerRPGWorld(String worldName, WorldMetadata metadata) {
+        rpgWorlds.put(worldName, metadata);
         
-        // Crear estructura de datos para este mundo si no existe
-        File worldDataDir = new File(plugin.getDataFolder(), "data/" + worldSlug);
-        if (!worldDataDir.exists()) {
-            worldDataDir.mkdirs();
-            
-            // Crear archivos base
-            createBaseDataFiles(worldSlug);
+        // Crear directorio de datos locales del mundo si no existe
+        if (pathResolver.ensureWorldDataDirExists(worldName)) {
+            // Crear archivos base locales
+            createBaseDataFiles(worldName);
+            plugin.getLogger().info("Mundo RPG registrado: " + worldName);
+        } else {
+            plugin.getLogger().warning("No se pudo crear directorio de datos para: " + worldName);
         }
     }
     
     /**
      * Crea archivos de datos base para un mundo RPG
+     * Archivos locales en worlds/{worldName}/data/
      */
-    private void createBaseDataFiles(String worldSlug) {
-        File worldDataDir = new File(plugin.getDataFolder(), "data/" + worldSlug);
+    private void createBaseDataFiles(String worldName) {
+        // Archivos locales del mundo
+        String[] localFiles = {"status.json", "players.json", "npcs.json", "quests.json", "spawns.json", "dungeons.json"};
         
-        // Crear status.json
-        File statusFile = new File(worldDataDir, "status.json");
-        if (!statusFile.exists()) {
-            plugin.getDataManager().createDefaultStatusFile(worldSlug);
+        for (String filename : localFiles) {
+            File dataFile = pathResolver.getLocalFile(worldName, filename);
+            if (!dataFile.exists()) {
+                if (filename.equals("status.json")) {
+                    plugin.getDataManager().createDefaultStatusFile(worldName);
+                } else if (filename.equals("players.json")) {
+                    plugin.getDataManager().createDefaultPlayersFile(worldName);
+                }
+                // Los demás archivos se crearán cuando sean necesarios
+            }
         }
         
-        // Crear players.json
-        File playersFile = new File(worldDataDir, "players.json");
-        if (!playersFile.exists()) {
-            plugin.getDataManager().createDefaultPlayersFile(worldSlug);
-        }
-        
-        plugin.getLogger().info("Archivos de datos creados para mundo RPG: " + worldSlug);
+        plugin.getLogger().info("Archivos de datos creados para mundo RPG: " + worldName);
     }
     
     /**

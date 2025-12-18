@@ -1,6 +1,7 @@
 package com.nightslayer.mmorpg.mobs;
 
 import com.nightslayer.mmorpg.MMORPGPlugin;
+import com.nightslayer.mmorpg.RPGPathResolver;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -21,9 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Gestiona mobs personalizados del plugin MMORPG
+ * Lee desde: plugins/MMORPGPlugin/data/mobs.json (universal)
  */
 public class MobManager {
     private final MMORPGPlugin plugin;
+    private final RPGPathResolver pathResolver;
     private final Map<String, CustomMob> customMobs;
     private final Map<UUID, String> spawnedMobs; // UUID de entidad -> ID de custom mob
     private final File mobsFile;
@@ -31,20 +34,21 @@ public class MobManager {
     
     public MobManager(MMORPGPlugin plugin) {
         this.plugin = plugin;
+        this.pathResolver = plugin.getWorldRPGManager().getPathResolver();
         this.customMobs = new ConcurrentHashMap<>();
         this.spawnedMobs = new ConcurrentHashMap<>();
-        this.mobsFile = new File(plugin.getDataFolder(), "data/mobs.json");
+        this.mobsFile = pathResolver.getUniversalFile("mobs.json");
         this.gson = new GsonBuilder().setPrettyPrinting().create();
         
         loadMobs();
     }
     
     /**
-     * Carga mobs desde el archivo JSON
+     * Carga mobs desde el archivo JSON (universal)
      */
     public void loadMobs() {
         if (!mobsFile.exists()) {
-            mobsFile.getParentFile().mkdirs();
+            pathResolver.ensureUniversalDataDirExists();
             return;
         }
         

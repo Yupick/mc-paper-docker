@@ -13,17 +13,19 @@ from .world import World
 class WorldManager:
     """Gestiona todos los mundos del servidor"""
     
-    def __init__(self, worlds_base_path="/server/worlds"):
+    def __init__(self, worlds_base_path="/server/worlds", rpg_manager=None):
         """
         Inicializar gestor de mundos
         
         Args:
             worlds_base_path: Ruta base donde se almacenan los mundos
+            rpg_manager: Instancia de RPGManager para gestión de mundos RPG
         """
         self.worlds_base_path = Path(worlds_base_path)
         self.config_file = self.worlds_base_path / "worlds.json"
         self.active_symlink = self.worlds_base_path / "active"
         self.templates_path = self.worlds_base_path / "templates"
+        self.rpg_manager = rpg_manager
         
         # Asegurar que existen los directorios necesarios
         self.worlds_base_path.mkdir(parents=True, exist_ok=True)
@@ -214,6 +216,10 @@ class WorldManager:
         
         # Asegurar estructura de dimensiones requerida
         self._ensure_world_structure(world_path)
+        
+        # Inicializar archivos RPG si el mundo es RPG
+        if is_rpg and self.rpg_manager:
+            self.rpg_manager.initialize_rpg_world(slug, rpg_config)
         
         # Actualizar configuración
         self.config['worlds'].append({

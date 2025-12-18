@@ -17,6 +17,16 @@ const rpgState = {
 };
 
 /**
+ * Inicializa los modales en el DOM al cargar la página
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Insertar modales de Spawns y Dungeons
+    const modalsContainer = document.createElement('div');
+    modalsContainer.innerHTML = getSpawnModalsHTML() + getDungeonModalsHTML();
+    document.body.appendChild(modalsContainer);
+});
+
+/**
  * Inicializa la sección RPG para un mundo
  */
 async function initRPGSection(worldSlug) {
@@ -174,6 +184,18 @@ function renderRPGDashboard(summary) {
                 <button class="nav-link" id="respawn-tab" data-bs-toggle="tab" data-bs-target="#respawn" 
                         type="button" role="tab" onclick="switchRPGTab('respawn')">
                     <i class="bi bi-arrow-repeat"></i> Respawn
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="spawns-tab" data-bs-toggle="tab" data-bs-target="#spawns" 
+                        type="button" role="tab" onclick="switchRPGTab('spawns')">
+                    <i class="bi bi-pin-map"></i> Spawns
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="dungeons-tab" data-bs-toggle="tab" data-bs-target="#dungeons" 
+                        type="button" role="tab" onclick="switchRPGTab('dungeons')">
+                    <i class="bi bi-building"></i> Dungeons
                 </button>
             </li>
         </ul>
@@ -389,7 +411,25 @@ function renderRPGDashboard(summary) {
                     </div>
                 </div>
             </div>
+            
+            <!-- Tab: Spawns -->
+            <div class="tab-pane fade" id="spawns" role="tabpanel">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            </div>
+            
+            <!-- Tab: Dungeons -->
+            <div class="tab-pane fade" id="dungeons" role="tabpanel">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            </div>
         </div>
+        
+        <!-- Modales para Spawns y Dungeons -->
+        ${getSpawnModalsHTML()}
+        ${getDungeonModalsHTML()}
     `;
     
     // Cargar listas iniciales
@@ -587,6 +627,10 @@ function switchRPGTab(tab) {
         loadQuests();
     } else if (tab === 'mobs') {
         loadMobs();
+    } else if (tab === 'spawns') {
+        loadSpawns();
+    } else if (tab === 'dungeons') {
+        loadDungeons();
     }
 }
 
@@ -1806,4 +1850,805 @@ async function deleteMob(mobId, scope) {
     }
 }
 
+// ============================================================================
+// GESTIÓN DE SPAWNS
+// ============================================================================
 
+/**
+ * Carga los spawns del mundo actual
+ */
+async function loadSpawns() {
+    if (!rpgState.currentWorldSlug) return;
+    
+    try {
+        const response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/spawns`);
+        const data = await response.json();
+        
+        if (data.success) {
+            renderSpawnsTable(data.spawns);
+        } else {
+            document.getElementById('spawns').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i> ${data.message}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error al cargar spawns:', error);
+        document.getElementById('spawns').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle me-2"></i> Error de conexión al cargar spawns
+            </div>
+        `;
+    }
+}
+
+/**
+ * Renderiza la tabla de spawns
+ */
+function renderSpawnsTable(spawns) {
+    const container = document.getElementById('spawns');
+    
+    if (!spawns || spawns.length === 0) {
+        container.innerHTML = `
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-pin-map text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-3 text-muted">No hay spawns configurados</p>
+                    <button class="btn btn-primary" onclick="showCreateSpawnModal()">
+                        <i class="bi bi-plus-circle"></i> Crear Primer Spawn
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="bi bi-pin-map"></i> Puntos de Spawn (${spawns.length})</h4>
+            <button class="btn btn-primary" onclick="showCreateSpawnModal()">
+                <i class="bi bi-plus-circle"></i> Nuevo Spawn
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo</th>
+                        <th>Item/Entidad</th>
+                        <th>Coordenadas</th>
+                        <th>Respawn</th>
+                        <th>Tiempo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    spawns.forEach(spawn => {
+        const coords = `${spawn.x}, ${spawn.y}, ${spawn.z}`;
+        const respawnInfo = spawn.respawn_enabled 
+            ? `${spawn.respawn_time_seconds}s` 
+            : 'No';
+        const statusBadge = spawn.enabled 
+            ? '<span class="badge bg-success">Activo</span>' 
+            : '<span class="badge bg-secondary">Inactivo</span>';
+        
+        html += `
+            <tr>
+                <td><code>${spawn.id}</code></td>
+                <td><span class="badge bg-info">${spawn.type}</span></td>
+                <td>${spawn.item || spawn.entity_type || '-'}</td>
+                <td><small>${coords}</small></td>
+                <td>${respawnInfo}</td>
+                <td>
+                    ${spawn.respawn_on_death ? '<span class="badge bg-warning">Muerte</span> ' : ''}
+                    ${spawn.respawn_on_use ? '<span class="badge bg-primary">Uso</span>' : ''}
+                </td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick='editSpawn(${JSON.stringify(spawn)})'>
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSpawn('${spawn.id}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Muestra el modal para crear spawn
+ */
+function showCreateSpawnModal() {
+    // TODO: Crear modal de spawn
+    alert('Funcionalidad en desarrollo. Por ahora puedes usar la API directamente:\nPOST /api/worlds/' + rpgState.currentWorldSlug + '/rpg/spawns');
+}
+
+/**
+ * Edita un spawn
+ */
+function editSpawn(spawn) {
+    // TODO: Mostrar modal de edición
+    alert('Edición de spawn: ' + spawn.id);
+}
+
+/**
+ * Elimina un spawn
+ */
+async function deleteSpawn(spawnId) {
+    if (!confirm(`¿Eliminar el spawn "${spawnId}"?`)) return;
+    
+    try {
+        const response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/spawns/${spawnId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Spawn eliminado correctamente', 'success');
+            setTimeout(() => loadSpawns(), 500);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar spawn:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+// ============================================================================
+// GESTIÓN DE DUNGEONS
+// ============================================================================
+
+/**
+ * Carga las dungeons del mundo actual
+ */
+async function loadDungeons() {
+    if (!rpgState.currentWorldSlug) return;
+    
+    try {
+        const response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/dungeons`);
+        const data = await response.json();
+        
+        if (data.success) {
+            renderDungeonsTable(data.dungeons);
+        } else {
+            document.getElementById('dungeons').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i> ${data.message}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error al cargar dungeons:', error);
+        document.getElementById('dungeons').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle me-2"></i> Error de conexión al cargar dungeons
+            </div>
+        `;
+    }
+}
+
+/**
+ * Renderiza la tabla de dungeons
+ */
+function renderDungeonsTable(dungeons) {
+    const container = document.getElementById('dungeons');
+    
+    if (!dungeons || dungeons.length === 0) {
+        container.innerHTML = `
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-3 text-muted">No hay dungeons configuradas</p>
+                    <button class="btn btn-primary" onclick="showCreateDungeonModal()">
+                        <i class="bi bi-plus-circle"></i> Crear Primera Dungeon
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="bi bi-building"></i> Dungeons (${dungeons.length})</h4>
+            <button class="btn btn-primary" onclick="showCreateDungeonModal()">
+                <i class="bi bi-plus-circle"></i> Nueva Dungeon
+            </button>
+        </div>
+        <div class="row g-3">
+    `;
+    
+    dungeons.forEach(dungeon => {
+        const difficultyColors = {
+            'easy': 'success',
+            'normal': 'primary',
+            'hard': 'warning',
+            'extreme': 'danger'
+        };
+        const diffColor = difficultyColors[dungeon.difficulty] || 'secondary';
+        const statusBadge = dungeon.enabled 
+            ? '<span class="badge bg-success">Activa</span>' 
+            : '<span class="badge bg-secondary">Inactiva</span>';
+        
+        const location = dungeon.location && dungeon.location.x !== undefined
+            ? `${dungeon.location.x}, ${dungeon.location.y}, ${dungeon.location.z}`
+            : 'No definida';
+        
+        html += `
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-${diffColor} text-white">
+                        <h5 class="mb-0">${dungeon.name}</h5>
+                        <small>${statusBadge}</small>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">${dungeon.description || 'Sin descripción'}</p>
+                        <hr>
+                        <div class="mb-2">
+                            <strong>ID:</strong> <code>${dungeon.id}</code>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Nivel:</strong> ${dungeon.min_level} - ${dungeon.max_level}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Dificultad:</strong> 
+                            <span class="badge bg-${diffColor}">${dungeon.difficulty}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Ubicación:</strong><br>
+                            <small class="text-muted">${location}</small>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Salas:</strong> ${dungeon.rooms ? dungeon.rooms.length : 0}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Recompensas:</strong> ${dungeon.rewards ? dungeon.rewards.length : 0}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-sm btn-outline-primary" onclick='editDungeon(${JSON.stringify(dungeon).replace(/'/g, "\\'")})'> 
+                            <i class="bi bi-pencil"></i> Editar
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDungeon('${dungeon.id}')">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Muestra el modal para crear dungeon
+ */
+function showCreateDungeonModal() {
+    // TODO: Crear modal de dungeon
+    alert('Funcionalidad en desarrollo. Por ahora puedes usar la API directamente:\nPOST /api/worlds/' + rpgState.currentWorldSlug + '/rpg/dungeons');
+}
+
+/**
+ * Edita una dungeon
+ */
+function editDungeon(dungeon) {
+    // TODO: Mostrar modal de edición
+    alert('Edición de dungeon: ' + dungeon.name);
+}
+
+/**
+ * Elimina una dungeon
+ */
+async function deleteDungeon(dungeonId) {
+    if (!confirm(`¿Eliminar la dungeon "${dungeonId}"?`)) return;
+    
+    try {
+        const response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/dungeons/${dungeonId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Dungeon eliminada correctamente', 'success');
+            setTimeout(() => loadDungeons(), 500);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar dungeon:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+// ============================================================================
+// MODALES HTML
+// ============================================================================
+
+/**
+ * Genera el HTML de los modales para Spawns
+ */
+function getSpawnModalsHTML() {
+    return `
+        <!-- Modal: Crear/Editar Spawn -->
+        <div class="modal fade" id="spawnModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="spawnModalTitle">
+                            <i class="bi bi-pin-map"></i> Crear Spawn
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="spawnForm">
+                            <input type="hidden" id="spawn-edit-mode" value="create">
+                            <input type="hidden" id="spawn-original-id">
+                            
+                            <div class="mb-3">
+                                <label for="spawn-id" class="form-label">ID del Spawn *</label>
+                                <input type="text" class="form-control" id="spawn-id" required 
+                                       placeholder="ej: spawn_chest_1">
+                                <small class="text-muted">Identificador único del spawn</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="spawn-type" class="form-label">Tipo *</label>
+                                <select class="form-select" id="spawn-type" required onchange="updateSpawnTypeFields()">
+                                    <option value="item">Item</option>
+                                    <option value="mob">Mob</option>
+                                    <option value="npc">NPC</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3" id="spawn-item-group">
+                                <label for="spawn-item" class="form-label">Item/Material *</label>
+                                <input type="text" class="form-control" id="spawn-item" 
+                                       placeholder="ej: DIAMOND, IRON_SWORD">
+                                <small class="text-muted">Nombre del material de Minecraft</small>
+                            </div>
+                            
+                            <div class="mb-3 d-none" id="spawn-entity-group">
+                                <label for="spawn-entity" class="form-label">Tipo de Entidad *</label>
+                                <input type="text" class="form-control" id="spawn-entity" 
+                                       placeholder="ej: ZOMBIE, SKELETON">
+                                <small class="text-muted">EntityType de Minecraft</small>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="spawn-x" class="form-label">X *</label>
+                                    <input type="number" step="0.5" class="form-control" id="spawn-x" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="spawn-y" class="form-label">Y *</label>
+                                    <input type="number" step="0.5" class="form-control" id="spawn-y" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="spawn-z" class="form-label">Z *</label>
+                                    <input type="number" step="0.5" class="form-control" id="spawn-z" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="spawn-respawn-enabled" checked>
+                                <label class="form-check-label" for="spawn-respawn-enabled">
+                                    <strong>Habilitar Respawn</strong>
+                                </label>
+                            </div>
+                            
+                            <div id="spawn-respawn-config">
+                                <div class="mb-3">
+                                    <label for="spawn-respawn-time" class="form-label">Tiempo de Respawn (segundos)</label>
+                                    <input type="number" class="form-control" id="spawn-respawn-time" value="300" min="1">
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="spawn-respawn-on-death" checked>
+                                    <label class="form-check-label" for="spawn-respawn-on-death">
+                                        Respawnear al morir
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="spawn-respawn-on-use">
+                                    <label class="form-check-label" for="spawn-respawn-on-use">
+                                        Respawnear al usar/recoger
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="spawn-enabled" checked>
+                                <label class="form-check-label" for="spawn-enabled">
+                                    <strong>Spawn Activo</strong>
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="saveSpawn()">
+                            <i class="bi bi-save"></i> Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Genera el HTML de los modales para Dungeons
+ */
+function getDungeonModalsHTML() {
+    return `
+        <!-- Modal: Crear/Editar Dungeon -->
+        <div class="modal fade" id="dungeonModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="dungeonModalTitle">
+                            <i class="bi bi-building"></i> Crear Dungeon
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="dungeonForm">
+                            <input type="hidden" id="dungeon-edit-mode" value="create">
+                            <input type="hidden" id="dungeon-original-id">
+                            
+                            <div class="mb-3">
+                                <label for="dungeon-id" class="form-label">ID de la Dungeon *</label>
+                                <input type="text" class="form-control" id="dungeon-id" required 
+                                       placeholder="ej: dungeon_ice_cave">
+                                <small class="text-muted">Identificador único de la dungeon</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="dungeon-name" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="dungeon-name" required 
+                                       placeholder="ej: Cueva de Hielo">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="dungeon-description" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="dungeon-description" rows="2" 
+                                          placeholder="Descripción breve de la dungeon"></textarea>
+                            </div>
+                            
+                            <h6 class="mb-3">Ubicación</h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="dungeon-x" class="form-label">X</label>
+                                    <input type="number" step="1" class="form-control" id="dungeon-x" value="0">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="dungeon-y" class="form-label">Y</label>
+                                    <input type="number" step="1" class="form-control" id="dungeon-y" value="64">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="dungeon-z" class="form-label">Z</label>
+                                    <input type="number" step="1" class="form-control" id="dungeon-z" value="0">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="dungeon-min-level" class="form-label">Nivel Mínimo</label>
+                                    <input type="number" class="form-control" id="dungeon-min-level" value="1" min="1">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="dungeon-max-level" class="form-label">Nivel Máximo</label>
+                                    <input type="number" class="form-control" id="dungeon-max-level" value="100" min="1">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="dungeon-difficulty" class="form-label">Dificultad</label>
+                                <select class="form-select" id="dungeon-difficulty">
+                                    <option value="easy">Fácil</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="hard">Difícil</option>
+                                    <option value="extreme">Extrema</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="dungeon-enabled" checked>
+                                <label class="form-check-label" for="dungeon-enabled">
+                                    <strong>Dungeon Activa</strong>
+                                </label>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <small>Las salas, boss y recompensas se pueden configurar más tarde editando el archivo JSON directamente.</small>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="saveDungeon()">
+                            <i class="bi bi-save"></i> Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// FUNCIONES CRUD COMPLETAS
+// ============================================================================
+
+/**
+ * Muestra el modal para crear spawn
+ */
+function showCreateSpawnModal() {
+    document.getElementById('spawn-edit-mode').value = 'create';
+    document.getElementById('spawnModalTitle').innerHTML = '<i class="bi bi-pin-map"></i> Crear Spawn';
+    
+    // Limpiar formulario
+    document.getElementById('spawnForm').reset();
+    document.getElementById('spawn-id').disabled = false;
+    document.getElementById('spawn-respawn-enabled').checked = true;
+    document.getElementById('spawn-enabled').checked = true;
+    document.getElementById('spawn-respawn-on-death').checked = true;
+    document.getElementById('spawn-respawn-time').value = 300;
+    
+    // Mostrar campos correctos según tipo
+    updateSpawnTypeFields();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('spawnModal'));
+    modal.show();
+}
+
+/**
+ * Edita un spawn existente
+ */
+function editSpawn(spawn) {
+    document.getElementById('spawn-edit-mode').value = 'edit';
+    document.getElementById('spawn-original-id').value = spawn.id;
+    document.getElementById('spawnModalTitle').innerHTML = '<i class="bi bi-pencil"></i> Editar Spawn';
+    
+    // Llenar formulario
+    document.getElementById('spawn-id').value = spawn.id;
+    document.getElementById('spawn-id').disabled = true;
+    document.getElementById('spawn-type').value = spawn.type;
+    document.getElementById('spawn-item').value = spawn.item || '';
+    document.getElementById('spawn-entity').value = spawn.entity_type || '';
+    document.getElementById('spawn-x').value = spawn.x;
+    document.getElementById('spawn-y').value = spawn.y;
+    document.getElementById('spawn-z').value = spawn.z;
+    document.getElementById('spawn-respawn-enabled').checked = spawn.respawn_enabled;
+    document.getElementById('spawn-respawn-time').value = spawn.respawn_time_seconds;
+    document.getElementById('spawn-respawn-on-death').checked = spawn.respawn_on_death;
+    document.getElementById('spawn-respawn-on-use').checked = spawn.respawn_on_use;
+    document.getElementById('spawn-enabled').checked = spawn.enabled;
+    
+    // Actualizar campos visibles
+    updateSpawnTypeFields();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('spawnModal'));
+    modal.show();
+}
+
+/**
+ * Actualiza los campos visibles según el tipo de spawn
+ */
+function updateSpawnTypeFields() {
+    const type = document.getElementById('spawn-type').value;
+    const itemGroup = document.getElementById('spawn-item-group');
+    const entityGroup = document.getElementById('spawn-entity-group');
+    
+    if (type === 'item') {
+        itemGroup.classList.remove('d-none');
+        entityGroup.classList.add('d-none');
+        document.getElementById('spawn-item').required = true;
+        document.getElementById('spawn-entity').required = false;
+    } else {
+        itemGroup.classList.add('d-none');
+        entityGroup.classList.remove('d-none');
+        document.getElementById('spawn-item').required = false;
+        document.getElementById('spawn-entity').required = true;
+    }
+}
+
+/**
+ * Guarda un spawn (crear o editar)
+ */
+async function saveSpawn() {
+    const form = document.getElementById('spawnForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const editMode = document.getElementById('spawn-edit-mode').value;
+    const originalId = document.getElementById('spawn-original-id').value;
+    
+    const spawnData = {
+        id: document.getElementById('spawn-id').value,
+        type: document.getElementById('spawn-type').value,
+        item: document.getElementById('spawn-item').value,
+        entity_type: document.getElementById('spawn-entity').value,
+        x: parseFloat(document.getElementById('spawn-x').value),
+        y: parseFloat(document.getElementById('spawn-y').value),
+        z: parseFloat(document.getElementById('spawn-z').value),
+        respawn_enabled: document.getElementById('spawn-respawn-enabled').checked,
+        respawn_time_seconds: parseInt(document.getElementById('spawn-respawn-time').value),
+        respawn_on_death: document.getElementById('spawn-respawn-on-death').checked,
+        respawn_on_use: document.getElementById('spawn-respawn-on-use').checked,
+        enabled: document.getElementById('spawn-enabled').checked
+    };
+    
+    try {
+        let response;
+        if (editMode === 'create') {
+            response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/spawns`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(spawnData)
+            });
+        } else {
+            response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/spawns/${originalId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(spawnData)
+            });
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message || 'Spawn guardado correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('spawnModal')).hide();
+            setTimeout(() => loadSpawns(), 500);
+        } else {
+            showToast('Error: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error al guardar spawn:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+/**
+ * Muestra el modal para crear dungeon
+ */
+function showCreateDungeonModal() {
+    document.getElementById('dungeon-edit-mode').value = 'create';
+    document.getElementById('dungeonModalTitle').innerHTML = '<i class="bi bi-building"></i> Crear Dungeon';
+    
+    // Limpiar formulario
+    document.getElementById('dungeonForm').reset();
+    document.getElementById('dungeon-id').disabled = false;
+    document.getElementById('dungeon-enabled').checked = true;
+    document.getElementById('dungeon-min-level').value = 1;
+    document.getElementById('dungeon-max-level').value = 100;
+    document.getElementById('dungeon-difficulty').value = 'normal';
+    document.getElementById('dungeon-x').value = 0;
+    document.getElementById('dungeon-y').value = 64;
+    document.getElementById('dungeon-z').value = 0;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('dungeonModal'));
+    modal.show();
+}
+
+/**
+ * Edita una dungeon existente
+ */
+function editDungeon(dungeon) {
+    document.getElementById('dungeon-edit-mode').value = 'edit';
+    document.getElementById('dungeon-original-id').value = dungeon.id;
+    document.getElementById('dungeonModalTitle').innerHTML = '<i class="bi bi-pencil"></i> Editar Dungeon';
+    
+    // Llenar formulario
+    document.getElementById('dungeon-id').value = dungeon.id;
+    document.getElementById('dungeon-id').disabled = true;
+    document.getElementById('dungeon-name').value = dungeon.name;
+    document.getElementById('dungeon-description').value = dungeon.description || '';
+    document.getElementById('dungeon-min-level').value = dungeon.min_level;
+    document.getElementById('dungeon-max-level').value = dungeon.max_level;
+    document.getElementById('dungeon-difficulty').value = dungeon.difficulty;
+    document.getElementById('dungeon-enabled').checked = dungeon.enabled;
+    
+    if (dungeon.location) {
+        document.getElementById('dungeon-x').value = dungeon.location.x || 0;
+        document.getElementById('dungeon-y').value = dungeon.location.y || 64;
+        document.getElementById('dungeon-z').value = dungeon.location.z || 0;
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('dungeonModal'));
+    modal.show();
+}
+
+/**
+ * Guarda una dungeon (crear o editar)
+ */
+async function saveDungeon() {
+    const form = document.getElementById('dungeonForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const editMode = document.getElementById('dungeon-edit-mode').value;
+    const originalId = document.getElementById('dungeon-original-id').value;
+    
+    const dungeonData = {
+        id: document.getElementById('dungeon-id').value,
+        name: document.getElementById('dungeon-name').value,
+        description: document.getElementById('dungeon-description').value,
+        location: {
+            x: parseInt(document.getElementById('dungeon-x').value),
+            y: parseInt(document.getElementById('dungeon-y').value),
+            z: parseInt(document.getElementById('dungeon-z').value)
+        },
+        min_level: parseInt(document.getElementById('dungeon-min-level').value),
+        max_level: parseInt(document.getElementById('dungeon-max-level').value),
+        difficulty: document.getElementById('dungeon-difficulty').value,
+        enabled: document.getElementById('dungeon-enabled').checked,
+        rooms: [],
+        boss: {},
+        rewards: []
+    };
+    
+    try {
+        let response;
+        if (editMode === 'create') {
+            response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/dungeons`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(dungeonData)
+            });
+        } else {
+            response = await fetch(`/api/worlds/${rpgState.currentWorldSlug}/rpg/dungeons/${originalId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(dungeonData)
+            });
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message || 'Dungeon guardada correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('dungeonModal')).hide();
+            setTimeout(() => loadDungeons(), 500);
+        } else {
+            showToast('Error: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error al guardar dungeon:', error);
+        showToast('Error de conexión', 'error');
+    }
+}

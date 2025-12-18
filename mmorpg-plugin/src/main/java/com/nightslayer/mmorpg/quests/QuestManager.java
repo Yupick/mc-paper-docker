@@ -1,10 +1,11 @@
 package com.nightslayer.mmorpg.quests;
 
+import com.nightslayer.mmorpg.RPGPathResolver;
+import com.nightslayer.mmorpg.MMORPGPlugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.nightslayer.mmorpg.classes.ClassManager;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 import java.io.File;
 import java.io.FileReader;
@@ -14,25 +15,30 @@ import java.util.stream.Collectors;
 
 /**
  * Gestor del sistema de quests
+ * Lee desde: worlds/{worldName}/data/quests.json (local por mundo)
+ * Nota: El progreso de jugadores se mantiene en archivos individuales por compatibilidad
  */
 public class QuestManager {
-    private final Plugin plugin;
+    private final MMORPGPlugin plugin;
+    private final RPGPathResolver pathResolver;
     private final ClassManager classManager;
     private final Map<String, Quest> quests;
     private final Map<UUID, Map<String, PlayerQuestProgress>> playerProgress; // UUID -> QuestID -> Progress
     private final Gson gson;
-    private final File dataFolder;
+    private final File playerProgressFolder; // Mantener carpeta de progreso de jugadores
     
-    public QuestManager(Plugin plugin, ClassManager classManager) {
+    public QuestManager(MMORPGPlugin plugin, ClassManager classManager) {
         this.plugin = plugin;
+        this.pathResolver = plugin.getWorldRPGManager().getPathResolver();
         this.classManager = classManager;
         this.quests = new HashMap<>();
         this.playerProgress = new HashMap<>();
         this.gson = new Gson();
-        this.dataFolder = new File(plugin.getDataFolder(), "quests");
+        // Progreso de jugadores se mantiene en carpeta separada
+        this.playerProgressFolder = new File(plugin.getDataFolder(), "quest-progress");
         
-        if (!dataFolder.exists()) {
-            dataFolder.mkdirs();
+        if (!playerProgressFolder.exists()) {
+            playerProgressFolder.mkdirs();
         }
         
         createDefaultQuests();
@@ -369,7 +375,7 @@ public class QuestManager {
      * Carga el progreso de una quest
      */
     private PlayerQuestProgress loadQuestProgress(UUID playerUUID, String questId) {
-        File file = new File(dataFolder, playerUUID.toString() + "_" + questId + ".json");
+        File file = new File(playerProgressFolder, playerUUID.toString() + "_" + questId + ".json");
         
         if (!file.exists()) {
             return null;
@@ -388,7 +394,7 @@ public class QuestManager {
      * Guarda el progreso de una quest
      */
     public void saveQuestProgress(PlayerQuestProgress progress) {
-        File file = new File(dataFolder, progress.getPlayerUUID().toString() + "_" + progress.getQuestId() + ".json");
+        File file = new File(playerProgressFolder, progress.getPlayerUUID().toString() + "_" + progress.getQuestId() + ".json");
         
         try (FileWriter writer = new FileWriter(file)) {
             gson.toJson(progress.toJson(), writer);
@@ -405,6 +411,50 @@ public class QuestManager {
             for (PlayerQuestProgress progress : playerQuests.values()) {
                 saveQuestProgress(progress);
             }
+        }
+    }
+    
+    /**
+     * Guarda definiciones de quests para un mundo específico
+     * Guarda en: worlds/{worldName}/data/quests.json
+     */
+    public void saveWorldQuests(String worldName) {
+        File file = pathResolver.getLocalFile(worldName, "quests.json");
+        
+        try (FileWriter writer = new FileWriter(file)) {
+            JsonObject json = new JsonObject();
+            
+            for (Quest quest : quests.values()) {
+                json.add(quest.getId(), quest.toJson());
+            }
+            
+            gson.toJson(json, writer);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error al guardar quests para mundo " + worldName + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Carga quests de un mundo específico
+     * Lee desde: worlds/{worldName}/data/quests.json
+     */
+    public void loadWorldQuests(String worldName) {
+        File file = pathResolver.getLocalFile(worldName, "quests.json");
+        
+        if (!file.exists()) {
+            return;
+        }
+        
+        try (FileReader reader = new FileReader(file)) {
+            JsonObject json = gson.fromJson(reader, JsonObject.class);
+            if (json != null) {
+                for (String key : json.keySet()) {
+                    // Implementar deserialización de Quests desde JSON
+                    plugin.getLogger().info("Cargada quest: " + key + " del mundo " + worldName);
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error al cargar quests para mundo " + worldName + ": " + e.getMessage());
         }
     }
 }

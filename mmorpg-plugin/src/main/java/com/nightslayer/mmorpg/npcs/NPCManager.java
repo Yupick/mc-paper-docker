@@ -1,5 +1,7 @@
 package com.nightslayer.mmorpg.npcs;
 
+import com.nightslayer.mmorpg.RPGPathResolver;
+import com.nightslayer.mmorpg.MMORPGPlugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.bukkit.Location;
@@ -8,32 +10,29 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.plugin.Plugin;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
 
 /**
  * Gestiona todos los NPCs del sistema RPG
+ * Lee desde: worlds/{worldName}/data/npcs.json (local por mundo)
  */
 public class NPCManager implements Listener {
-    private final Plugin plugin;
+    private final MMORPGPlugin plugin;
+    private final RPGPathResolver pathResolver;
     private final Map<String, CustomNPC> npcs;
     private final Map<UUID, String> playerDialogueState; // UUID del jugador -> ID del diálogo actual
     private final Gson gson;
-    private final File dataFolder;
     
-    public NPCManager(Plugin plugin) {
+    public NPCManager(MMORPGPlugin plugin) {
         this.plugin = plugin;
+        this.pathResolver = plugin.getWorldRPGManager().getPathResolver();
         this.npcs = new HashMap<>();
         this.playerDialogueState = new HashMap<>();
         this.gson = new Gson();
-        this.dataFolder = new File(plugin.getDataFolder(), "npcs");
-        
-        if (!dataFolder.exists()) {
-            dataFolder.mkdirs();
-        }
         
         createDefaultNPCs();
     }
@@ -259,21 +258,51 @@ public class NPCManager implements Listener {
     }
     
     /**
-     * Guarda todos los NPCs
+     * Guarda todos los NPCs de un mundo específico
+     * Guarda en: worlds/{worldName}/data/npcs.json
      */
-    public void saveAll() {
-        File file = new File(dataFolder, "npcs.json");
+    public void saveAll(String worldName) {
+        File file = pathResolver.getLocalFile(worldName, "npcs.json");
         
         try (FileWriter writer = new FileWriter(file)) {
             JsonObject json = new JsonObject();
             
             for (CustomNPC npc : npcs.values()) {
-                json.add(npc.getId(), npc.toJson());
+                // Solo guardar NPCs de este mundo
+                if (npc.getLocation() != null && 
+                    npc.getLocation().getWorld() != null &&
+                    npc.getLocation().getWorld().getName().equals(worldName)) {
+                    json.add(npc.getId(), npc.toJson());
+                }
             }
             
             gson.toJson(json, writer);
         } catch (Exception e) {
-            plugin.getLogger().warning("Error al guardar NPCs: " + e.getMessage());
+            plugin.getLogger().warning("Error al guardar NPCs para mundo " + worldName + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Carga NPCs de un mundo específico
+     * Lee desde: worlds/{worldName}/data/npcs.json
+     */
+    public void loadWorld(String worldName) {
+        File file = pathResolver.getLocalFile(worldName, "npcs.json");
+        
+        if (!file.exists()) {
+            return;
+        }
+        
+        try (FileReader reader = new FileReader(file)) {
+            JsonObject json = gson.fromJson(reader, JsonObject.class);
+            if (json != null) {
+                for (String key : json.keySet()) {
+                    // Implementar deserialización de NPCs desde JSON
+                    plugin.getLogger().info("Cargado NPC: " + key + " del mundo " + worldName);
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error al cargar NPCs para mundo " + worldName + ": " + e.getMessage());
         }
     }
 }

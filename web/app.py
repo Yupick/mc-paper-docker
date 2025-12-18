@@ -15,6 +15,7 @@ from time import time
 import docker
 from models.world_manager import WorldManager
 from models.rpg_manager import RPGManager
+from models.resource_pack_manager import ResourcePackManager
 from services.backup_service import BackupService
 def _load_panel_config():
     try:
@@ -60,10 +61,15 @@ CONTAINER_NAME = os.getenv('DOCKER_CONTAINER_NAME', 'minecraft-paper')
 app.config['UPLOAD_FOLDER'] = PLUGINS_DIR
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
-# Inicializar WorldManager, BackupService y RPGManager
-world_manager = WorldManager(WORLDS_DIR)
-backup_service = BackupService(WORLDS_DIR, BACKUP_WORLDS_DIR)
+# Inicializar RPGManager primero
 rpg_manager = RPGManager()
+
+# Inicializar ResourcePackManager
+resource_pack_manager = ResourcePackManager(BASE_DIR)
+
+# Inicializar WorldManager con rpg_manager y BackupService
+world_manager = WorldManager(WORLDS_DIR, rpg_manager=rpg_manager)
+backup_service = BackupService(WORLDS_DIR, BACKUP_WORLDS_DIR)
 
 # Login manager
 login_manager = LoginManager()
@@ -2105,6 +2111,277 @@ def list_rpg_worlds():
             'success': True,
             'worlds': rpg_worlds,
             'count': len(rpg_worlds)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============================================================================
+# ENDPOINTS PARA GESTIÓN DE SPAWNS
+# ============================================================================
+
+@app.route('/api/worlds/<slug>/rpg/spawns', methods=['GET'])
+@login_required
+def get_world_spawns(slug):
+    """Obtiene todos los spawns configurados de un mundo RPG"""
+    try:
+        spawns_data = rpg_manager.read_file(slug, 'spawns.json', scope='local')
+        
+        if spawns_data is None:
+            spawns_data = {"spawns": []}
+        
+        return jsonify({
+            'success': True,
+            'spawns': spawns_data.get('spawns', [])
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/spawns', methods=['POST'])
+@login_required
+def create_world_spawn(slug):
+    """Crea un nuevo spawn en un mundo RPG"""
+    try:
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        required = ['id', 'type', 'x', 'y', 'z']
+        for field in required:
+            if field not in data:
+                return jsonify({'success': False, 'error': f'Campo requerido: {field}'}), 400
+        
+        # Cargar spawns existentes
+        spawns_data = rpg_manager.read_file(slug, 'spawns.json', scope='local')
+        if spawns_data is None:
+            spawns_data = {"spawns": []}
+        
+        # Verificar que no exista el ID
+        if any(s['id'] == data['id'] for s in spawns_data['spawns']):
+            return jsonify({'success': False, 'error': 'Ya existe un spawn con ese ID'}), 400
+        
+        # Crear nuevo spawn
+        new_spawn = {
+            'id': data['id'],
+            'type': data['type'],  # 'item', 'mob', 'npc'
+            'item': data.get('item', ''),
+            'entity_type': data.get('entity_type', ''),
+            'x': data['x'],
+            'y': data['y'],
+            'z': data['z'],
+            'respawn_enabled': data.get('respawn_enabled', True),
+            'respawn_time_seconds': data.get('respawn_time_seconds', 300),
+            'respawn_on_death': data.get('respawn_on_death', True),
+            'respawn_on_use': data.get('respawn_on_use', False),
+            'enabled': data.get('enabled', True)
+        }
+        
+        spawns_data['spawns'].append(new_spawn)
+        
+        # Guardar
+        if not rpg_manager.write_file(slug, 'spawns.json', spawns_data, scope='local'):
+            return jsonify({'success': False, 'error': 'Error al guardar'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': 'Spawn creado correctamente',
+            'spawn': new_spawn
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/spawns/<spawn_id>', methods=['PUT'])
+@login_required
+def update_world_spawn(slug, spawn_id):
+    """Actualiza un spawn existente"""
+    try:
+        data = request.get_json()
+        
+        # Cargar spawns existentes
+        spawns_data = rpg_manager.read_file(slug, 'spawns.json', scope='local')
+        if spawns_data is None:
+            return jsonify({'success': False, 'error': 'No se encontraron spawns'}), 404
+        
+        # Buscar spawn
+        spawn_found = False
+        for i, spawn in enumerate(spawns_data['spawns']):
+            if spawn['id'] == spawn_id:
+                # Actualizar campos
+                spawns_data['spawns'][i].update(data)
+                spawn_found = True
+                break
+        
+        if not spawn_found:
+            return jsonify({'success': False, 'error': 'Spawn no encontrado'}), 404
+        
+        # Guardar
+        if not rpg_manager.write_file(slug, 'spawns.json', spawns_data, scope='local'):
+            return jsonify({'success': False, 'error': 'Error al guardar'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': 'Spawn actualizado correctamente'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/spawns/<spawn_id>', methods=['DELETE'])
+@login_required
+def delete_world_spawn(slug, spawn_id):
+    """Elimina un spawn"""
+    try:
+        # Cargar spawns existentes
+        spawns_data = rpg_manager.read_file(slug, 'spawns.json', scope='local')
+        if spawns_data is None:
+            return jsonify({'success': False, 'error': 'No se encontraron spawns'}), 404
+        
+        # Filtrar spawn
+        original_count = len(spawns_data['spawns'])
+        spawns_data['spawns'] = [s for s in spawns_data['spawns'] if s['id'] != spawn_id]
+        
+        if len(spawns_data['spawns']) == original_count:
+            return jsonify({'success': False, 'error': 'Spawn no encontrado'}), 404
+        
+        # Guardar
+        if not rpg_manager.write_file(slug, 'spawns.json', spawns_data, scope='local'):
+            return jsonify({'success': False, 'error': 'Error al guardar'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': 'Spawn eliminado correctamente'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============================================================================
+# ENDPOINTS PARA GESTIÓN DE DUNGEONS
+# ============================================================================
+
+@app.route('/api/worlds/<slug>/rpg/dungeons', methods=['GET'])
+@login_required
+def get_world_dungeons(slug):
+    """Obtiene todas las dungeons configuradas de un mundo RPG"""
+    try:
+        dungeons_data = rpg_manager.read_file(slug, 'dungeons.json', scope='local')
+        
+        if dungeons_data is None:
+            dungeons_data = {"dungeons": []}
+        
+        return jsonify({
+            'success': True,
+            'dungeons': dungeons_data.get('dungeons', [])
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/dungeons', methods=['POST'])
+@login_required
+def create_world_dungeon(slug):
+    """Crea una nueva dungeon en un mundo RPG"""
+    try:
+        data = request.get_json()
+        
+        # Validar datos requeridos
+        required = ['id', 'name']
+        for field in required:
+            if field not in data:
+                return jsonify({'success': False, 'error': f'Campo requerido: {field}'}), 400
+        
+        # Cargar dungeons existentes
+        dungeons_data = rpg_manager.read_file(slug, 'dungeons.json', scope='local')
+        if dungeons_data is None:
+            dungeons_data = {"dungeons": []}
+        
+        # Verificar que no exista el ID
+        if any(d['id'] == data['id'] for d in dungeons_data['dungeons']):
+            return jsonify({'success': False, 'error': 'Ya existe una dungeon con ese ID'}), 400
+        
+        # Crear nueva dungeon
+        new_dungeon = {
+            'id': data['id'],
+            'name': data['name'],
+            'description': data.get('description', ''),
+            'location': data.get('location', {}),
+            'min_level': data.get('min_level', 1),
+            'max_level': data.get('max_level', 100),
+            'difficulty': data.get('difficulty', 'normal'),
+            'rooms': data.get('rooms', []),
+            'boss': data.get('boss', {}),
+            'rewards': data.get('rewards', []),
+            'enabled': data.get('enabled', True)
+        }
+        
+        dungeons_data['dungeons'].append(new_dungeon)
+        
+        # Guardar
+        if not rpg_manager.write_file(slug, 'dungeons.json', dungeons_data, scope='local'):
+            return jsonify({'success': False, 'error': 'Error al guardar'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': 'Dungeon creada correctamente',
+            'dungeon': new_dungeon
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/dungeons/<dungeon_id>', methods=['PUT'])
+@login_required
+def update_world_dungeon(slug, dungeon_id):
+    """Actualiza una dungeon existente"""
+    try:
+        data = request.get_json()
+        
+        # Cargar dungeons existentes
+        dungeons_data = rpg_manager.read_file(slug, 'dungeons.json', scope='local')
+        if dungeons_data is None:
+            return jsonify({'success': False, 'error': 'No se encontraron dungeons'}), 404
+        
+        # Buscar dungeon
+        dungeon_found = False
+        for i, dungeon in enumerate(dungeons_data['dungeons']):
+            if dungeon['id'] == dungeon_id:
+                # Actualizar campos
+                dungeons_data['dungeons'][i].update(data)
+                dungeon_found = True
+                break
+        
+        if not dungeon_found:
+            return jsonify({'success': False, 'error': 'Dungeon no encontrada'}), 404
+        
+        # Guardar
+        if not rpg_manager.write_file(slug, 'dungeons.json', dungeons_data, scope='local'):
+            return jsonify({'success': False, 'error': 'Error al guardar'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': 'Dungeon actualizada correctamente'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/worlds/<slug>/rpg/dungeons/<dungeon_id>', methods=['DELETE'])
+@login_required
+def delete_world_dungeon(slug, dungeon_id):
+    """Elimina una dungeon"""
+    try:
+        # Cargar dungeons existentes
+        dungeons_data = rpg_manager.read_file(slug, 'dungeons.json', scope='local')
+        if dungeons_data is None:
+            return jsonify({'success': False, 'error': 'No se encontraron dungeons'}), 404
+        
+        # Filtrar dungeon
+        original_count = len(dungeons_data['dungeons'])
+        dungeons_data['dungeons'] = [d for d in dungeons_data['dungeons'] if d['id'] != dungeon_id]
+        
+        if len(dungeons_data['dungeons']) == original_count:
+            return jsonify({'success': False, 'error': 'Dungeon no encontrada'}), 404
+        
+        # Guardar
+        if not rpg_manager.write_file(slug, 'dungeons.json', dungeons_data, scope='local'):
+            return jsonify({'success': False, 'error': 'Error al guardar'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': 'Dungeon eliminada correctamente'
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -6149,6 +6426,134 @@ def generate_spawn_script():
     except Exception as e:
         print(f"Error en generate_spawn_script: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ============================================================================
+# RESOURCE PACK ENDPOINTS
+# ============================================================================
+
+@app.route('/api/resource-pack/config', methods=['GET'])
+@login_required
+def get_resource_pack_config():
+    """Obtiene la configuración actual de resource pack"""
+    try:
+        config = resource_pack_manager.get_current_config()
+        return jsonify({
+            'success': True,
+            'config': config
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/resource-pack/config', methods=['POST'])
+@login_required
+def update_resource_pack_config():
+    """Actualiza la configuración de resource pack"""
+    try:
+        data = request.get_json()
+        
+        result = resource_pack_manager.update_config(
+            resource_pack_url=data.get('resource_pack_url'),
+            sha1_hash=data.get('sha1_hash'),
+            require=data.get('require'),
+            prompt=data.get('prompt')
+        )
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/resource-pack/upload', methods=['POST'])
+@login_required
+def upload_resource_pack():
+    """Sube un resource pack al servidor"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No se envió ningún archivo'
+            }), 400
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'Nombre de archivo vacío'
+            }), 400
+        
+        if not file.filename.endswith('.zip'):
+            return jsonify({
+                'success': False,
+                'error': 'El archivo debe ser un .zip'
+            }), 400
+        
+        # Leer archivo
+        file_data = file.read()
+        filename = secure_filename(file.filename)
+        
+        # Guardar y calcular SHA-1
+        result = resource_pack_manager.save_resource_pack(file_data, filename)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/resource-pack/local', methods=['GET'])
+@login_required
+def list_local_resource_packs():
+    """Lista los resource packs almacenados localmente"""
+    try:
+        packs = resource_pack_manager.list_local_packs()
+        return jsonify({
+            'success': True,
+            'packs': packs
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/resource-pack/local/<filename>', methods=['DELETE'])
+@login_required
+def delete_local_resource_pack(filename):
+    """Elimina un resource pack local"""
+    try:
+        result = resource_pack_manager.delete_pack(filename)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
