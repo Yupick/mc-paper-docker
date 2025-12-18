@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 from .world import World
+from .rpg_manager import RPGManager
 
 
 class WorldManager:
@@ -214,6 +215,23 @@ class WorldManager:
         
         # Asegurar estructura de dimensiones requerida
         self._ensure_world_structure(world_path)
+        
+        # Inicializar archivos RPG si está activado
+        if is_rpg:
+            # Determinar el level-name (nombre real del mundo en el servidor)
+            # Por defecto usamos el slug, pero puede ser diferente
+            level_name = slug  # El slug es el nombre de la carpeta
+            
+            # Inicializar RPG Manager y crear archivos
+            try:
+                rpg_manager = RPGManager()
+                success = rpg_manager.initialize_rpg_world(level_name, rpg_config)
+                if success:
+                    print(f"✓ Mundo RPG '{name}' inicializado correctamente con archivos RPG")
+                else:
+                    print(f"⚠ Advertencia: No se pudieron inicializar todos los archivos RPG para '{name}'")
+            except Exception as e:
+                print(f"⚠ Error al inicializar archivos RPG: {e}")
         
         # Actualizar configuración
         self.config['worlds'].append({

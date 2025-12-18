@@ -284,3 +284,105 @@ class RPGManager:
         except Exception as e:
             print(f"Error escribiendo {filename} para {world_slug}: {e}")
             return False
+
+    def initialize_rpg_world(self, world_slug: str, rpg_config: Optional[Dict] = None) -> bool:
+        """
+        Inicializa los archivos RPG para un nuevo mundo
+        Copia archivos universales y crea archivos exclusive-local vacíos
+        
+        Args:
+            world_slug: Slug del mundo
+            rpg_config: Configuración RPG del mundo (opcional)
+            
+        Returns:
+            True si se inicializó correctamente, False en caso contrario
+        """
+        try:
+            world_dir = self._resolve_world_data_dir(world_slug)
+            
+            # Crear directorio del mundo si no existe
+            world_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Archivos híbridos que pueden tener versión local (copiar de universal)
+            hybrid_files = ['npcs.json', 'quests.json', 'mobs.json', 'pets.json', 'enchantments.json']
+            
+            for filename in hybrid_files:
+                universal_file = self.plugin_data_path / filename
+                local_file = world_dir / filename
+                
+                # Si existe el archivo universal, copiarlo como base
+                if universal_file.exists():
+                    try:
+                        with open(universal_file, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                        
+                        # Escribir en archivo local
+                        with open(local_file, 'w', encoding='utf-8') as f:
+                            json.dump(data, f, indent=2, ensure_ascii=False)
+                    except Exception as e:
+                        print(f"Error copiando {filename}: {e}")
+                        # Si falla, crear archivo vacío con estructura básica
+                        empty_data = {}
+                        if filename in ['npcs.json', 'quests.json']:
+                            key = filename.replace('.json', '')
+                            empty_data = {key: []}
+                        elif filename == 'mobs.json':
+                            empty_data = {'mobs': {}}
+                        
+                        with open(local_file, 'w', encoding='utf-8') as f:
+                            json.dump(empty_data, f, indent=2, ensure_ascii=False)
+                else:
+                    # No existe archivo universal, crear vacío
+                    empty_data = {}
+                    if filename in ['npcs.json', 'quests.json']:
+                        key = filename.replace('.json', '')
+                        empty_data = {key: []}
+                    elif filename == 'mobs.json':
+                        empty_data = {'mobs': {}}
+                    
+                    with open(local_file, 'w', encoding='utf-8') as f:
+                        json.dump(empty_data, f, indent=2, ensure_ascii=False)
+            
+            # Archivos exclusive-local (crear vacíos con estructura inicial)
+            exclusive_files = {
+                'players.json': {},
+                'status.json': {
+                    'rpgEnabled': True,
+                    'serverStarted': False,
+                    'worldName': world_slug,
+                    'lastUpdate': None
+                },
+                'invasions.json': {
+                    'invasions': [],
+                    'active': []
+                },
+                'kills.json': {
+                    'kills': {}
+                },
+                'respawn.json': {
+                    'zones': [],
+                    'spawns': []
+                },
+                'squads.json': {
+                    'squads': []
+                },
+                'metadata.json': rpg_config or {
+                    'classesEnabled': True,
+                    'questsEnabled': True,
+                    'customMobsEnabled': True,
+                    'petsEnabled': True
+                }
+            }
+            
+            for filename, initial_data in exclusive_files.items():
+                local_file = world_dir / filename
+                if not local_file.exists():
+                    with open(local_file, 'w', encoding='utf-8') as f:
+                        json.dump(initial_data, f, indent=2, ensure_ascii=False)
+            
+            print(f"✓ Archivos RPG inicializados para el mundo '{world_slug}'")
+            return True
+            
+        except Exception as e:
+            print(f"Error inicializando archivos RPG para {world_slug}: {e}")
+            return False
