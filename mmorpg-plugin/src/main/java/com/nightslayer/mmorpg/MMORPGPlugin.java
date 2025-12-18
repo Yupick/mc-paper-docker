@@ -90,6 +90,10 @@ public class MMORPGPlugin extends JavaPlugin {
         pathResolver = new PathResolver(this);
         dataInitializer = new DataInitializer(this, pathResolver);
         
+        // Inicializar datos universales (items, mobs globales, etc.)
+        getLogger().info("Inicializando archivos de configuración RPG globales...");
+        dataInitializer.initializeWorldData("_universal_");
+        
         economyManager = new EconomyManager(this);
         classManager = new ClassManager(this);
         shopManager = new ShopManager(this, economyManager);
@@ -231,6 +235,9 @@ public class MMORPGPlugin extends JavaPlugin {
                     if (metadata != null && metadata.isRPG()) {
                         worldRPGManager.registerRPGWorld(worldFolder.getName(), metadata);
                         rpgWorldsCount++;
+                        
+                        // Inicializar archivos de datos del mundo RPG
+                        dataInitializer.initializeWorldData(worldFolder.getName());
                         
                         if (getConfig().getBoolean("plugin.debug", false)) {
                             getLogger().info("Mundo RPG detectado: " + worldFolder.getName());

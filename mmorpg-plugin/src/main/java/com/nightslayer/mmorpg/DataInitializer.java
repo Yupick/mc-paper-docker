@@ -28,9 +28,15 @@ public class DataInitializer {
     /**
      * Inicializa todos los datos requeridos para un mundo RPG
      * 
-     * @param worldSlug Slug del mundo
+     * @param worldSlug Slug del mundo (usar "_universal_" para solo inicializar datos globales)
      */
     public void initializeWorldData(String worldSlug) {
+        if ("_universal_".equals(worldSlug)) {
+            plugin.getLogger().info("Inicializando datos RPG universales (globales)...");
+            initializeUniversalData();
+            return;
+        }
+        
         plugin.getLogger().info("Inicializando datos RPG para mundo: " + worldSlug);
         
         // Datos universal (solo si no existen)

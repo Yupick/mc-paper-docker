@@ -367,10 +367,9 @@ public class BestiaryManager {
         }
         
         if (reward.shouldBroadcast()) {
-            plugin.getServer().broadcastMessage(
-                "§6✦ " + player.getName() + " §eha completado la categoría §6" + 
-                category.getName() + " §edel bestiario!"
-            );
+            net.kyori.adventure.audience.Audience audience = plugin.getServer();
+            net.kyori.adventure.text.Component msg = net.kyori.adventure.text.Component.text("§6✦ " + player.getName() + " §eha completado la categoría §6" + category.getName() + " §edel bestiario!");
+            audience.sendMessage(msg);
         } else {
             player.sendMessage("§6✦ Categoría completada: §e" + category.getName());
         }

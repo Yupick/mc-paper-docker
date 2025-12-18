@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.nightslayer.mmorpg.MMORPGPlugin;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -238,7 +237,9 @@ public class AchievementManager {
         }
 
         if (reward.isBroadcast()) {
-            Bukkit.broadcastMessage("§b" + player.getName() + " completó el logro §e" + achievement.getName() + "§b!");
+            net.kyori.adventure.audience.Audience audience = org.bukkit.Bukkit.getServer();
+            net.kyori.adventure.text.Component msg = net.kyori.adventure.text.Component.text("§b" + player.getName() + " completó el logro §e" + achievement.getName() + "§b!");
+            audience.sendMessage(msg);
         } else {
             player.sendMessage("§aLogro completado: §f" + achievement.getName());
         }

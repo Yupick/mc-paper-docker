@@ -5,13 +5,9 @@ import com.nightslayer.mmorpg.MMORPGPlugin;
 import com.nightslayer.mmorpg.mobs.MobManager;
 import com.nightslayer.mmorpg.economy.EconomyManager;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.entity.Player;
 
 import java.io.*;
 import java.sql.*;
@@ -26,8 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class EventManager {
     private final MMORPGPlugin plugin;
-    private final MobManager mobManager;
-    private final EconomyManager economy;
     private final File configFile;
     private final Map<String, EventConfig> eventConfigs;
     private final Map<String, EventSession> activeSessions;
@@ -60,8 +54,6 @@ public class EventManager {
     
     public EventManager(MMORPGPlugin plugin, MobManager mobManager, EconomyManager economy) {
         this.plugin = plugin;
-        this.mobManager = mobManager;
-        this.economy = economy;
         this.configFile = new File(plugin.getDataFolder(), "events_config.json");
         this.eventConfigs = new ConcurrentHashMap<>();
         this.activeSessions = new ConcurrentHashMap<>();
@@ -307,8 +299,11 @@ public class EventManager {
         saveEventStart(session);
         
         // Broadcast
-        Bukkit.broadcastMessage("§6§l[EVENTO] §e" + config.getName() + " §7ha comenzado!");
-        Bukkit.broadcastMessage("§7" + config.getDescription());
+        net.kyori.adventure.audience.Audience audience = org.bukkit.Bukkit.getServer();
+        net.kyori.adventure.text.Component msg1 = net.kyori.adventure.text.Component.text("§6§l[EVENTO] §e" + config.getName() + " §7ha comenzado!");
+        net.kyori.adventure.text.Component msg2 = net.kyori.adventure.text.Component.text("§7" + config.getDescription());
+        audience.sendMessage(msg1);
+        audience.sendMessage(msg2);
         
         plugin.getLogger().info("Evento " + eventId + " iniciado en mundo " + worldName);
         return true;
@@ -330,8 +325,11 @@ public class EventManager {
         saveEventEnd(session);
         
         // Broadcast
-        Bukkit.broadcastMessage("§6§l[EVENTO] §e" + session.getEventName() + " §7ha finalizado!");
-        Bukkit.broadcastMessage("§7Participantes: §e" + session.getParticipants().size() + " §7| Kills totales: §c" + session.getTotalKills());
+        net.kyori.adventure.audience.Audience audience = org.bukkit.Bukkit.getServer();
+        net.kyori.adventure.text.Component msg1 = net.kyori.adventure.text.Component.text("§6§l[EVENTO] §e" + session.getEventName() + " §7ha finalizado!");
+        net.kyori.adventure.text.Component msg2 = net.kyori.adventure.text.Component.text("§7Participantes: §e" + session.getParticipants().size() + " §7| Kills totales: §c" + session.getTotalKills());
+        audience.sendMessage(msg1);
+        audience.sendMessage(msg2);
         
         plugin.getLogger().info("Evento " + eventId + " finalizado");
         return true;
@@ -358,8 +356,7 @@ public class EventManager {
                 // Recompensas
                 if (config.getRewards() != null) {
                     int eventCoins = config.getRewards().getEventCoinsPerKill();
-                    eventCurrency.merge(playerId, eventCoins, Integer::sum);
-                    
+                    eventCurrency.merge(playerId, Integer.valueOf(eventCoins), (a, b) -> Integer.valueOf(a.intValue() + b.intValue()));
                     killer.sendMessage("§a§l[EVENTO] §7+§e" + eventCoins + " §7monedas de evento");
                 }
                 

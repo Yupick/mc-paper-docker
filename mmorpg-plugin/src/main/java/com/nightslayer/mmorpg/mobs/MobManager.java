@@ -56,6 +56,21 @@ public class MobManager {
                 for (Map.Entry<String, MobData> entry : mobsData.entrySet()) {
                     MobData data = entry.getValue();
                     
+                    // Validar datos obligatorios
+                    if (data == null || data.entityType == null || data.entityType.trim().isEmpty()) {
+                        plugin.getLogger().warning("Mob '" + entry.getKey() + "' tiene datos inválidos (entityType null/vacío), omitiendo...");
+                        continue;
+                    }
+                    
+                    // Validar que el EntityType sea válido
+                    EntityType entityType;
+                    try {
+                        entityType = EntityType.valueOf(data.entityType.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Mob '" + entry.getKey() + "' tiene entityType inválido: " + data.entityType);
+                        continue;
+                    }
+                    
                     List<CustomMob.MobDrop> drops = new ArrayList<>();
                     if (data.drops != null) {
                         for (DropData dropData : data.drops) {
@@ -83,7 +98,7 @@ public class MobManager {
                     CustomMob mob = new CustomMob(
                         entry.getKey(),
                         data.name,
-                        EntityType.valueOf(data.entityType),
+                        entityType,
                         data.health,
                         data.damage,
                         data.defense,

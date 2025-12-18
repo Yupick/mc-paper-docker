@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.nightslayer.mmorpg.MMORPGPlugin;
 import com.nightslayer.mmorpg.achievements.AchievementManager;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -21,7 +20,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -271,7 +269,9 @@ public class RankManager {
         }
 
         if (reward.isBroadcast()) {
-            Bukkit.broadcastMessage("§b" + player.getName() + " ascendió al rango §e" + rank.getName() + "§b!");
+            net.kyori.adventure.audience.Audience audience = org.bukkit.Bukkit.getServer();
+            net.kyori.adventure.text.Component msg = net.kyori.adventure.text.Component.text("§b" + player.getName() + " ascendió al rango §e" + rank.getName() + "§b!");
+            audience.sendMessage(msg);
         } else {
             player.sendMessage("§aAscendiste al rango §f" + rank.getName());
         }

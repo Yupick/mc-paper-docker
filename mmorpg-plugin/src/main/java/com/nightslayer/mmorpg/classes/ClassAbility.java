@@ -140,8 +140,8 @@ public class ClassAbility {
             
             // CLÉRIGO
             case "cleric_heal":
-                double healthToHeal = Math.min(player.getMaxHealth() * 0.3, 
-                                              player.getMaxHealth() - player.getHealth());
+                double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                double healthToHeal = Math.min(maxHealth * 0.3, maxHealth - player.getHealth());
                 player.setHealth(player.getHealth() + healthToHeal);
                 player.sendMessage("§b¡Sanación divina! +" + (int)healthToHeal + " HP");
                 break;
@@ -158,7 +158,8 @@ public class ClassAbility {
                 player.getWorld().getNearbyEntities(player.getLocation(), 10, 10, 10).forEach(entity -> {
                     if (entity instanceof Player) {
                         Player target = (Player) entity;
-                        target.setHealth(Math.min(target.getHealth() + 4, target.getMaxHealth()));
+                        double targetMaxHealth = target.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                        target.setHealth(Math.min(target.getHealth() + 4, targetMaxHealth));
                     }
                 });
                 player.sendMessage("§f¡Luz divina! Aliados cercanos curados");

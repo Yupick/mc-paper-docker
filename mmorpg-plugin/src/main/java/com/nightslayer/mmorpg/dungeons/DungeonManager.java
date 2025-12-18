@@ -5,12 +5,9 @@ import com.nightslayer.mmorpg.MMORPGPlugin;
 import com.nightslayer.mmorpg.mobs.MobManager;
 import com.nightslayer.mmorpg.economy.EconomyManager;
 import org.bukkit.*;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 
 import java.io.*;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,8 +18,6 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class DungeonManager {
     private final MMORPGPlugin plugin;
-    private final MobManager mobManager;
-    private final EconomyManager economy;
     private final File configFile;
     private final Map<String, DungeonConfig> dungeonConfigs;
     private final Map<String, DungeonSession> activeSessions;
@@ -58,8 +53,6 @@ public class DungeonManager {
     
     public DungeonManager(MMORPGPlugin plugin, MobManager mobManager, EconomyManager economy) {
         this.plugin = plugin;
-        this.mobManager = mobManager;
-        this.economy = economy;
         this.configFile = new File(plugin.getDataFolder(), "dungeons_config.json");
         this.dungeonConfigs = new ConcurrentHashMap<>();
         this.activeSessions = new ConcurrentHashMap<>();
@@ -300,7 +293,9 @@ public class DungeonManager {
         activeSessions.put(sessionId, session);
         saveSessionStart(session);
         
-        Bukkit.broadcastMessage("§6§l[MAZMORRA] §e" + config.getName() + " §7iniciada!");
+        net.kyori.adventure.audience.Audience audience = org.bukkit.Bukkit.getServer();
+        net.kyori.adventure.text.Component msg = net.kyori.adventure.text.Component.text("§6§l[MAZMORRA] §e" + config.getName() + " §7iniciada!");
+        audience.sendMessage(msg);
         plugin.getLogger().info("Sesión de mazmorra iniciada: " + sessionId);
         
         return session;
@@ -367,8 +362,9 @@ public class DungeonManager {
         // Guardar en BD
         saveSessionEnd(session);
         
-        Bukkit.broadcastMessage("§6§l[MAZMORRA] §e" + session.getDungeonName() + 
-            (success ? " §7completada!" : " §cfracasada!"));
+        net.kyori.adventure.audience.Audience audience = org.bukkit.Bukkit.getServer();
+        net.kyori.adventure.text.Component msg = net.kyori.adventure.text.Component.text("§6§l[MAZMORRA] §e" + session.getDungeonName() + (success ? " §7completada!" : " §cfracasada!"));
+        audience.sendMessage(msg);
     }
     
     /**

@@ -149,10 +149,10 @@ public class PlayerClass {
         }
         
         ClassStats stats = classType.getBaseStats().getStatsForLevel(level);
-        
-        // Aplicar vida máxima
-        player.setMaxHealth(stats.getBaseHealth() / 5.0); // Convertir a corazones (20 = 10 corazones)
-        player.setHealth(Math.min(player.getHealth(), player.getMaxHealth()));
+        // Aplicar vida máxima usando atributos (Paper/Spigot moderno)
+        double newMaxHealth = stats.getBaseHealth() / 5.0; // 20 = 10 corazones
+        player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(newMaxHealth);
+        player.setHealth(Math.min(player.getHealth(), newMaxHealth));
     }
     
     /**

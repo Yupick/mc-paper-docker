@@ -1,6 +1,11 @@
 #!/bin/bash
 
 echo "========================================="
+echo "Instalando dependencias Adventure API (kyori/adventure) para plugins modernos..."
+echo "========================================="
+mvn dependency:resolve -f mmorpg-plugin/pom.xml
+
+echo "========================================="
 echo "Creando servidor Minecraft Paper"
 echo "========================================="
 

@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import com.nightslayer.mmorpg.classes.PlayerClass;
 import com.nightslayer.mmorpg.npcs.CustomNPC;
 import com.nightslayer.mmorpg.quests.Quest;
-import com.nightslayer.mmorpg.quests.PlayerQuestProgress;
+// import com.nightslayer.mmorpg.quests.PlayerQuestProgress;
 import org.bukkit.entity.Player;
 
 import java.io.File;

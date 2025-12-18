@@ -23,7 +23,8 @@ import java.nio.file.Files;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.audience.Audience;
 
 /**
  * Manager for invasion system
@@ -333,7 +334,8 @@ public class InvasionManager {
         invasionMobs.put(session.getSessionId(), new ArrayList<>());
 
         // Broadcast start
-        Bukkit.broadcastMessage("§c§l[INVASIÓN] §e" + config.getDisplayName() + " §7ha comenzado en §b" + worldName + "§7!");
+        Audience audience = Bukkit.getServer();
+        audience.sendMessage(Component.text("§c§l[INVASIÓN] §e" + config.getDisplayName() + " §7ha comenzado en §b" + worldName + "§7!"));
 
         // Start first wave
         scheduleWave(session, config, 0);
@@ -363,9 +365,10 @@ public class InvasionManager {
                 spawnWave(session, config, waveConfig);
 
                 // Broadcast wave start
-                Bukkit.broadcastMessage("§c§l[INVASIÓN] §7Oleada §e" + waveConfig.getWaveNumber() + 
-                        "§7/§e" + config.getWaves().size() + " §7- §6" + waveConfig.getMobCount() + 
-                        " " + waveConfig.getMobType() + (waveConfig.isBossWave() ? " §c§lBOSS" : ""));
+                Audience audience = Bukkit.getServer();
+                audience.sendMessage(Component.text("§c§l[INVASIÓN] §7Oleada §e" + waveConfig.getWaveNumber() +
+                    "§7/§e" + config.getWaves().size() + " §7- §6" + waveConfig.getMobCount() +
+                    " " + waveConfig.getMobType() + (waveConfig.isBossWave() ? " §c§lBOSS" : "")));
 
                 // Check wave completion periodically
                 checkWaveCompletion(session, config, waveIndex);
@@ -403,7 +406,7 @@ public class InvasionManager {
             if (entity instanceof LivingEntity) {
                 LivingEntity mob = (LivingEntity) entity;
                 // Set custom properties for invasion mob
-                mob.setCustomName("§c" + waveConfig.getMobType() + " Lv." + waveConfig.getMobLevel());
+                mob.customName(Component.text("§c" + waveConfig.getMobType() + " Lv." + waveConfig.getMobLevel()));
                 mob.setCustomNameVisible(true);
                 waveMobs.add(mob);
                 session.setTotalMobsSpawned(session.getTotalMobsSpawned() + 1);
@@ -422,10 +425,12 @@ public class InvasionManager {
 
             if (bossEntity instanceof LivingEntity) {
                 LivingEntity boss = (LivingEntity) bossEntity;
-                boss.setCustomName("§c§l" + waveConfig.getBossName());
+                boss.customName(Component.text("§c§l" + waveConfig.getBossName()));
                 boss.setCustomNameVisible(true);
-                boss.setMaxHealth(boss.getMaxHealth() * waveConfig.getBossHealthMultiplier());
-                boss.setHealth(boss.getMaxHealth());
+                double oldMaxHealth = boss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                double newMaxHealth = oldMaxHealth * waveConfig.getBossHealthMultiplier();
+                boss.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(newMaxHealth);
+                boss.setHealth(newMaxHealth);
                 waveMobs.add(boss);
                 session.setTotalMobsSpawned(session.getTotalMobsSpawned() + 1);
             }
@@ -502,11 +507,11 @@ public class InvasionManager {
                 }
             }
 
-            Bukkit.broadcastMessage("§a§l[INVASIÓN] §7¡La invasión de §e" + config.getDisplayName() + 
-                    " §7ha sido derrotada!");
+            Audience audience = Bukkit.getServer();
+            audience.sendMessage(Component.text("§a§l[INVASIÓN] §7¡La invasión de §e" + config.getDisplayName() + " §7ha sido derrotada!"));
         } else {
-            Bukkit.broadcastMessage("§c§l[INVASIÓN] §7La invasión de §e" + config.getDisplayName() + 
-                    " §7ha fracasado...");
+            Audience audience = Bukkit.getServer();
+            audience.sendMessage(Component.text("§c§l[INVASIÓN] §7La invasión de §e" + config.getDisplayName() + " §7ha fracasado..."));
         }
 
         // Save to database
@@ -614,7 +619,8 @@ public class InvasionManager {
         invasionMobs.remove(sessionId);
         activeSessions.remove(sessionId);
 
-        Bukkit.broadcastMessage("§c§l[INVASIÓN] §7La invasión ha sido cancelada por un administrador.");
+        Audience audience = Bukkit.getServer();
+        audience.sendMessage(Component.text("§c§l[INVASIÓN] §7La invasión ha sido cancelada por un administrador."));
         return true;
     }
 
