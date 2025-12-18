@@ -405,3 +405,164 @@ class RPGManager:
         except Exception as e:
             print(f"Error inicializando archivos RPG para {world_slug}: {e}")
             return False
+
+    def auto_spawn_entities(self, world_slug: str, spawn_config: Optional[Dict] = None) -> bool:
+        """
+        Genera spawns automáticos de NPCs y dungeons en un mundo RPG nuevo
+        
+        Args:
+            world_slug: Slug del mundo
+            spawn_config: Configuración de spawns (opcional, usa valores por defecto)
+            
+        Returns:
+            True si se generaron los spawns correctamente
+        """
+        try:
+            import random
+            
+            world_dir = self._resolve_world_data_dir(world_slug)
+            
+            # Configuración por defecto
+            config = spawn_config or {
+                'spawn_radius': 500,  # Radio desde spawn (0,0)
+                'min_npc_distance': 100,  # Distancia mínima entre NPCs
+                'min_dungeon_distance': 200,  # Distancia mínima entre dungeons
+                'npc_count': 3,  # Número de NPCs a spawnear
+                'dungeon_count': 2  # Número de dungeons a spawnear
+            }
+            
+            spawn_radius = config.get('spawn_radius', 500)
+            min_npc_dist = config.get('min_npc_distance', 100)
+            min_dungeon_dist = config.get('min_dungeon_distance', 200)
+            
+            # Cargar NPCs universales
+            universal_npcs_file = self.plugin_data_path / 'npcs.json'
+            npcs_to_spawn = []
+            
+            if universal_npcs_file.exists():
+                with open(universal_npcs_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    universal_npcs = data.get('npcs', [])
+                    # Seleccionar NPCs aleatorios
+                    npc_count = min(config.get('npc_count', 3), len(universal_npcs))
+                    if npc_count > 0:
+                        npcs_to_spawn = random.sample(universal_npcs, npc_count)
+            
+            # Generar ubicaciones para NPCs
+            npc_locations = []
+            for npc in npcs_to_spawn:
+                attempts = 0
+                while attempts < 50:  # Máximo 50 intentos por NPC
+                    x = random.randint(-spawn_radius, spawn_radius)
+                    z = random.randint(-spawn_radius, spawn_radius)
+                    y = 64  # Altura por defecto
+                    
+                    # Verificar distancia mínima con otros NPCs
+                    valid = True
+                    for loc in npc_locations:
+                        dist = ((x - loc['x'])**2 + (z - loc['z'])**2) ** 0.5
+                        if dist < min_npc_dist:
+                            valid = False
+                            break
+                    
+                    if valid:
+                        npc_locations.append({
+                            'npc_id': npc.get('id'),
+                            'name': npc.get('name'),
+                            'x': x,
+                            'y': y,
+                            'z': z
+                        })
+                        break
+                    
+                    attempts += 1
+            
+            # Guardar NPCs con ubicaciones actualizadas en archivo local
+            local_npcs_file = world_dir / 'npcs.json'
+            if local_npcs_file.exists():
+                with open(local_npcs_file, 'r', encoding='utf-8') as f:
+                    local_npcs_data = json.load(f)
+                
+                # Actualizar ubicaciones de NPCs spawneados
+                for npc in local_npcs_data.get('npcs', []):
+                    for loc in npc_locations:
+                        if npc.get('id') == loc['npc_id']:
+                            npc['location'] = {
+                                'world': world_slug,
+                                'x': loc['x'],
+                                'y': loc['y'],
+                                'z': loc['z']
+                            }
+                
+                with open(local_npcs_file, 'w', encoding='utf-8') as f:
+                    json.dump(local_npcs_data, f, indent=2, ensure_ascii=False)
+            
+            # Cargar dungeons universales
+            dungeons_config_file = self.plugin_data_path.parent / 'dungeons_config.json'
+            dungeons_to_spawn = []
+            
+            if dungeons_config_file.exists():
+                with open(dungeons_config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    universal_dungeons = data.get('dungeons', [])
+                    # Seleccionar dungeons aleatorios
+                    dungeon_count = min(config.get('dungeon_count', 2), len(universal_dungeons))
+                    if dungeon_count > 0:
+                        dungeons_to_spawn = random.sample(universal_dungeons, dungeon_count)
+            
+            # Generar ubicaciones para dungeons
+            dungeon_locations = []
+            for dungeon in dungeons_to_spawn:
+                attempts = 0
+                while attempts < 50:
+                    x = random.randint(-spawn_radius, spawn_radius)
+                    z = random.randint(-spawn_radius, spawn_radius)
+                    y = 64
+                    
+                    # Verificar distancia mínima con otros dungeons y NPCs
+                    valid = True
+                    
+                    # Verificar distancia con dungeons
+                    for loc in dungeon_locations:
+                        dist = ((x - loc['x'])**2 + (z - loc['z'])**2) ** 0.5
+                        if dist < min_dungeon_dist:
+                            valid = False
+                            break
+                    
+                    # Verificar distancia con NPCs
+                    for loc in npc_locations:
+                        dist = ((x - loc['x'])**2 + (z - loc['z'])**2) ** 0.5
+                        if dist < min_npc_dist:
+                            valid = False
+                            break
+                    
+                    if valid:
+                        dungeon_locations.append({
+                            'dungeon_id': dungeon.get('id'),
+                            'name': dungeon.get('name'),
+                            'x': x,
+                            'y': y,
+                            'z': z
+                        })
+                        break
+                    
+                    attempts += 1
+            
+            # Guardar configuración de spawns en el archivo del mundo
+            spawns_file = world_dir / 'spawns.json'
+            spawns_data = {
+                'item_spawns': [],
+                'mob_spawns': [],
+                'npc_spawns': npc_locations,
+                'dungeon_spawns': dungeon_locations
+            }
+            
+            with open(spawns_file, 'w', encoding='utf-8') as f:
+                json.dump(spawns_data, f, indent=2, ensure_ascii=False)
+            
+            print(f"✓ Auto-spawn completado: {len(npc_locations)} NPCs y {len(dungeon_locations)} dungeons")
+            return True
+            
+        except Exception as e:
+            print(f"Error en auto-spawn para {world_slug}: {e}")
+            return False

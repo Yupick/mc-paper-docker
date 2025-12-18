@@ -228,6 +228,15 @@ class WorldManager:
                 success = rpg_manager.initialize_rpg_world(level_name, rpg_config)
                 if success:
                     print(f"✓ Mundo RPG '{name}' inicializado correctamente con archivos RPG")
+                    
+                    # Auto-spawn de NPCs y dungeons si está configurado
+                    auto_spawn = rpg_config.get('autoSpawn', True) if rpg_config else True
+                    if auto_spawn:
+                        spawn_success = rpg_manager.auto_spawn_entities(level_name)
+                        if spawn_success:
+                            print(f"✓ Auto-spawn de entidades completado para '{name}'")
+                        else:
+                            print(f"⚠ No se pudo completar el auto-spawn para '{name}'")
                 else:
                     print(f"⚠ Advertencia: No se pudieron inicializar todos los archivos RPG para '{name}'")
             except Exception as e:
