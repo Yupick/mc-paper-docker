@@ -61,7 +61,7 @@ app.config['UPLOAD_FOLDER'] = PLUGINS_DIR
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
 # Inicializar WorldManager, BackupService y RPGManager
-world_manager = WorldManager(WORLDS_DIR)
+world_manager = WorldManager(WORLDS_DIR, plugins_path=PLUGINS_DIR)
 backup_service = BackupService(WORLDS_DIR, BACKUP_WORLDS_DIR)
 # RPGManager necesita el path completo al directorio de datos del plugin y de mundos
 rpg_data_path = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data')

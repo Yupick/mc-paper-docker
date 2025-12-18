@@ -408,7 +408,7 @@ function renderRPGDashboard(summary) {
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Gestión de Spawns</h5>
                         <div>
-                            <button class="btn btn-success" onclick="showCreateSpawnModal()">
+                            <button class="btn btn-success" onclick="showCreateSpawnModal()" disabled title="Funcionalidad en desarrollo">
                                 <i class="bi bi-plus-circle"></i> Crear Spawn
                             </button>
                             <button class="btn btn-primary" onclick="loadSpawns()">
@@ -459,7 +459,7 @@ function renderRPGDashboard(summary) {
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-building me-2"></i>Gestión de Dungeons</h5>
                         <div>
-                            <button class="btn btn-success" onclick="showCreateDungeonModal()">
+                            <button class="btn btn-success" onclick="showCreateDungeonModal()" disabled title="Funcionalidad en desarrollo">
                                 <i class="bi bi-plus-circle"></i> Crear Dungeon
                             </button>
                             <button class="btn btn-primary" onclick="loadDungeons()">
@@ -1961,7 +1961,7 @@ function renderItemSpawnsList(itemSpawns) {
                                     '<span class="badge bg-secondary">Inactivo</span>'}
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick='editSpawn(${JSON.stringify(spawn)}, "item")'>
+                                <button class="btn btn-sm btn-primary" onclick='editSpawn(${JSON.stringify(spawn)}, "item")' disabled title="Funcionalidad en desarrollo">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-sm btn-danger" onclick="deleteSpawn('${spawn.id}', 'item')">
@@ -2018,7 +2018,7 @@ function renderMobSpawnsList(mobSpawns) {
                                     '<span class="badge bg-secondary">Inactivo</span>'}
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick='editSpawn(${JSON.stringify(spawn)}, "mob")'>
+                                <button class="btn btn-sm btn-primary" onclick='editSpawn(${JSON.stringify(spawn)}, "mob")' disabled title="Funcionalidad en desarrollo">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-sm btn-danger" onclick="deleteSpawn('${spawn.id}', 'mob')">
@@ -2144,10 +2144,10 @@ function renderDungeonsList(dungeons) {
                             </div>
                         </div>
                         <div class="card-footer">
-                            <button class="btn btn-sm btn-primary" onclick='editDungeon(${JSON.stringify(dungeon)})'>
+                            <button class="btn btn-sm btn-primary" onclick='editDungeon(${JSON.stringify(dungeon)})' disabled title="Funcionalidad en desarrollo">
                                 <i class="bi bi-pencil"></i> Editar
                             </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteDungeon('${dungeon.id}')">
+                            <button class="btn btn-sm btn-danger" onclick="deleteDungeon('${dungeon.id}')" disabled title="Funcionalidad en desarrollo">
                                 <i class="bi bi-trash"></i> Eliminar
                             </button>
                             <button class="btn btn-sm btn-success" onclick="startDungeon('${dungeon.id}')">

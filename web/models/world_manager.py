@@ -14,14 +14,16 @@ from .rpg_manager import RPGManager
 class WorldManager:
     """Gestiona todos los mundos del servidor"""
     
-    def __init__(self, worlds_base_path="/server/worlds"):
+    def __init__(self, worlds_base_path="/server/worlds", plugins_path=None):
         """
         Inicializar gestor de mundos
         
         Args:
             worlds_base_path: Ruta base donde se almacenan los mundos
+            plugins_path: Ruta a la carpeta de plugins (para RPGManager)
         """
         self.worlds_base_path = Path(worlds_base_path)
+        self.plugins_path = plugins_path
         self.config_file = self.worlds_base_path / "worlds.json"
         self.active_symlink = self.worlds_base_path / "active"
         self.templates_path = self.worlds_base_path / "templates"
@@ -224,7 +226,14 @@ class WorldManager:
             
             # Inicializar RPG Manager y crear archivos
             try:
-                rpg_manager = RPGManager()
+                # Determinar ruta de plugins
+                if self.plugins_path:
+                    rpg_data_path = str(Path(self.plugins_path) / 'MMORPGPlugin' / 'data')
+                    rpg_manager = RPGManager(plugin_data_path=rpg_data_path, worlds_base_path=str(self.worlds_base_path))
+                else:
+                    # Fallback a rutas por defecto
+                    rpg_manager = RPGManager()
+                
                 success = rpg_manager.initialize_rpg_world(level_name, rpg_config)
                 if success:
                     print(f"✓ Mundo RPG '{name}' inicializado correctamente con archivos RPG")
