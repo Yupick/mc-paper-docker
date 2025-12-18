@@ -378,6 +378,10 @@ class RPGManager:
                     'zones': [],
                     'spawns': []
                 },
+                'spawns.json': {
+                    'item_spawns': [],
+                    'mob_spawns': []
+                },
                 'squads.json': {
                     'squads': []
                 },

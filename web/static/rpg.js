@@ -176,6 +176,18 @@ function renderRPGDashboard(summary) {
                     <i class="bi bi-arrow-repeat"></i> Respawn
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="spawns-tab" data-bs-toggle="tab" data-bs-target="#spawns" 
+                        type="button" role="tab" onclick="switchRPGTab('spawns')">
+                    <i class="bi bi-geo-alt-fill"></i> Spawns
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="dungeons-tab" data-bs-toggle="tab" data-bs-target="#dungeons" 
+                        type="button" role="tab" onclick="switchRPGTab('dungeons')">
+                    <i class="bi bi-building"></i> Dungeons
+                </button>
+            </li>
         </ul>
         
         <!-- Contenido de tabs -->
@@ -386,6 +398,83 @@ function renderRPGDashboard(summary) {
                     </div>
                     <div class="card-body">
                         <p class="text-muted">Panel de configuración de respawn automático (próximamente)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Spawns -->
+            <div class="tab-pane fade" id="spawns" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Gestión de Spawns</h5>
+                        <div>
+                            <button class="btn btn-success" onclick="showCreateSpawnModal()">
+                                <i class="bi bi-plus-circle"></i> Crear Spawn
+                            </button>
+                            <button class="btn btn-primary" onclick="loadSpawns()">
+                                <i class="bi bi-arrow-clockwise"></i> Refrescar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-pills mb-3" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#item-spawns">
+                                    Items
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#mob-spawns">
+                                    Mobs
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="item-spawns">
+                                <div id="item-spawns-list">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="mob-spawns">
+                                <div id="mob-spawns-list">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Dungeons -->
+            <div class="tab-pane fade" id="dungeons" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-building me-2"></i>Gestión de Dungeons</h5>
+                        <div>
+                            <button class="btn btn-success" onclick="showCreateDungeonModal()">
+                                <i class="bi bi-plus-circle"></i> Crear Dungeon
+                            </button>
+                            <button class="btn btn-primary" onclick="loadDungeons()">
+                                <i class="bi bi-arrow-clockwise"></i> Refrescar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="dungeons-list">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1803,6 +1892,338 @@ async function deleteMob(mobId, scope) {
     } catch (error) {
         console.error('Error al eliminar Mob:', error);
         showToast('Error de conexión', 'error');
+    }
+}
+
+// ============================================
+// SPAWNS MANAGEMENT
+// ============================================
+
+/**
+ * Carga todos los spawns configurados
+ */
+async function loadSpawns() {
+    try {
+        const response = await fetch('/api/rpg/spawns');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderItemSpawnsList(data.spawns.item_spawns || []);
+            renderMobSpawnsList(data.spawns.mob_spawns || []);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al cargar spawns:', error);
+        showToast('Error de conexión al cargar spawns', 'error');
+    }
+}
+
+/**
+ * Renderiza la lista de item spawns
+ */
+function renderItemSpawnsList(itemSpawns) {
+    const container = document.getElementById('item-spawns-list');
+    
+    if (!itemSpawns || itemSpawns.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay spawns de items configurados
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Item</th>
+                        <th>Ubicación</th>
+                        <th>Intervalo Respawn</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemSpawns.map(spawn => `
+                        <tr>
+                            <td><code>${spawn.id}</code></td>
+                            <td>${spawn.entity}</td>
+                            <td>${spawn.location.x}, ${spawn.location.y}, ${spawn.location.z}</td>
+                            <td>${spawn.respawn_interval}s</td>
+                            <td>
+                                ${spawn.enabled ? 
+                                    '<span class="badge bg-success">Activo</span>' : 
+                                    '<span class="badge bg-secondary">Inactivo</span>'}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick='editSpawn(${JSON.stringify(spawn)}, "item")'>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSpawn('${spawn.id}', 'item')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+/**
+ * Renderiza la lista de mob spawns
+ */
+function renderMobSpawnsList(mobSpawns) {
+    const container = document.getElementById('mob-spawns-list');
+    
+    if (!mobSpawns || mobSpawns.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay spawns de mobs configurados
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Mob</th>
+                        <th>Ubicación</th>
+                        <th>Intervalo Respawn</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${mobSpawns.map(spawn => `
+                        <tr>
+                            <td><code>${spawn.id}</code></td>
+                            <td>${spawn.entity}</td>
+                            <td>${spawn.location.x}, ${spawn.location.y}, ${spawn.location.z}</td>
+                            <td>${spawn.respawn_interval}s</td>
+                            <td>
+                                ${spawn.enabled ? 
+                                    '<span class="badge bg-success">Activo</span>' : 
+                                    '<span class="badge bg-secondary">Inactivo</span>'}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick='editSpawn(${JSON.stringify(spawn)}, "mob")'>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSpawn('${spawn.id}', 'mob')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+/**
+ * Muestra modal para crear spawn
+ */
+function showCreateSpawnModal() {
+    // TODO: Implementar modal de creación de spawn
+    showToast('Funcionalidad de creación de spawns en desarrollo', 'info');
+}
+
+/**
+ * Edita un spawn
+ */
+function editSpawn(spawn, type) {
+    // TODO: Implementar edición de spawn
+    showToast('Funcionalidad de edición de spawns en desarrollo', 'info');
+}
+
+/**
+ * Elimina un spawn
+ */
+async function deleteSpawn(spawnId, type) {
+    if (!confirm(`¿Eliminar el spawn "${spawnId}"?`)) return;
+    
+    try {
+        const response = await fetch(`/api/rpg/spawns/${spawnId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type: type })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Spawn eliminado correctamente', 'success');
+            setTimeout(() => loadSpawns(), 1000);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar spawn:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+// ============================================
+// DUNGEONS MANAGEMENT
+// ============================================
+
+/**
+ * Carga la configuración de dungeons
+ */
+async function loadDungeons() {
+    try {
+        const response = await fetch('/api/rpg/dungeons/config');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderDungeonsList(data.config.dungeons || []);
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al cargar dungeons:', error);
+        showToast('Error de conexión al cargar dungeons', 'error');
+    }
+}
+
+/**
+ * Renderiza la lista de dungeons
+ */
+function renderDungeonsList(dungeons) {
+    const container = document.getElementById('dungeons-list');
+    
+    if (!dungeons || dungeons.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay dungeons configurados
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="row g-3">
+            ${dungeons.map(dungeon => `
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-building me-2"></i>
+                                ${dungeon.name || dungeon.id}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">${dungeon.description || 'Sin descripción'}</p>
+                            <div class="mb-2">
+                                <strong>Nivel requerido:</strong> ${dungeon.minLevel || 1}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Jugadores:</strong> ${dungeon.minPlayers || 1} - ${dungeon.maxPlayers || 4}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Ubicación:</strong> 
+                                ${dungeon.entrance ? 
+                                    `${dungeon.entrance.x}, ${dungeon.entrance.y}, ${dungeon.entrance.z}` : 
+                                    'No configurada'}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-sm btn-primary" onclick='editDungeon(${JSON.stringify(dungeon)})'>
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteDungeon('${dungeon.id}')">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="startDungeon('${dungeon.id}')">
+                                <i class="bi bi-play-fill"></i> Iniciar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+/**
+ * Muestra modal para crear dungeon
+ */
+function showCreateDungeonModal() {
+    // TODO: Implementar modal de creación de dungeon
+    showToast('Funcionalidad de creación de dungeons en desarrollo', 'info');
+}
+
+/**
+ * Edita un dungeon
+ */
+function editDungeon(dungeon) {
+    // TODO: Implementar edición de dungeon
+    showToast('Funcionalidad de edición de dungeons en desarrollo', 'info');
+}
+
+/**
+ * Elimina un dungeon
+ */
+async function deleteDungeon(dungeonId) {
+    if (!confirm(`¿Eliminar el dungeon "${dungeonId}"?`)) return;
+    
+    // TODO: Implementar eliminación de dungeon
+    showToast('Funcionalidad de eliminación de dungeons en desarrollo', 'info');
+}
+
+/**
+ * Inicia un dungeon
+ */
+async function startDungeon(dungeonId) {
+    try {
+        const response = await fetch('/api/rpg/dungeons/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ dungeonId: dungeonId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Dungeon iniciado correctamente', 'success');
+        } else {
+            showToast('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al iniciar dungeon:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+/**
+ * Cambia de tab en el RPG module
+ */
+function switchRPGTab(tabName) {
+    rpgState.currentTab = tabName;
+    
+    // Cargar datos específicos del tab si es necesario
+    if (tabName === 'spawns') {
+        loadSpawns();
+    } else if (tabName === 'dungeons') {
+        loadDungeons();
     }
 }
 

@@ -3156,6 +3156,204 @@ def update_global_respawn_settings():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # ============================================
+# SPAWNS MANAGEMENT ENDPOINTS (Items & Mobs)
+# ============================================
+
+@app.route('/api/rpg/spawns', methods=['GET'])
+@login_required
+def get_rpg_spawns():
+    """Obtiene todos los spawns configurados para el mundo activo"""
+    try:
+        world_slug = _get_active_world_slug()
+        if not world_slug:
+            return jsonify({'success': False, 'message': 'No hay mundo activo'}), 400
+        
+        # Leer spawns desde el archivo local del mundo
+        spawns_data = rpg_manager.read_file(world_slug, 'spawns', scope='exclusive-local')
+        
+        if spawns_data is None:
+            # Si no existe, crear estructura vacía
+            spawns_data = {
+                'item_spawns': [],
+                'mob_spawns': []
+            }
+        
+        return jsonify({
+            'success': True,
+            'spawns': spawns_data
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/spawns', methods=['POST'])
+@login_required
+def create_rpg_spawn():
+    """Crea un nuevo spawn (item o mob)"""
+    try:
+        world_slug = _get_active_world_slug()
+        if not world_slug:
+            return jsonify({'success': False, 'message': 'No hay mundo activo'}), 400
+        
+        data = request.get_json()
+        spawn_type = data.get('type')  # 'item' o 'mob'
+        
+        if spawn_type not in ['item', 'mob']:
+            return jsonify({'success': False, 'message': 'Tipo de spawn inválido'}), 400
+        
+        # Validar campos requeridos
+        required_fields = ['id', 'entity', 'location']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'message': f'Campo requerido: {field}'}), 400
+        
+        # Leer spawns actuales
+        spawns_data = rpg_manager.read_file(world_slug, 'spawns', scope='exclusive-local')
+        if spawns_data is None:
+            spawns_data = {
+                'item_spawns': [],
+                'mob_spawns': []
+            }
+        
+        # Crear nuevo spawn
+        new_spawn = {
+            'id': data['id'],
+            'entity': data['entity'],  # ID del item o mob
+            'location': {
+                'world': data['location'].get('world', world_slug),
+                'x': data['location']['x'],
+                'y': data['location']['y'],
+                'z': data['location']['z']
+            },
+            'respawn_on_use': data.get('respawn_on_use', True),
+            'respawn_on_death': data.get('respawn_on_death', True),
+            'respawn_interval': data.get('respawn_interval', 300),  # 5 minutos por defecto
+            'enabled': data.get('enabled', True)
+        }
+        
+        # Agregar a la lista correspondiente
+        if spawn_type == 'item':
+            spawns_data['item_spawns'].append(new_spawn)
+        else:
+            spawns_data['mob_spawns'].append(new_spawn)
+        
+        # Guardar
+        success = rpg_manager.write_file(world_slug, 'spawns', spawns_data, scope='exclusive-local')
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Spawn {spawn_type} creado correctamente',
+                'spawn': new_spawn
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Error al guardar spawn'}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/spawns/<spawn_id>', methods=['PUT'])
+@login_required
+def update_rpg_spawn(spawn_id):
+    """Actualiza un spawn existente"""
+    try:
+        world_slug = _get_active_world_slug()
+        if not world_slug:
+            return jsonify({'success': False, 'message': 'No hay mundo activo'}), 400
+        
+        data = request.get_json()
+        spawn_type = data.get('type')  # 'item' o 'mob'
+        
+        if spawn_type not in ['item', 'mob']:
+            return jsonify({'success': False, 'message': 'Tipo de spawn inválido'}), 400
+        
+        # Leer spawns actuales
+        spawns_data = rpg_manager.read_file(world_slug, 'spawns', scope='exclusive-local')
+        if spawns_data is None:
+            return jsonify({'success': False, 'message': 'No se encontraron spawns'}), 404
+        
+        # Buscar el spawn
+        spawn_list = spawns_data['item_spawns'] if spawn_type == 'item' else spawns_data['mob_spawns']
+        spawn_found = False
+        
+        for i, spawn in enumerate(spawn_list):
+            if spawn['id'] == spawn_id:
+                # Actualizar campos
+                if 'entity' in data:
+                    spawn['entity'] = data['entity']
+                if 'location' in data:
+                    spawn['location'] = data['location']
+                if 'respawn_on_use' in data:
+                    spawn['respawn_on_use'] = data['respawn_on_use']
+                if 'respawn_on_death' in data:
+                    spawn['respawn_on_death'] = data['respawn_on_death']
+                if 'respawn_interval' in data:
+                    spawn['respawn_interval'] = data['respawn_interval']
+                if 'enabled' in data:
+                    spawn['enabled'] = data['enabled']
+                
+                spawn_found = True
+                break
+        
+        if not spawn_found:
+            return jsonify({'success': False, 'message': 'Spawn no encontrado'}), 404
+        
+        # Guardar
+        success = rpg_manager.write_file(world_slug, 'spawns', spawns_data, scope='exclusive-local')
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Spawn actualizado correctamente'
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Error al guardar spawn'}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/rpg/spawns/<spawn_id>', methods=['DELETE'])
+@login_required
+def delete_rpg_spawn(spawn_id):
+    """Elimina un spawn"""
+    try:
+        world_slug = _get_active_world_slug()
+        if not world_slug:
+            return jsonify({'success': False, 'message': 'No hay mundo activo'}), 400
+        
+        data = request.get_json() or {}
+        spawn_type = data.get('type')  # 'item' o 'mob'
+        
+        if spawn_type not in ['item', 'mob']:
+            return jsonify({'success': False, 'message': 'Tipo de spawn inválido'}), 400
+        
+        # Leer spawns actuales
+        spawns_data = rpg_manager.read_file(world_slug, 'spawns', scope='exclusive-local')
+        if spawns_data is None:
+            return jsonify({'success': False, 'message': 'No se encontraron spawns'}), 404
+        
+        # Buscar y eliminar el spawn
+        spawn_list_key = 'item_spawns' if spawn_type == 'item' else 'mob_spawns'
+        original_count = len(spawns_data[spawn_list_key])
+        spawns_data[spawn_list_key] = [s for s in spawns_data[spawn_list_key] if s['id'] != spawn_id]
+        
+        if len(spawns_data[spawn_list_key]) == original_count:
+            return jsonify({'success': False, 'message': 'Spawn no encontrado'}), 404
+        
+        # Guardar
+        success = rpg_manager.write_file(world_slug, 'spawns', spawns_data, scope='exclusive-local')
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Spawn eliminado correctamente'
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Error al guardar cambios'}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ============================================
 # BESTIARY ENDPOINTS
 # ============================================
 
