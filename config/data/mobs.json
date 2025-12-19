@@ -1,18 +1,21 @@
 {
-  "mobs": [
-    {
-      "id": "zombie_warrior",
-      "name": "Guerrero Zombi",
-      "entityType": "ZOMBIE",
-      "level": 5,
-      "health": 100,
-      "damage": 15,
-      "drops": [
-        {
-          "item": "IRON_SWORD",
-          "chance": 0.1
-        }
-      ]
-    }
-  ]
+  "zombie_warrior": {
+    "name": "Guerrero Zombi",
+    "entityType": "ZOMBIE",
+    "level": 5,
+    "health": 100,
+    "damage": 15,
+    "defense": 2.0,
+    "experienceReward": 50,
+    "isBoss": false,
+    "spawnLocation": null,
+    "drops": [
+      {
+        "itemType": "IRON_SWORD",
+        "minAmount": 1,
+        "maxAmount": 1,
+        "dropChance": 0.1
+      }
+    ]
+  }
 }
