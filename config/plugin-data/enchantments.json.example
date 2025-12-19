@@ -1,0 +1,35 @@
+{
+  "enchantments": {
+    "flame": {
+      "id": "flame",
+      "name": "Fuego",
+      "description": "Las flechas se encienden en llamas",
+      "max_level": 1,
+      "applicable_items": ["BOW"],
+      "conflict_with": [],
+      "level_multiplier": 1.0,
+      "effects": [
+        {
+          "type": "APPLY_FLAME",
+          "level": 1,
+          "duration": -1
+        }
+      ]
+    },
+    "infinity": {
+      "id": "infinity",
+      "name": "Infinito",
+      "description": "Las flechas nunca se agotan",
+      "max_level": 1,
+      "applicable_items": ["BOW"],
+      "conflict_with": ["mending"],
+      "level_multiplier": 1.0,
+      "effects": [
+        {
+          "type": "INFINITE_ARROWS",
+          "level": 1
+        }
+      ]
+    }
+  ]
+}

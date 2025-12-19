@@ -10,6 +10,23 @@ VENV_DIR="$SCRIPT_DIR/.venv"
 PID_FILE="$WEB_DIR/panel.pid"
 LOG_FILE="$WEB_DIR/panel.log"
 
+# Funciones de utilidad
+show_status() {
+    echo "✅ $1"
+}
+
+show_warning() {
+    echo "⚠️  $1"
+}
+
+show_error() {
+    echo "❌ $1"
+}
+
+show_info() {
+    echo "ℹ️  $1"
+}
+
 cd "$SCRIPT_DIR"
 
 # Función para verificar si el proceso está corriendo
@@ -73,6 +90,34 @@ cd "$SCRIPT_DIR"
 echo "========================================="
 echo "🚀 Panel Web Minecraft Server"
 echo "========================================="
+echo ""
+
+# Verificar plugin MMORPG
+echo "📦 Verificando plugin MMORPG..."
+echo ""
+
+# Verificar si el JAR del plugin está compilado
+PLUGIN_JAR="$SCRIPT_DIR/mmorpg-plugin/target/mmorpg-plugin-1.0.0.jar"
+
+if [ ! -f "$PLUGIN_JAR" ]; then
+    show_warning "Plugin MMORPG no compilado"
+    echo ""
+    show_info "El plugin se compila automáticamente con: ./install-mmorpg.sh"
+    echo ""
+else
+    show_status "Plugin MMORPG compilado"
+    
+    # Si el contenedor está corriendo, verificar que el JAR esté sincronizado
+    if docker ps --format '{{.Names}}' | grep -q "^minecraft-paper$" 2>/dev/null; then
+        if docker exec minecraft-paper test -f /server/plugins/mmorpg-plugin-1.0.0.jar 2>/dev/null; then
+            show_status "Plugin sincronizado en el servidor"
+        else
+            show_warning "Plugin no encontrado en el servidor"
+            show_info "Ejecuta: docker cp $PLUGIN_JAR minecraft-paper:/server/plugins/"
+        fi
+    fi
+fi
+
 echo ""
 
 # Verificar/Crear entorno virtual
@@ -197,7 +242,7 @@ ADMIN_PASSWORD_HASH=$PASSWORD_HASH
 ADMIN_PASSWORD=$DEFAULT_PASSWORD
 
 # Nombre del contenedor Docker
-DOCKER_CONTAINER_NAME=mc-paper
+DOCKER_CONTAINER_NAME=minecraft-paper
 EOF
     
     echo "✅ Archivo .env creado"
@@ -224,8 +269,13 @@ done
 
 if [ $MISSING_DEPS -eq 1 ]; then
     echo "⚙️  Instalando dependencias en el entorno virtual..."
-    pip install --upgrade pip --quiet
-    pip install flask flask-login python-dotenv docker werkzeug --quiet
+    pip install --upgrade pip --quiet 2>/dev/null || pip install --upgrade pip --break-system-packages --quiet 2>/dev/null
+    
+    # Intentar instalación normal primero
+    if ! pip install flask flask-login python-dotenv docker werkzeug --quiet 2>/dev/null; then
+        echo "⚙️  Instalando con --break-system-packages..."
+        pip install --break-system-packages flask flask-login python-dotenv docker werkzeug --quiet
+    fi
     
     if [ $? -ne 0 ]; then
         echo "❌ ERROR: No se pudieron instalar las dependencias"

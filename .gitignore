@@ -22,6 +22,9 @@ cache/
 crash-reports/
 libraries/
 
+# Config generada en ejecución
+config/server.properties
+
 # Archivos del servidor (mantener solo la configuración base)
 paper-*.jar
 paper.jar

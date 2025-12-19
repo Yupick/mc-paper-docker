@@ -8,7 +8,7 @@ echo ""
 echo "[1/2] Verificando estado del contenedor..."
 
 # Verificar si el contenedor existe
-if ! sudo docker-compose ps -q minecraft 2>/dev/null | grep -q .; then
+if ! sudo docker-compose ps -q minecraft-paper 2>/dev/null | grep -q .; then
     echo "⚠️  Contenedor no encontrado. Ejecuta ./create.sh primero."
     exit 1
 fi

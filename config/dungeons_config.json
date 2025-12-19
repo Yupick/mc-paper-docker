@@ -1,0 +1,91 @@
+{
+  "dungeons": [
+    {
+      "id": "catacombs",
+      "name": "Catacumbas Perdidas",
+      "description": "Ruinas antiguas llenas de esqueletos y no-muertos",
+      "minLevel": 10,
+      "maxLevel": 30,
+      "minPlayers": 1,
+      "maxPlayers": 4,
+      "estimatedDuration": 30,
+      "enabled": true,
+      "roomTemplates": [
+        {
+          "id": "chamber_main",
+          "type": "CHAMBER",
+          "width": 30,
+          "height": 30,
+          "possibleMobs": [
+            "skeleton",
+            "zombie",
+            "wither_skeleton"
+          ],
+          "mobCount": 8,
+          "hasTreasure": false,
+          "hasBoss": false
+        },
+        {
+          "id": "arena_boss",
+          "type": "BOSS_ARENA",
+          "width": 40,
+          "height": 40,
+          "possibleMobs": [
+            "necromancer"
+          ],
+          "mobCount": 1,
+          "hasTreasure": true,
+          "hasBoss": true
+        }
+      ],
+      "rewards": {
+        "baseXp": 500,
+        "baseCoin": 200,
+        "treasureItems": [
+          "Iron Sword RPG",
+          "Gold Boots"
+        ],
+        "treasureDropChance": 0.3,
+        "bossXpBonus": 1000,
+        "bossCoinBonus": 500
+      }
+    },
+    {
+      "id": "wizard_tower",
+      "name": "Torre del Mago Oscuro",
+      "description": "Una torre mágica llena de hechiceros y constructos",
+      "minLevel": 25,
+      "maxLevel": 50,
+      "minPlayers": 2,
+      "maxPlayers": 4,
+      "estimatedDuration": 45,
+      "enabled": true,
+      "roomTemplates": [
+        {
+          "id": "chamber_tower",
+          "type": "CHAMBER",
+          "width": 25,
+          "height": 25,
+          "possibleMobs": [
+            "mage",
+            "wizard"
+          ],
+          "mobCount": 6,
+          "hasTreasure": false,
+          "hasBoss": false
+        }
+      ],
+      "rewards": {
+        "baseXp": 800,
+        "baseCoin": 400,
+        "treasureItems": [
+          "Mage Robe",
+          "Staff of Power"
+        ],
+        "treasureDropChance": 0.4,
+        "bossXpBonus": 1500,
+        "bossCoinBonus": 700
+      }
+    }
+  ]
+}

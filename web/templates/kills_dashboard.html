@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Kills - Panel RPG</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='kills-tracking.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>RPG Panel</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" class="nav-link">Dashboard</a></li>
+                    <li><a href="#kills-section" class="nav-link active">Kills Tracking</a></li>
+                    <li><a href="#" class="nav-link">Quests</a></li>
+                    <li><a href="#" class="nav-link">Items</a></li>
+                    <li><a href="#" class="nav-link">Configuración</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <h1>Sistema de Tracking de Kills</h1>
+                <div class="header-info">
+                    <span class="info-badge">Última actualización: <span id="last-update">ahora</span></span>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="dashboard-content">
+                
+                <!-- Sección de Kills Recientes -->
+                <section id="kills-section" class="dashboard-section">
+                    <h2>Kills Recientes</h2>
+                    <div id="kills-table-container" class="kills-table-container">
+                        <div class="empty-state">
+                            <p>Cargando datos...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección de Estadísticas por Jugador -->
+                <section class="dashboard-section">
+                    <h2>Estadísticas por Jugador</h2>
+                    <div id="player-stats-container" class="player-stats-container">
+                        <div class="empty-state">
+                            <p>Cargando datos...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección de Estadísticas por Mob -->
+                <section class="dashboard-section">
+                    <h2>Estadísticas por Mob</h2>
+                    <div id="mob-stats-container" class="mob-stats-container">
+                        <div class="empty-state">
+                            <p>Cargando datos...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección de Timeline -->
+                <section class="dashboard-section">
+                    <h2>Timeline de Kills</h2>
+                    <div id="timeline-container" class="timeline-container">
+                        <div class="empty-state">
+                            <p>Cargando datos...</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='kills-tracking.js') }}"></script>
+    <script>
+        // Actualizar timestamp de última actualización
+        setInterval(() => {
+            const lastUpdate = document.getElementById('last-update');
+            if (lastUpdate) {
+                lastUpdate.textContent = new Date().toLocaleString('es-ES');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -364,47 +364,51 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-menu">
-            <div class="sidebar-item active" onclick="showSection('dashboard')">
+            <div class="sidebar-item active" onclick="showSection('dashboard', event)">
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('config')">
+            <div class="sidebar-item" onclick="showSection('config', event)">
                 <i class="bi bi-gear"></i>
                 <span>Configuración</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('players')">
+            <div class="sidebar-item" onclick="showSection('players', event)">
                 <i class="bi bi-people"></i>
                 <span>Jugadores</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('console')">
+            <div class="sidebar-item" onclick="showSection('console', event)">
                 <i class="bi bi-terminal"></i>
                 <span>Consola</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('plugins')">
+            <div class="sidebar-item" onclick="showSection('plugins', event)">
                 <i class="bi bi-puzzle"></i>
                 <span>Plugins</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('files')">
+            <div class="sidebar-item" onclick="showSection('files', event)">
                 <i class="bi bi-file-earmark-code"></i>
                 <span>Editor Archivos</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('worlds')">
+            <div class="sidebar-item" onclick="showSection('worlds', event)">
                 <i class="bi bi-globe2"></i>
                 <span>Mundos</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('backups')">
+            <div class="sidebar-item d-none" id="sidebar-rpg" onclick="showSection('rpg', event)">
+                <i class="bi bi-controller"></i>
+                <span>RPG</span>
+            </div>
+            <div class="sidebar-item" onclick="showSection('backups', event)">
                 <i class="bi bi-archive"></i>
                 <span>Backups</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('whitelist')">
+            <div class="sidebar-item" onclick="showSection('whitelist', event)">
                 <i class="bi bi-person-check"></i>
                 <span>Whitelist</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('ops')">
+            <div class="sidebar-item" onclick="showSection('ops', event)">
                 <i class="bi bi-shield-check"></i>
                 <span>Operadores</span>
             </div>
-            <div class="sidebar-item" onclick="showSection('stats')">
+            <div class="sidebar-item" onclick="showSection('stats', event)">
                 <i class="bi bi-graph-up"></i>
                 <span>Estadísticas</span>
             </div>
@@ -416,7 +420,13 @@
         
         <!-- Dashboard Section -->
         <div class="content-section active" id="section-dashboard">
-            <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard del Servidor</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard del Servidor</h2>
+                <div class="alert alert-info mb-0 py-2 px-3">
+                    <i class="bi bi-globe2"></i> <strong>Mundo Activo:</strong> 
+                    <span id="activeWorldNameDashboard">Cargando...</span>
+                </div>
+            </div>
             
             <!-- Server Status -->
             <div class="row">
@@ -544,7 +554,116 @@
 
         <!-- Configuration Section -->
         <div class="content-section" id="section-config">
-            <h2 class="mb-4"><i class="bi bi-gear"></i> Configuración del Servidor</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-gear"></i> Configuración del Servidor</h2>
+                <div class="alert alert-info mb-0 py-2 px-3">
+                    <i class="bi bi-globe2"></i> <strong>Mundo Activo:</strong> 
+                    <span id="activeWorldName">Cargando...</span>
+                </div>
+            </div>
+            
+            <!-- Configuración de Rendimiento del Panel -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="bi bi-speedometer2"></i> Rendimiento del Panel
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Optimización de RCON:</strong> Ajusta los intervalos de actualización para reducir la carga en el servidor.
+                        Valores más altos = menos solicitudes RCON = mejor rendimiento del servidor.
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Actualización de Estado</label>
+                            <select class="form-select" id="refreshInterval" onchange="updateRefreshInterval()">
+                                <option value="2000">2 segundos (Alto consumo)</option>
+                                <option value="3000">3 segundos</option>
+                                <option value="5000" selected>5 segundos (Recomendado)</option>
+                                <option value="10000">10 segundos</option>
+                                <option value="15000">15 segundos</option>
+                                <option value="30000">30 segundos (Bajo consumo)</option>
+                            </select>
+                            <small class="text-muted">Estado del servidor, CPU, RAM</small>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Actualización de Logs</label>
+                            <select class="form-select" id="logsInterval" onchange="updateLogsInterval()">
+                                <option value="5000">5 segundos</option>
+                                <option value="10000" selected>10 segundos (Recomendado)</option>
+                                <option value="15000">15 segundos</option>
+                                <option value="30000">30 segundos</option>
+                                <option value="60000">60 segundos</option>
+                            </select>
+                            <small class="text-muted">Logs de consola</small>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Actualización de TPS</label>
+                            <select class="form-select" id="tpsInterval" onchange="updateTpsInterval()">
+                                <option value="5000">5 segundos</option>
+                                <option value="10000" selected>10 segundos (Recomendado)</option>
+                                <option value="15000">15 segundos</option>
+                                <option value="30000">30 segundos</option>
+                                <option value="60000">60 segundos</option>
+                            </select>
+                            <small class="text-muted">TPS y rendimiento</small>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="pauseWhenHidden" checked onchange="togglePauseWhenHidden()">
+                                <label class="form-check-label" for="pauseWhenHidden">
+                                    <strong>Pausar al cambiar de pestaña</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Detiene las actualizaciones cuando el panel no está visible (ahorra recursos del servidor)
+                            </small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="alert alert-success mb-0 py-2">
+                                <i class="bi bi-check-circle"></i> <strong>Estado:</strong> 
+                                <span id="pollingStatus">Activo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="rconEnabled" onchange="toggleRconEnabled()">
+                                <label class="form-check-label" for="rconEnabled">
+                                    <strong>RCON habilitado</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Desactiva completamente RCON (comandos, chat, acciones de jugadores)
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="rconPollingEnabled" onchange="toggleRconPolling()">
+                                <label class="form-check-label" for="rconPollingEnabled">
+                                    <strong>Polling RCON (TPS/Jugadores)</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Cuando está desactivado, el panel usa caché/valores por defecto para TPS y jugadores
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="card">
                 <div class="card-header">
@@ -769,14 +888,21 @@
 
         <!-- Worlds Section -->
         <div class="content-section" id="section-worlds">
-            <h2 class="mb-4"><i class="bi bi-globe2"></i> Gestión de Mundos</h2>
-            
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-list"></i> Mundos del Servidor
-                </div>
-                <div class="card-body">
-                    <div id="worlds-list">Cargando...</div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-globe2"></i> Gestión de Mundos</h2>
+                <button class="btn btn-primary" onclick="showCreateWorldModal()">
+                    <i class="bi bi-plus-circle"></i> Crear Mundo
+                </button>
+            </div>
+
+            <!-- Grid de mundos -->
+            <div class="row g-4" id="worldsGrid">
+                <!-- Las tarjetas se generarán dinámicamente -->
+                <div class="col-12 text-center text-muted">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando mundos...</span>
+                    </div>
+                    <p class="mt-2">Cargando mundos...</p>
                 </div>
             </div>
         </div>
@@ -784,6 +910,47 @@
         <!-- Backups Section -->
         <div class="content-section" id="section-backups">
             <h2 class="mb-4"><i class="bi bi-archive"></i> Gestión de Backups</h2>
+            
+            <!-- Configuración de Backups Automáticos -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <i class="bi bi-gear"></i> Configuración de Backups
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-1">Backups Automáticos al Cambiar Mundo</h5>
+                            <p class="text-muted mb-0 small">
+                                Cuando está activado, se creará automáticamente un backup del mundo actual antes de cambiar a otro mundo.
+                                Solo se mantienen los últimos 5 backups automáticos por mundo.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input" type="checkbox" role="switch" id="autoBackupEnabled" style="width: 3rem; height: 1.5rem;" onchange="toggleAutoBackup()">
+                                <label class="form-check-label ms-2" for="autoBackupEnabled" id="autoBackupLabel">
+                                    <span class="badge bg-secondary">Cargando...</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="autoBackupRetention" class="form-label">Backups automáticos a conservar</label>
+                            <select class="form-select" id="autoBackupRetention" onchange="updateBackupRetention()">
+                                <option value="3">3 backups</option>
+                                <option value="5" selected>5 backups</option>
+                                <option value="10">10 backups</option>
+                                <option value="15">15 backups</option>
+                            </select>
+                            <small class="text-muted">Los más antiguos se eliminarán automáticamente</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="card">
                 <div class="card-header">
@@ -901,6 +1068,294 @@
             </div>
         </div>
 
+        <!-- RPG Section -->
+        <div class="content-section" id="section-rpg">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-controller"></i> Panel RPG
+                </h2>
+                <div>
+                    <span class="badge bg-primary" id="rpg-world-name">Cargando...</span>
+                </div>
+            </div>
+            
+            <div id="rpg-content">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Cargando datos RPG...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal: Crear Mundo -->
+    <div class="modal fade" id="createWorldModal" tabindex="-1" aria-labelledby="createWorldModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createWorldModalLabel">
+                        <i class="bi bi-plus-circle"></i> Crear Nuevo Mundo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createWorldForm">
+                        <div class="mb-3">
+                            <label for="worldName" class="form-label">Nombre del Mundo *</label>
+                            <input type="text" class="form-control" id="worldName" name="name" required
+                                   placeholder="Ej: Survival Principal">
+                            <div class="form-text">Nombre descriptivo para identificar el mundo</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="worldDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="worldDescription" name="description" rows="2"
+                                      placeholder="Descripción breve del mundo (opcional)"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="worldTemplate" class="form-label">Plantilla</label>
+                                <select class="form-select" id="worldTemplate" name="template">
+                                    <option value="vanilla" selected>Vanilla (Generación Normal)</option>
+                                    <option value="flat">Flat (Mundo Plano)</option>
+                                    <option value="amplified">Amplified (Montañas Extremas)</option>
+                                    <option value="large_biomes">Large Biomes (Biomas Grandes)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="worldSeed" class="form-label">Seed (Semilla)</label>
+                                <input type="text" class="form-control" id="worldSeed" name="seed"
+                                       placeholder="Opcional, deja vacío para aleatorio">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="worldGamemode" class="form-label">Modo de Juego</label>
+                                <select class="form-select" id="worldGamemode" name="gamemode">
+                                    <option value="survival" selected>Survival</option>
+                                    <option value="creative">Creative</option>
+                                    <option value="adventure">Adventure</option>
+                                    <option value="spectator">Spectator</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="worldDifficulty" class="form-label">Dificultad</label>
+                                <select class="form-select" id="worldDifficulty" name="difficulty">
+                                    <option value="peaceful">Peaceful (Pacífico)</option>
+                                    <option value="easy">Easy (Fácil)</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="hard">Hard (Difícil)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="worldMotd" class="form-label">MOTD (Mensaje del Día)</label>
+                            <input type="text" class="form-control" id="worldMotd" name="motd"
+                                   placeholder="Ej: ¡Bienvenido a mi servidor!" maxlength="59">
+                            <div class="form-text">Este mensaje aparece en la lista de servidores de Minecraft (máximo 59 caracteres)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary bg-opacity-10">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-controller me-2"></i>
+                                        Modo RPG
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="worldIsRPG" name="isRPG">
+                                        <label class="form-check-label" for="worldIsRPG">
+                                            <strong>Activar modo MMORPG</strong>
+                                        </label>
+                                    </div>
+                                    <div class="form-text mt-2">
+                                        Habilita características RPG como clases, quests, NPCs y economía.
+                                        Requiere el plugin MMORPG instalado.
+                                    </div>
+                                    
+                                    <div id="rpgConfigOptions" class="mt-3 d-none">
+                                        <hr>
+                                        <h6 class="mb-3">Características RPG</h6>
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgClasses" checked>
+                                                    <label class="form-check-label" for="rpgClasses">
+                                                        Sistema de Clases
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgQuests" checked>
+                                                    <label class="form-check-label" for="rpgQuests">
+                                                        Sistema de Quests
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgNPCs" checked>
+                                                    <label class="form-check-label" for="rpgNPCs">
+                                                        NPCs
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="rpgEconomy" checked>
+                                                    <label class="form-check-label" for="rpgEconomy">
+                                                        Economía
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="createWorldError" class="alert alert-danger d-none"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitCreateWorld()">
+                        <i class="bi bi-check-circle"></i> Crear Mundo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar Cambio de Mundo -->
+    <div class="modal fade" id="confirmSwitchModal" tabindex="-1" aria-labelledby="confirmSwitchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning bg-opacity-10 border-warning">
+                    <h5 class="modal-title text-warning" id="confirmSwitchModalLabel">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Cambio de Mundo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Estás a punto de cambiar al mundo: <strong id="targetWorldName"></strong></p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i> El servidor se detendrá temporalmente y todos los jugadores conectados serán desconectados.
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="createBackupBeforeSwitch" checked>
+                        <label class="form-check-label" for="createBackupBeforeSwitch">
+                            Crear backup del mundo actual antes de cambiar
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" onclick="confirmSwitchWorld()">
+                        <i class="bi bi-arrow-repeat"></i> Cambiar Mundo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Configuración del Mundo -->
+    <div class="modal fade" id="editWorldConfigModal" tabindex="-1" aria-labelledby="editWorldConfigModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editWorldConfigModalLabel">
+                        <i class="bi bi-gear"></i> Configuración del Mundo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Mundo: <strong id="editWorldName"></strong></p>
+                    <form id="editWorldConfigForm">
+                        <!-- El contenido se cargará dinámicamente -->
+                        <div id="worldConfigContent">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Cargando configuración...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveWorldConfig()">
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Backups del Mundo -->
+    <div class="modal fade" id="worldBackupsModal" tabindex="-1" aria-labelledby="worldBackupsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="worldBackupsModalLabel">
+                        <i class="bi bi-archive"></i> Backups del Mundo: <strong id="backupsWorldName"></strong>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Botón para crear backup -->
+                    <div class="mb-3">
+                        <button class="btn btn-success w-100" onclick="createWorldBackupFromModal()">
+                            <i class="bi bi-plus-circle"></i> Crear Backup Ahora
+                        </button>
+                    </div>
+
+                    <!-- Estadísticas de backups -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Total de Backups</small>
+                                    <h4 class="mb-0 text-primary" id="totalBackupsCount">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Espacio Utilizado</small>
+                                    <h4 class="mb-0 text-success" id="totalBackupsSize">0 MB</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de backups -->
+                    <div id="worldBackupsList">
+                        <div class="text-center text-muted">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando backups...</span>
+                            </div>
+                            <p class="mt-2">Cargando backups...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal de Cambio de Contraseña Obligatorio -->
@@ -945,5 +1400,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/dashboard.js?v=2.0.1"></script>
+    <script src="/static/rpg.js?v=1.0.0"></script>
 </body>
 </html>

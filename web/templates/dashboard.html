@@ -537,6 +537,87 @@
                     </div>
                 </div>
 
+                <!-- Resource Pack Configuration -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="bi bi-box-seam"></i> Configuración de Resource Pack
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs mb-3" id="resourcePackTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="rp-url-tab" data-bs-toggle="tab" data-bs-target="#rp-url" type="button">
+                                    <i class="bi bi-link-45deg"></i> URL Externa
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="rp-local-tab" data-bs-toggle="tab" data-bs-target="#rp-local" type="button">
+                                    <i class="bi bi-hdd"></i> Packs Locales
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="resourcePackTabContent">
+                            <!-- Tab: URL Externa -->
+                            <div class="tab-pane fade show active" id="rp-url" role="tabpanel">
+                                <div class="mb-3">
+                                    <label for="rp-url-input" class="form-label">URL del Resource Pack</label>
+                                    <input type="url" class="form-control" id="rp-url-input" 
+                                           placeholder="https://example.com/resource-pack.zip">
+                                    <small class="text-muted">Debe ser una URL pública accesible</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="rp-sha1-input" class="form-label">Hash SHA-1</label>
+                                    <input type="text" class="form-control font-monospace" id="rp-sha1-input" 
+                                           placeholder="40 caracteres hexadecimales" maxlength="40">
+                                    <small class="text-muted">Hash SHA-1 del archivo .zip para validación</small>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="rp-require-check">
+                                    <label class="form-check-label" for="rp-require-check">
+                                        <strong>Requerir Resource Pack</strong> (forzar descarga)
+                                    </label>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="rp-prompt-input" class="form-label">Mensaje Opcional</label>
+                                    <input type="text" class="form-control" id="rp-prompt-input" 
+                                           placeholder="¡Descarga nuestro resource pack!">
+                                    <small class="text-muted">Mensaje que verán los jugadores al conectarse</small>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="saveResourcePackConfig()">
+                                    <i class="bi bi-save"></i> Guardar Configuración
+                                </button>
+                            </div>
+
+                            <!-- Tab: Packs Locales -->
+                            <div class="tab-pane fade" id="rp-local" role="tabpanel">
+                                <div class="mb-3">
+                                    <label for="rp-file-upload" class="form-label">Subir Resource Pack (.zip)</label>
+                                    <input type="file" class="form-control" id="rp-file-upload" accept=".zip">
+                                    <small class="text-muted">Máximo 50 MB</small>
+                                </div>
+
+                                <button class="btn btn-success mb-3" onclick="uploadResourcePack()">
+                                    <i class="bi bi-upload"></i> Subir Pack
+                                </button>
+
+                                <hr>
+
+                                <h6>Packs Almacenados</h6>
+                                <div id="local-packs-list">
+                                    <div class="text-center py-3">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <p class="text-muted small mt-2">Cargando...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Backups -->
                 <div class="card mt-3">
                     <div class="card-header">
@@ -1144,6 +1225,8 @@
             loadVersion();
             loadUptime();
             loadBackups();
+            loadResourcePackConfig();
+            loadLocalResourcePacks();
             
             // Actualizar estado cada 5 segundos
             setInterval(loadServerStatus, 5000);
@@ -1154,6 +1237,186 @@
             // Actualizar uptime cada 30 segundos
             setInterval(loadUptime, 30000);
         });
+
+        // ============================================================================
+        // RESOURCE PACK FUNCTIONS
+        // ============================================================================
+
+        /**
+         * Carga la configuración actual de resource pack
+         */
+        function loadResourcePackConfig() {
+            fetch('/api/resource-pack/config')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const config = data.config;
+                        document.getElementById('rp-url-input').value = config['resource-pack'] || '';
+                        document.getElementById('rp-sha1-input').value = config['resource-pack-sha1'] || '';
+                        document.getElementById('rp-require-check').checked = config['require-resource-pack'] === 'true';
+                        document.getElementById('rp-prompt-input').value = config['resource-pack-prompt'] || '';
+                    } else {
+                        showToast('Error al cargar configuración de resource pack', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading resource pack config:', error);
+                    showToast('Error de conexión', 'error');
+                });
+        }
+
+        /**
+         * Guarda la configuración de resource pack
+         */
+        function saveResourcePackConfig() {
+            const url = document.getElementById('rp-url-input').value.trim();
+            const sha1 = document.getElementById('rp-sha1-input').value.trim();
+            const require = document.getElementById('rp-require-check').checked;
+            const prompt = document.getElementById('rp-prompt-input').value.trim();
+
+            // Validar SHA-1 si está presente
+            if (sha1 && !/^[a-fA-F0-9]{40}$/.test(sha1)) {
+                showToast('El hash SHA-1 debe tener exactamente 40 caracteres hexadecimales', 'error');
+                return;
+            }
+
+            fetch('/api/resource-pack/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    resource_pack_url: url,
+                    sha1_hash: sha1,
+                    require: require,
+                    prompt: prompt
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message || 'Configuración guardada. Reinicia el servidor para aplicar cambios.', 'success');
+                } else {
+                    showToast(data.error || 'Error al guardar configuración', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving resource pack config:', error);
+                showToast('Error de conexión', 'error');
+            });
+        }
+
+        /**
+         * Sube un resource pack local
+         */
+        function uploadResourcePack() {
+            const fileInput = document.getElementById('rp-file-upload');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showToast('Selecciona un archivo .zip', 'error');
+                return;
+            }
+
+            if (!file.name.endsWith('.zip')) {
+                showToast('El archivo debe ser un .zip', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showToast('Subiendo archivo...', 'info');
+
+            fetch('/api/resource-pack/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(`Pack subido: ${data.sha1}`, 'success');
+                    fileInput.value = '';
+                    loadLocalResourcePacks();
+                } else {
+                    showToast(data.error || 'Error al subir pack', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading resource pack:', error);
+                showToast('Error de conexión', 'error');
+            });
+        }
+
+        /**
+         * Carga la lista de resource packs locales
+         */
+        function loadLocalResourcePacks() {
+            fetch('/api/resource-pack/local')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('local-packs-list');
+
+                    if (!data.success) {
+                        container.innerHTML = '<p class="text-danger">Error al cargar packs</p>';
+                        return;
+                    }
+
+                    if (data.packs.length === 0) {
+                        container.innerHTML = '<p class="text-muted">No hay packs almacenados</p>';
+                        return;
+                    }
+
+                    let html = '<div class="list-group">';
+                    data.packs.forEach(pack => {
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${pack.filename}</strong><br>
+                                        <small class="text-muted">
+                                            ${pack.size_mb} MB | SHA-1: <code>${pack.sha1.substring(0, 16)}...</code>
+                                        </small>
+                                    </div>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteLocalPack('${pack.filename}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading local packs:', error);
+                    document.getElementById('local-packs-list').innerHTML = '<p class="text-danger">Error de conexión</p>';
+                });
+        }
+
+        /**
+         * Elimina un resource pack local
+         */
+        function deleteLocalPack(filename) {
+            if (!confirm(`¿Eliminar el pack "${filename}"?`)) return;
+
+            fetch(`/api/resource-pack/local/${filename}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message || 'Pack eliminado', 'success');
+                    loadLocalResourcePacks();
+                } else {
+                    showToast(data.error || 'Error al eliminar pack', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting pack:', error);
+                showToast('Error de conexión', 'error');
+            });
+        }
     </script>
 </body>
 </html>
+

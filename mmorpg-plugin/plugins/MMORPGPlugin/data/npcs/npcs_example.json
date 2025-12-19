@@ -1,0 +1,7 @@
+[
+    { "id": "merchant_1", "name": "Comerciante Hugo", "type": "MERCHANT", "location": { "world": "village", "x": -80, "y": 65, "z": 210 }, "shop": ["potion", "sword", "shield"] },
+    { "id": "trainer_1", "name": "Entrenador Lara", "type": "TRAINER", "location": { "world": "castle", "x": 510, "y": 80, "z": 110 }, "skills": ["strength", "agility"] },
+    { "id": "guard_1", "name": "Guardia Boris", "type": "GUARD", "location": { "world": "city", "x": 120, "y": 70, "z": -60 }, "patrol": ["gate", "market"] },
+    { "id": "quest_giver_1", "name": "Maestra Quests", "type": "QUEST_GIVER", "location": { "world": "village", "x": -90, "y": 65, "z": 215 }, "quests": ["quest_1", "quest_2"] },
+    { "id": "merchant_2", "name": "Comerciante Ana", "type": "MERCHANT", "location": { "world": "city", "x": 130, "y": 70, "z": -65 }, "shop": ["armor", "bow"] }
+]

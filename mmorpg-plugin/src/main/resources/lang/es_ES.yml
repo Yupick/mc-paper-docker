@@ -1,0 +1,115 @@
+# Archivo de idioma Español (España)
+language:
+  name: "Español"
+  code: "es_ES"
+
+# Mensajes generales
+general:
+  prefix: "&8[&6MMORPG&8]&r "
+  no_permission: "&cNo tienes permiso para hacer esto."
+  player_only: "&cEste comando solo puede ser usado por jugadores."
+  invalid_player: "&cJugador no encontrado: &f{0}"
+  command_usage: "&eUso: &f{0}"
+  
+# Sistema de clases
+classes:
+  no_class: "&7Sin clase"
+  choose_success: "&a¡Has elegido la clase &f{0}&a!"
+  already_has_class: "&cYa tienes una clase asignada."
+  class_not_found: "&cClase no encontrada: &f{0}"
+  available_classes: "&6Clases disponibles:"
+  class_info: "&6Información de clase: &f{0}"
+  stats_title: "&eEstadísticas base:"
+  health: "&c❤ Vida: &f{0}"
+  mana: "&b✦ Maná: &f{0}"
+  strength: "&6⚔ Fuerza: &f{0}"
+  intelligence: "&d✦ Inteligencia: &f{0}"
+  agility: "&a➶ Agilidad: &f{0}"
+  defense: "&7🛡 Defensa: &f{0}"
+  abilities_title: "&eHabilidades:"
+  ability_info: "&7- &f{0} &8(Nivel {1})"
+  ability_description: "&7  {0}"
+  ability_cost: "&7  &bCoste: {0} maná &8| &7Cooldown: {1}s"
+  level_info: "&eNivel: &f{0} &8| &eExp: &f{1}/{2}"
+  not_enough_mana: "&cNo tienes suficiente maná. Necesitas: &f{0}"
+  ability_on_cooldown: "&cHabilidad en cooldown. Espera &f{0}s"
+  ability_used: "&a¡Habilidad &f{0} &aactivada!"
+  
+# Sistema de quests
+quests:
+  list_title: "&6Quests disponibles:"
+  active_title: "&6Tus quests activas:"
+  completed_title: "&6Quests completadas:"
+  no_quests: "&7No hay quests {0}."
+  quest_info: "&6Quest: &f{0}"
+  description: "&7{0}"
+  difficulty: "&eDificultad: {0}"
+  required_level: "&eNivel requerido: &f{0}"
+  objectives_title: "&eObjetivos:"
+  objective_complete: "&a✓"
+  objective_incomplete: "&c✗"
+  objective_progress: "&7{0} - &f{1}/{2}"
+  rewards_title: "&eRecompensas:"
+  reward_exp: "&7- &b{0} experiencia"
+  reward_money: "&7- &6{0} monedas"
+  reward_item: "&7- &f{0}"
+  reward_skill: "&7- &d{0} punto(s) de habilidad"
+  accept_success: "&a¡Quest &f{0} &aaceptada!"
+  already_active: "&cYa tienes esta quest activa."
+  quest_full: "&cNo puedes aceptar más quests."
+  level_too_low: "&cNivel requerido: &f{0}"
+  complete_success: "&a¡Quest completada! Recompensas recibidas."
+  not_completed: "&cAún no has completado esta quest."
+  progress_updated: "&eProgreso de quest actualizado: &f{0}"
+  
+# Sistema de NPCs
+npcs:
+  interact_message: "&eHas interactuado con &f{0}"
+  quest_available: "&a¡Este NPC tiene una quest para ti!"
+  shop_open: "&6Tienda abierta: &f{0}"
+  trainer_message: "&6Entrenador: &7{0}"
+  
+# Sistema de economía
+economy:
+  balance: "&6Balance: &f{0}"
+  insufficient_funds: "&cDinero insuficiente. Necesitas: &f{0}"
+  transaction_success: "&aTransacción completada."
+  shop_buy_success: "&aCompraste &f{0}x {1} &apor &6{2}"
+  shop_sell_success: "&aVendiste &f{0}x {1} &apor &6{2}"
+  cannot_buy: "&cNo puedes comprar este item."
+  cannot_sell: "&cNo puedes vender este item."
+  no_space: "&cNo tienes espacio en el inventario."
+  
+# Mensajes del sistema
+system:
+  level_up: "&a&l¡SUBISTE DE NIVEL! &r&eNivel {0} → {1}"
+  mana_regenerated: "&b+{0} maná regenerado"
+  world_rpg_enabled: "&aMundo RPG activado"
+  world_rpg_disabled: "&cMundo RPG desactivado"
+  data_saved: "&aDatos guardados correctamente."
+  plugin_reload: "&aPlugin recargado."
+  
+# Comandos
+commands:
+  class:
+    description: "Gestiona tu clase RPG"
+    list: "Ver clases disponibles"
+    choose: "Elegir una clase"
+    info: "Ver información de clase"
+    skills: "Ver tus habilidades"
+    use: "Usar una habilidad"
+    
+  quest:
+    description: "Gestiona tus quests"
+    list: "Ver quests disponibles"
+    active: "Ver quests activas"
+    completed: "Ver quests completadas"
+    accept: "Aceptar una quest"
+    progress: "Ver progreso de quests"
+    complete: "Completar una quest"
+    info: "Ver información de quest"
+    
+  rpg:
+    description: "Comandos administrativos RPG"
+    status: "Ver estado del sistema RPG"
+    reload: "Recargar configuración"

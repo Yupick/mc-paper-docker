@@ -1,0 +1,73 @@
+{
+  "invasions": [
+    {
+      "invasionId": "zombie_horde",
+      "displayName": "Horda de Zombies",
+      "description": "Una horda masiva de zombies ataca el mundo!",
+      "targetWorlds": [
+        "mmorpg"
+      ],
+      "enabled": true,
+      "waves": [
+        {
+          "waveNumber": 1,
+          "mobType": "ZOMBIE",
+          "mobCount": 15,
+          "mobLevel": 2,
+          "delaySeconds": 30,
+          "isBossWave": false
+        },
+        {
+          "waveNumber": 2,
+          "mobType": "ZOMBIE",
+          "mobCount": 20,
+          "mobLevel": 4,
+          "delaySeconds": 30,
+          "isBossWave": false
+        },
+        {
+          "waveNumber": 3,
+          "mobType": "ZOMBIE",
+          "mobCount": 25,
+          "mobLevel": 6,
+          "delaySeconds": 30,
+          "isBossWave": false
+        },
+        {
+          "waveNumber": 4,
+          "mobType": "ZOMBIE",
+          "mobCount": 30,
+          "mobLevel": 8,
+          "delaySeconds": 30,
+          "isBossWave": false
+        },
+        {
+          "waveNumber": 5,
+          "mobType": "ZOMBIE",
+          "mobCount": 35,
+          "mobLevel": 10,
+          "delaySeconds": 30,
+          "isBossWave": true,
+          "bossName": "Rey Zombie",
+          "bossHealthMultiplier": 5.0
+        }
+      ],
+      "rewards": {
+        "xpPerWave": 500,
+        "coinsPerWave": 100,
+        "xpBonus": 2000,
+        "coinsBonus": 500,
+        "specialItems": [
+          "DIAMOND_SWORD",
+          "GOLDEN_APPLE"
+        ]
+      },
+      "schedule": {
+        "scheduleType": "RANDOM",
+        "randomMinHours": 4,
+        "randomMaxHours": 8,
+        "durationMinutes": 30
+      }
+    }
+  ]
+}

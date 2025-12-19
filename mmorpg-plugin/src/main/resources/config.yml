@@ -1,0 +1,38 @@
+# Configuración general del plugin MMORPG
+plugin:
+  enabled: true
+  debug: false
+  
+# Ruta al directorio de mundos del servidor
+worlds:
+  base-path: "/server/worlds"
+  
+# Sistema de clases
+classes:
+  enabled: true
+  allow-change: true
+  change-cooldown: 86400  # 24 horas en segundos
+  
+# Sistema de quests
+quests:
+  enabled: true
+  daily-reset: true
+  reset-time: "00:00"
+  
+# Sistema de NPCs
+npcs:
+  enabled: true
+  spawn-radius: 50
+  respawn-time: 300  # 5 minutos
+  
+# Sistema de economía
+economy:
+  enabled: true
+  starting-balance: 100
+  currency-name: "monedas"
+  
+# Comunicación con panel web
+web-panel:
+  enabled: true
+  sync-interval: 30  # segundos
+  data-path: "/server/plugins/MMORPGPlugin/data"

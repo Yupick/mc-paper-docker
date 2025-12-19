@@ -1,0 +1,21 @@
+{
+  "bestiary": {
+    "enabled": true,
+    "auto_discover": true,
+    "discovery_methods": ["kill", "scan_command"],
+    "unlock_info_on_kill": true
+  },
+  "rarity_colors": {
+    "COMMON": "#FFFFFF",
+    "UNCOMMON": "#00FF00",
+    "RARE": "#0070DD",
+    "EPIC": "#A335EE",
+    "LEGENDARY": "#FF8000",
+    "MYTHIC": "#E60000"
+  },
+  "settings": {
+    "show_health_bar": true,
+    "show_level": true,
+    "show_rarity": true
+  }
+}

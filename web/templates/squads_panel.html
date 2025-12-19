@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Escuadras - Panel MMORPG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='squads.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-users me-2"></i>Sistema de Escuadras</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="refreshAllBtn">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3" id="squadsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="directory-tab" data-bs-toggle="tab" data-bs-target="#directory" type="button">
+                            <i class="fas fa-book"></i> Directorio
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button">
+                            <i class="fas fa-cog"></i> Configuración
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">
+                            <i class="fas fa-history"></i> Historial
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="squadsTabContent">
+                    <!-- TAB: Directorio de Escuadras -->
+                    <div class="tab-pane fade show active" id="directory" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-users"></i> Escuadras Activas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="squadsList"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Configuración -->
+                    <div class="tab-pane fade" id="config" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-cog"></i> Configuración de Escuadras</h5>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-sm" id="saveConfigBtn">
+                                        <i class="fas fa-save"></i> Guardar
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="loadConfigBtn">
+                                        <i class="fas fa-sync-alt"></i> Recargar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Archivo JSON de Configuración:</label>
+                                    <textarea id="configEditor" class="form-control font-monospace" rows="30"></textarea>
+                                    <small class="text-muted">
+                                        Edita la configuración de escuadras, roles, economía y perks.
+                                    </small>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> Roles Disponibles:</h6>
+                                    <ul class="mb-0 small">
+                                        <li><strong>Capitán:</strong> Acceso total a todas las funciones</li>
+                                        <li><strong>Teniente:</strong> Invitar/remover miembros, gestionar tesorería</li>
+                                        <li><strong>Miembro:</strong> Acceso a historial de eventos</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Historial -->
+                    <div class="tab-pane fade" id="history" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-history"></i> Escuadras Disueltas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped table-hover" id="historyTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Capitán</th>
+                                                <th>Nivel Máximo</th>
+                                                <th>Creada</th>
+                                                <th>Disuelta</th>
+                                                <th>Tesorería Final</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historyTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Estadísticas -->
+                    <div class="tab-pane fade" id="stats" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-primary">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalSquads">0</div>
+                                        <div class="stat-label">Total Escuadras</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-success">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statActiveSquads">0</div>
+                                        <div class="stat-label">Activas</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-info">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalMembers">0</div>
+                                        <div class="stat-label">Miembros Total</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-warning">
+                                        <i class="fas fa-coins"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalTreasury">0</div>
+                                        <div class="stat-label">Tesorería Total</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-trophy"></i> Top 10 Escuadras</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Nivel</th>
+                                                <th>Miembros</th>
+                                                <th>Tesorería</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topSquadsTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalles de Escuadra -->
+    <div class="modal fade" id="squadDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-users"></i> Detalles de Escuadra</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="squadDetailsContent"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='squads.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "quests": [
+    {
+      "id": "first_quest",
+      "name": "Tu Primera Aventura",
+      "description": "Completa esta sencilla tarea para empezar",
+      "quest_giver": "wizard_npc",
+      "level_required": 1,
+      "experience_reward": 100,
+      "currency_reward": 50,
+      "item_reward": "health_potion_rpg",
+      "objectives": [
+        {
+          "id": "kill_mobs",
+          "type": "KILL",
+          "target": "common_zombie",
+          "required_amount": 5,
+          "progress": 0
+        }
+      ],
+      "status": "AVAILABLE",
+      "repeatable": false,
+      "chain_to": "second_quest"
+    },
+    {
+      "id": "second_quest",
+      "name": "Batalla Épica",
+      "description": "Derrota al Señor Zombie",
+      "quest_giver": "wizard_npc",
+      "level_required": 15,
+      "experience_reward": 1000,
+      "currency_reward": 500,
+      "item_reward": "legendary_sword",
+      "objectives": [
+        {
+          "id": "kill_boss",
+          "type": "KILL",
+          "target": "zombie_lord",
+          "required_amount": 1,
+          "progress": 0
+        }
+      ],
+      "status": "LOCKED",
+      "repeatable": false,
+      "chain_to": null
+    }
+  ]
+}

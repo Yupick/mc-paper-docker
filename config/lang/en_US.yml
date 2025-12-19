@@ -1,0 +1,115 @@
+# English (United States) Language File
+language:
+  name: English
+  code: en_US
+
+# General messages
+general:
+  prefix: '&8[&6MMORPG&8]&r '
+  no_permission: '&cYou don''t have permission to do this.'
+  player_only: '&cThis command can only be used by players.'
+  invalid_player: '&cPlayer not found: &f{0}'
+  command_usage: '&eUsage: &f{0}'
+
+# Class system
+classes:
+  no_class: '&7No class'
+  choose_success: '&aYou have chosen the &f{0}&a class!'
+  already_has_class: '&cYou already have a class assigned.'
+  class_not_found: '&cClass not found: &f{0}'
+  available_classes: '&6Available classes:'
+  class_info: '&6Class information: &f{0}'
+  stats_title: '&eBase stats:'
+  health: '&c❤ Health: &f{0}'
+  mana: '&b✦ Mana: &f{0}'
+  strength: '&6⚔ Strength: &f{0}'
+  intelligence: '&d✦ Intelligence: &f{0}'
+  agility: '&a➶ Agility: &f{0}'
+  defense: '&7🛡 Defense: &f{0}'
+  abilities_title: '&eAbilities:'
+  ability_info: '&7- &f{0} &8(Level {1})'
+  ability_description: '&7  {0}'
+  ability_cost: '&7  &bCost: {0} mana &8| &7Cooldown: {1}s'
+  level_info: '&eLevel: &f{0} &8| &eExp: &f{1}/{2}'
+  not_enough_mana: '&cNot enough mana. Need: &f{0}'
+  ability_on_cooldown: '&cAbility on cooldown. Wait &f{0}s'
+  ability_used: '&aAbility &f{0} &aactivated!'
+
+# Quest system
+quests:
+  list_title: '&6Available quests:'
+  active_title: '&6Your active quests:'
+  completed_title: '&6Completed quests:'
+  no_quests: '&7No {0} quests.'
+  quest_info: '&6Quest: &f{0}'
+  description: '&7{0}'
+  difficulty: '&eDifficulty: {0}'
+  required_level: '&eRequired level: &f{0}'
+  objectives_title: '&eObjectives:'
+  objective_complete: '&a✓'
+  objective_incomplete: '&c✗'
+  objective_progress: '&7{0} - &f{1}/{2}'
+  rewards_title: '&eRewards:'
+  reward_exp: '&7- &b{0} experience'
+  reward_money: '&7- &6{0} coins'
+  reward_item: '&7- &f{0}'
+  reward_skill: '&7- &d{0} skill point(s)'
+  accept_success: '&aQuest &f{0} &aaccepted!'
+  already_active: '&cYou already have this quest active.'
+  quest_full: '&cYou cannot accept more quests.'
+  level_too_low: '&cRequired level: &f{0}'
+  complete_success: '&aQuest completed! Rewards received.'
+  not_completed: '&cYou haven''t completed this quest yet.'
+  progress_updated: '&eQuest progress updated: &f{0}'
+
+# NPC system
+npcs:
+  interact_message: '&eYou interacted with &f{0}'
+  quest_available: '&aThis NPC has a quest for you!'
+  shop_open: '&6Shop opened: &f{0}'
+  trainer_message: '&6Trainer: &7{0}'
+
+# Economy system
+economy:
+  balance: '&6Balance: &f{0}'
+  insufficient_funds: '&cInsufficient funds. Need: &f{0}'
+  transaction_success: '&aTransaction completed.'
+  shop_buy_success: '&aBought &f{0}x {1} &afor &6{2}'
+  shop_sell_success: '&aSold &f{0}x {1} &afor &6{2}'
+  cannot_buy: '&cYou cannot buy this item.'
+  cannot_sell: '&cYou cannot sell this item.'
+  no_space: '&cNo inventory space available.'
+
+# System messages
+system:
+  level_up: '&a&lLEVEL UP! &r&eLevel {0} → {1}'
+  mana_regenerated: '&b+{0} mana regenerated'
+  world_rpg_enabled: '&aRPG world enabled'
+  world_rpg_disabled: '&cRPG world disabled'
+  data_saved: '&aData saved successfully.'
+  plugin_reload: '&aPlugin reloaded.'
+
+# Commands
+commands:
+  class:
+    description: Manage your RPG class
+    list: View available classes
+    choose: Choose a class
+    info: View class information
+    skills: View your abilities
+    use: Use an ability
+  
+  quest:
+    description: Manage your quests
+    list: View available quests
+    active: View active quests
+    completed: View completed quests
+    accept: Accept a quest
+    progress: View quest progress
+    complete: Complete a quest
+    info: View quest information
+  
+  rpg:
+    description: RPG administrative commands
+    status: View RPG system status
+    reload: Reload configuration

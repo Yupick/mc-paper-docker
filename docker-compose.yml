@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  minecraft:
+  minecraft-paper:
     build: .
     container_name: minecraft-paper
     restart: unless-stopped
@@ -11,10 +11,14 @@ services:
       - "25575:25575/tcp"  # Puerto RCON
     volumes:
       - ./worlds:/server/worlds
+      - ./worlds/active/world:/server/world
+      - ./worlds/active/world_nether:/server/world_nether
+      - ./worlds/active/world_the_end:/server/world_the_end
+      - ./worlds/active/server.properties:/server/server.properties
       - ./plugins:/server/plugins
       - ./resourcepacks:/server/resourcepacks
-      - ./config/server.properties:/server/server.properties
       - ./logs:/server/logs
+      - ./config:/server/plugins/MMORPGPlugin
     environment:
       - EULA=TRUE
       - RCON_PASSWORD=minecraft123

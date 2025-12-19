@@ -125,7 +125,7 @@ function toggleTheme() {
     icon.className = newTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars';
 }
 
-function showSection(sectionName) {
+function showSection(sectionName, evt) {
     // Ocultar todas las secciones
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
@@ -138,7 +138,17 @@ function showSection(sectionName) {
     document.querySelectorAll('.sidebar-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.target.closest('.sidebar-item').classList.add('active');
+    
+    // Si hay evento, actualizar el elemento activo
+    if (evt && evt.target) {
+        evt.target.closest('.sidebar-item').classList.add('active');
+    } else {
+        // Fallback: buscar por data attribute o sectionName
+        const targetItem = document.querySelector(`.sidebar-item[onclick*="'${sectionName}'"]`);
+        if (targetItem) {
+            targetItem.classList.add('active');
+        }
+    }
     
     // Cargar datos según la sección
     switch(sectionName) {
@@ -158,7 +168,7 @@ function showSection(sectionName) {
             loadFilesTree();
             break;
         case 'worlds':
-            loadWorldsSection();
+            loadWorlds();
             break;
         case 'backups':
             loadBackupsSection();
@@ -172,15 +182,85 @@ function showSection(sectionName) {
         case 'stats':
             loadStatsSection();
             break;
+        case 'rpg':
+            loadRPGSection();
+            break;
     }
 }
 
 // ==================== DASHBOARD ====================
 
+function loadRPGSection() {
+    // Cargar mundo activo y preparar panel RPG
+    fetch('/api/worlds/active')
+        .then(r => r.json())
+        .then(data => {
+            const nameEl = document.getElementById('rpg-world-name');
+            if (!data.success || !data.world) {
+                if (nameEl) nameEl.textContent = 'Desconocido';
+                showRPGError('No hay mundo activo');
+                return;
+            }
+            const world = data.world;
+            if (nameEl) nameEl.textContent = world.name;
+            if (world.isRPG) {
+                // Inicializar sección RPG para el mundo activo
+                if (typeof initRPGSection === 'function') {
+                    initRPGSection(world.slug);
+                }
+            } else {
+                // Mundo activo no es RPG
+                const sidebarRPG = document.getElementById('sidebar-rpg');
+                if (sidebarRPG) sidebarRPG.classList.add('d-none');
+                showRPGError('El mundo activo no tiene modo RPG habilitado');
+            }
+        })
+        .catch(err => {
+            console.error('Error cargando mundo activo para RPG:', err);
+            showRPGError('Error de conexión al cargar datos del mundo');
+        });
+}
+
 function loadDashboard() {
     loadServerStatus();
     loadLogs();
     loadTPS();
+    loadActiveWorldDashboard();
+}
+
+function loadActiveWorldDashboard() {
+    fetch('/api/worlds/active')
+        .then(r => r.json())
+        .then(data => {
+            const worldNameEl = document.getElementById('activeWorldNameDashboard');
+            if (worldNameEl && data.success && data.world) {
+                worldNameEl.textContent = data.world.name;
+                
+                // Verificar si el mundo activo es RPG
+                if (data.world.isRPG) {
+                    // Mostrar pestaña RPG
+                    const sidebarRPG = document.getElementById('sidebar-rpg');
+                    if (sidebarRPG) {
+                        sidebarRPG.classList.remove('d-none');
+                    }
+                } else {
+                    // Ocultar pestaña RPG
+                    const sidebarRPG = document.getElementById('sidebar-rpg');
+                    if (sidebarRPG) {
+                        sidebarRPG.classList.add('d-none');
+                    }
+                }
+            } else if (worldNameEl) {
+                worldNameEl.textContent = 'Desconocido';
+            }
+        })
+        .catch(e => {
+            console.error('Error loading active world:', e);
+            const worldNameEl = document.getElementById('activeWorldNameDashboard');
+            if (worldNameEl) {
+                worldNameEl.textContent = 'Error';
+            }
+        });
 }
 
 function loadServerStatus() {
@@ -299,6 +379,19 @@ function loadServerProperties() {
             document.getElementById('server-properties').value = data.content;
             parseQuickConfig(data.content);
         });
+    
+    // Cargar mundo activo
+    fetch('/api/config/server-properties-parsed')
+        .then(r => r.json())
+        .then(data => {
+            if (data.active_world) {
+                const worldNameEl = document.getElementById('activeWorldName');
+                if (worldNameEl) {
+                    worldNameEl.textContent = data.active_world;
+                }
+            }
+        })
+        .catch(e => console.error('Error loading active world:', e));
 }
 
 function parseQuickConfig(content) {
@@ -682,8 +775,10 @@ function loadFileContent(path, name) {
             // Highlight seleccionado
             document.querySelectorAll('.file-item').forEach(item => {
                 item.classList.remove('selected');
+                if (item.textContent.includes(name)) {
+                    item.classList.add('selected');
+                }
             });
-            event.target.closest('.file-item').classList.add('selected');
         });
 }
 
@@ -750,7 +845,112 @@ function backupWorld(worldName) {
 
 // ==================== BACKUPS ====================
 
+// Cargar configuración de backups al mostrar la sección
+async function loadBackupConfig() {
+    try {
+        const response = await fetch('/api/backup-config');
+        const data = await response.json();
+        
+        if (data.success) {
+            const config = data.config;
+            
+            // Actualizar toggle
+            const toggle = document.getElementById('autoBackupEnabled');
+            toggle.checked = config.auto_backup_enabled;
+            
+            // Actualizar label
+            updateAutoBackupLabel(config.auto_backup_enabled);
+            
+            // Actualizar select de retención
+            const retention = document.getElementById('autoBackupRetention');
+            if (retention) {
+                retention.value = config.retention_count || 5;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading backup config:', error);
+    }
+}
+
+// Actualizar label del toggle
+function updateAutoBackupLabel(enabled) {
+    const label = document.getElementById('autoBackupLabel');
+    if (enabled) {
+        label.innerHTML = '<span class=\"badge bg-success\">Activado</span>';
+    } else {
+        label.innerHTML = '<span class=\"badge bg-secondary\">Desactivado</span>';
+    }
+}
+
+// Toggle de backups automáticos
+async function toggleAutoBackup() {
+    const toggle = document.getElementById('autoBackupEnabled');
+    const enabled = toggle.checked;
+    
+    try {
+        const response = await fetch('/api/backup-config', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                auto_backup_enabled: enabled
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            updateAutoBackupLabel(enabled);
+            showToast(
+                enabled ? 'Backups automáticos activados' : 'Backups automáticos desactivados',
+                'success'
+            );
+        } else {
+            // Revertir toggle en caso de error
+            toggle.checked = !enabled;
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error toggling auto backup:', error);
+        toggle.checked = !enabled;
+        showToast('Error de conexión', 'error');
+    }
+}
+
+// Actualizar cantidad de backups a conservar
+async function updateBackupRetention() {
+    const retention = document.getElementById('autoBackupRetention');
+    const retentionCount = parseInt(retention.value);
+    
+    try {
+        const response = await fetch('/api/backup-config', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                retention_count: retentionCount
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(`Se conservarán los últimos ${retentionCount} backups automáticos`, 'success');
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error updating retention:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
 function loadBackupsSection() {
+    // Cargar configuración
+    loadBackupConfig();
+    
     fetch('/api/backup/list')
         .then(r => r.json())
         .then(data => {
@@ -803,17 +1003,31 @@ function createBackup() {
 }
 
 function restoreBackup(name) {
-    if (confirm(`¿Restaurar desde ${name}?\n\nADVERTENCIA: Esto reemplazará los mundos actuales. Se creará un backup automático antes de restaurar.`)) {
-        showToast('Restaurando backup... El servidor será reiniciado.', 'info');
+    // Extraer el slug del mundo del nombre del backup (formato: slug_tipo_timestamp.tar.gz)
+    const worldSlug = name.split('_')[0];
+    
+    if (!worldSlug) {
+        showToast('No se puede determinar el mundo de origen. Usa el menú de cada mundo para restaurar.', 'error');
+        return;
+    }
+    
+    if (confirm(`¿Restaurar "${name}" al mundo "${worldSlug}"?\n\nADVERTENCIA: Esto reemplazará el mundo actual. Se creará un backup de seguridad automáticamente.\n\nNOTA: El mundo no debe estar activo.`)) {
+        showToast('Restaurando backup...', 'info');
         fetch('/api/backup/restore', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ 
+                name: name,
+                target_world: worldSlug 
+            })
         })
         .then(r => r.json())
         .then(data => {
             showToast(data.message, data.success ? 'success' : 'error');
             loadBackupsSection();
+        })
+        .catch(error => {
+            showToast('Error de conexión al restaurar backup', 'error');
         });
     }
 }
@@ -933,6 +1147,9 @@ function loadStatsSection() {
         .then(data => {
             initStatsCharts(data.history);
         });
+
+    // También cargar y mostrar uso actual de CPU/Memoria en gráficas dedicadas
+    renderCurrentCpuMemoryCharts();
 }
 
 function initStatsCharts(history) {
@@ -990,6 +1207,49 @@ function initStatsCharts(history) {
     });
 }
 
+// Renderizar gráficas actuales de CPU y Memoria
+async function renderCurrentCpuMemoryCharts() {
+    try {
+        const r = await fetch('/api/server/status');
+        const s = await r.json();
+        if (!s || !s.running) return;
+
+        const cpuCtx = document.getElementById('cpuChart');
+        const memCtx = document.getElementById('memoryChart');
+
+        if (cpuChart) cpuChart.destroy();
+        if (memoryChart) memoryChart.destroy();
+
+        // CPU: doughnut con porcentaje actual
+        cpuChart = new Chart(cpuCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Usado', 'Libre'],
+                datasets: [{
+                    data: [s.cpu_percent, Math.max(0, 100 - s.cpu_percent)],
+                    backgroundColor: ['#667eea', '#e2e8f0']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // Memoria: doughnut con porcentaje actual
+        memoryChart = new Chart(memCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Usado', 'Libre'],
+                datasets: [{
+                    data: [s.memory_percent, Math.max(0, 100 - s.memory_percent)],
+                    backgroundColor: ['#48bb78', '#e2e8f0']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    } catch (e) {
+        console.error('Error rendering CPU/Mem charts:', e);
+    }
+}
+
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1004,29 +1264,1075 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar seguridad de contraseña después de cargar dashboard
     setTimeout(() => checkPasswordSecurity(), 1000);
     
-    // Actualizar cada 5 segundos
-    setInterval(loadServerStatus, 5000);
-    setInterval(loadLogs, 10000);
-    setInterval(loadTPS, 10000);
+// Cargar configuración del panel y configurar intervalos dinámicos
+loadPanelConfig();
+
+// Configurar observador de cambios en RCON para grey-out
+setInterval(updateRconUiState, 1000);
+
+// Configurar toggle de opciones RPG en modal de crear mundo
+document.getElementById('worldIsRPG')?.addEventListener('change', function(e) {
+    const rpgOptions = document.getElementById('rpgConfigOptions');
+    if (e.target.checked) {
+        rpgOptions.classList.remove('d-none');
+    } else {
+        rpgOptions.classList.add('d-none');
+    }
+});
+});
+
+// ==================== GREY-OUT RCON UI ====================
+
+function updateRconUiState() {
+    const rconEnabled = pollingConfig.rcon_enabled;
+    
+    // Botones de consola
+    const consoleButtons = document.querySelectorAll('#section-console button');
+    consoleButtons.forEach(btn => {
+        if (!rconEnabled) {
+            btn.disabled = true;
+            btn.classList.add('disabled');
+            btn.title = 'RCON deshabilitado en configuración';
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+            btn.title = '';
+        }
+    });
+    
+    // Input de consola
+    const consoleInput = document.getElementById('console-command');
+    if (consoleInput) {
+        consoleInput.disabled = !rconEnabled;
+    }
+    
+    // Botones de acciones de jugadores (kick, ban, gamemode)
+    const playerActionButtons = document.querySelectorAll('#section-players button');
+    playerActionButtons.forEach(btn => {
+        if (btn.onclick && btn.onclick.toString().includes('Player')) {
+            if (!rconEnabled) {
+                btn.disabled = true;
+                btn.classList.add('disabled');
+                btn.title = 'RCON deshabilitado';
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('disabled');
+                btn.title = '';
+            }
+        }
+    });
+    
+    // Selector de gamemode
+    const gamemodeSelects = document.querySelectorAll('#section-players select');
+    gamemodeSelects.forEach(select => {
+        select.disabled = !rconEnabled;
+    });
+    
+    // Botón de enviar chat
+    const chatButtons = document.querySelectorAll('#section-players button');
+    chatButtons.forEach(btn => {
+        if (btn.textContent.includes('Enviar')) {
+            btn.disabled = !rconEnabled;
+        }
+    });
+    
+    // Input de chat
+    const chatInput = document.getElementById('chat-message');
+    if (chatInput) {
+        chatInput.disabled = !rconEnabled;
+        if (!rconEnabled) {
+            chatInput.placeholder = 'RCON deshabilitado - No se pueden enviar mensajes';
+        } else {
+            chatInput.placeholder = 'Enviar mensaje a todos los jugadores...';
+        }
+    }
+    
+    // Botón de reload plugins
+    const reloadBtn = document.querySelector('button[onclick="reloadPlugins()"]');
+    if (reloadBtn) {
+        reloadBtn.disabled = !rconEnabled;
+    }
+    
+    // Agregar overlay visual si RCON está deshabilitado
+    const consoleSections = ['section-console'];
+    consoleSections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            let overlay = section.querySelector('.rcon-disabled-overlay');
+            
+            if (!rconEnabled) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.className = 'rcon-disabled-overlay';
+                    overlay.innerHTML = `
+                        <div class="alert alert-warning text-center">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>RCON Deshabilitado</strong><br>
+                            <small>Activa RCON en Configuración → Rendimiento del Panel</small>
+                        </div>
+                    `;
+                    overlay.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 999; display: flex; align-items: center; justify-content: center; border-radius: 16px;';
+                    section.style.position = 'relative';
+                    section.appendChild(overlay);
+                }
+                overlay.style.display = 'flex';
+            } else if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+    });
+}// ==================== CONFIGURACIÓN DE PANEL Y POLLING ====================
+
+// Variables de control de polling
+let pollingIntervals = {
+    serverStatus: null,
+    logs: null,
+    tps: null,
+    stats: null
+};
+
+let pollingConfig = {
+    refresh_interval: 5000,
+    logs_interval: 10000,
+    tps_interval: 10000,
+    pause_when_hidden: true,
+    enable_cache: true,
+    cache_ttl: 3000,
+    rcon_enabled: true,
+    rcon_polling_enabled: false
+};
+
+let isPageVisible = true;
+
+// Cargar configuración del panel
+async function loadPanelConfig() {
+    try {
+        const response = await fetch('/api/panel-config');
+        const data = await response.json();
+        
+        if (data.success) {
+            pollingConfig = data.config;
+            updatePollingConfigUI();
+        }
+    } catch (error) {
+        console.error('Error loading panel config:', error);
+    }
+    
+    // Iniciar polling con configuración cargada
+    startPolling();
+}
+
+// Iniciar todos los intervalos de polling
+function startPolling() {
+    // Limpiar intervalos existentes
+    stopPolling();
+    
+    // Configurar Page Visibility API
+    setupPageVisibility();
+    
+    // Iniciar intervalos
+    pollingIntervals.serverStatus = setInterval(() => {
+        if (shouldPoll()) loadServerStatus();
+    }, pollingConfig.refresh_interval);
+    
+    pollingIntervals.logs = setInterval(() => {
+        if (shouldPoll()) loadLogs();
+    }, pollingConfig.logs_interval);
+    
+    pollingIntervals.tps = setInterval(() => {
+        if (shouldPoll()) loadTPS();
+    }, pollingConfig.tps_interval);
     
     // Guardar estadísticas cada minuto
-    setInterval(() => {
-        fetch('/api/server/status')
-            .then(r => r.json())
-            .then(data => {
-                if (data.running) {
-                    fetch('/api/server/players').then(r => r.json()).then(players => {
-                        fetch('/api/stats/save', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                cpu: data.cpu_percent,
-                                memory: data.memory_percent,
-                                players: players.online
-                            })
+    pollingIntervals.stats = setInterval(() => {
+        if (shouldPoll()) {
+            fetch('/api/server/status')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.running) {
+                        fetch('/api/server/players').then(r => r.json()).then(players => {
+                            fetch('/api/stats/save', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    cpu: data.cpu_percent,
+                                    memory: data.memory_percent,
+                                    players: players.online
+                                })
+                            });
                         });
-                    });
-                }
-            });
+                    }
+                });
+        }
     }, 60000);
-});
+}
+
+// Detener todos los intervalos
+function stopPolling() {
+    Object.keys(pollingIntervals).forEach(key => {
+        if (pollingIntervals[key]) {
+            clearInterval(pollingIntervals[key]);
+            pollingIntervals[key] = null;
+        }
+    });
+}
+
+// Verificar si debe hacer polling
+function shouldPoll() {
+    if (pollingConfig.pause_when_hidden && !isPageVisible) {
+        return false;
+    }
+    return true;
+}
+
+// Configurar Page Visibility API
+function setupPageVisibility() {
+    // Detectar si la página está visible
+    document.addEventListener('visibilitychange', () => {
+        isPageVisible = !document.hidden;
+        
+        // Actualizar UI de estado
+        updatePollingStatusUI();
+        
+        if (isPageVisible && pollingConfig.pause_when_hidden) {
+            // Página visible de nuevo, actualizar inmediatamente
+            loadServerStatus();
+            loadLogs();
+            loadTPS();
+        }
+    });
+}
+
+// Actualizar indicador de estado de polling
+function updatePollingStatusUI() {
+    const statusElement = document.getElementById('pollingStatus');
+    if (!statusElement) return;
+    
+    if (!isPageVisible && pollingConfig.pause_when_hidden) {
+        statusElement.innerHTML = '<span class="text-warning">⏸️ Pausado (pestaña oculta)</span>';
+    } else {
+        statusElement.innerHTML = '<span class="text-success">✓ Activo</span>';
+    }
+}
+
+// Actualizar UI de configuración
+function updatePollingConfigUI() {
+    const refreshSelect = document.getElementById('refreshInterval');
+    const logsSelect = document.getElementById('logsInterval');
+    const tpsSelect = document.getElementById('tpsInterval');
+    const pauseToggle = document.getElementById('pauseWhenHidden');
+    const rconEnabledToggle = document.getElementById('rconEnabled');
+    const rconPollingToggle = document.getElementById('rconPollingEnabled');
+    
+    if (refreshSelect) refreshSelect.value = pollingConfig.refresh_interval;
+    if (logsSelect) logsSelect.value = pollingConfig.logs_interval;
+    if (tpsSelect) tpsSelect.value = pollingConfig.tps_interval;
+    if (pauseToggle) pauseToggle.checked = pollingConfig.pause_when_hidden;
+    if (rconEnabledToggle) rconEnabledToggle.checked = !!pollingConfig.rcon_enabled;
+    if (rconPollingToggle) rconPollingToggle.checked = !!pollingConfig.rcon_polling_enabled;
+    
+    // Actualizar estado inicial
+    updatePollingStatusUI();
+}
+
+// Actualizar configuración de refresco
+async function updateRefreshInterval() {
+    const interval = parseInt(document.getElementById('refreshInterval').value);
+    await updatePanelConfigValue('refresh_interval', interval);
+}
+
+async function updateLogsInterval() {
+    const interval = parseInt(document.getElementById('logsInterval').value);
+    await updatePanelConfigValue('logs_interval', interval);
+}
+
+async function updateTpsInterval() {
+    const interval = parseInt(document.getElementById('tpsInterval').value);
+    await updatePanelConfigValue('tps_interval', interval);
+}
+
+async function togglePauseWhenHidden() {
+    const enabled = document.getElementById('pauseWhenHidden').checked;
+    await updatePanelConfigValue('pause_when_hidden', enabled);
+}
+
+// Toggles RCON flags
+async function toggleRconEnabled() {
+    const enabled = document.getElementById('rconEnabled').checked;
+    await updatePanelConfigValue('rcon_enabled', enabled);
+    // Actualizar inmediatamente el estado de la UI
+    updateRconUiState();
+}
+
+async function toggleRconPolling() {
+    const enabled = document.getElementById('rconPollingEnabled').checked;
+    await updatePanelConfigValue('rcon_polling_enabled', enabled);
+}
+
+// Función auxiliar para actualizar configuración
+async function updatePanelConfigValue(key, value) {
+    try {
+        const response = await fetch('/api/panel-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [key]: value })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            pollingConfig = data.config;
+            showToast('Configuración actualizada. Reiniciando polling...', 'success');
+            
+            // Reiniciar polling con nueva configuración
+            startPolling();
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error updating panel config:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+// ==================== GESTIÓN DE MUNDOS ====================
+
+let pendingWorldSwitch = null;
+let currentEditingWorld = null;
+let currentBackupsWorld = null;
+
+// Cargar lista de mundos
+async function loadWorlds() {
+    try {
+        const response = await fetch('/api/worlds');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderWorldsGrid(data.worlds, data.active_world);
+        } else {
+            showWorldsError('Error al cargar mundos: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error loading worlds:', error);
+        showWorldsError('Error de conexión al cargar mundos');
+    }
+}
+
+// Renderizar grid de mundos
+function renderWorldsGrid(worlds, activeWorldSlug) {
+    const grid = document.getElementById('worldsGrid');
+    
+    if (!worlds || worlds.length === 0) {
+        grid.innerHTML = `
+            <div class="col-12 text-center text-muted">
+                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                <p class="mt-2">No hay mundos creados</p>
+                <button class="btn btn-primary" onclick="showCreateWorldModal()">
+                    <i class="bi bi-plus-circle"></i> Crear Primer Mundo
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = worlds.map(world => createWorldCard(world, world.slug === activeWorldSlug)).join('');
+}
+
+// Crear tarjeta de mundo
+function createWorldCard(world, isActive) {
+    const gamemodeBadges = {
+        'survival': 'bg-success',
+        'creative': 'bg-info',
+        'adventure': 'bg-warning',
+        'spectator': 'bg-secondary'
+    };
+    
+    const difficultyBadges = {
+        'peaceful': 'bg-success',
+        'easy': 'bg-info',
+        'normal': 'bg-warning',
+        'hard': 'bg-danger'
+    };
+    
+    const lastPlayed = world.last_played ? 
+        new Date(world.last_played).toLocaleString('es-ES') : 
+        'Nunca jugado';
+    
+    return `
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 ${isActive ? 'border-success border-2' : ''}">
+                <div class="card-header d-flex justify-content-between align-items-center ${isActive ? 'bg-success bg-opacity-10' : ''}">
+                    <h5 class="mb-0">
+                        ${escapeHtml(world.name)}
+                        ${isActive ? '<span class="badge bg-success ms-2">Activo</span>' : ''}
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-dark" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            ${!isActive ? `
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); activateWorld('${world.slug}', '${escapeHtml(world.name)}')">
+                                    <i class="bi bi-play-circle me-2"></i>Activar
+                                </a>
+                            </li>` : ''}
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); editWorld('${world.slug}')">
+                                    <i class="bi bi-gear me-2"></i>Configurar
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); duplicateWorld('${world.slug}', '${escapeHtml(world.name)}')">
+                                    <i class="bi bi-files me-2"></i>Duplicar
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); backupWorld('${world.slug}')">
+                                    <i class="bi bi-save me-2"></i>Backup
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            ${!isActive ? `
+                            <li>
+                                <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); deleteWorld('${world.slug}', '${escapeHtml(world.name)}')">
+                                    <i class="bi bi-trash me-2"></i>Eliminar
+                                </a>
+                            </li>` : ''}
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">${escapeHtml(world.description || 'Sin descripción')}</p>
+                    
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge ${gamemodeBadges[world.gamemode] || 'bg-secondary'}">
+                            <i class="bi bi-controller me-1"></i>${world.gamemode}
+                        </span>
+                        <span class="badge ${difficultyBadges[world.difficulty] || 'bg-secondary'}">
+                            <i class="bi bi-signal me-1"></i>${world.difficulty}
+                        </span>
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-hdd me-1"></i>${world.size_mb} MB
+                        </span>
+                        ${world.player_count > 0 ? `
+                        <span class="badge bg-info">
+                            <i class="bi bi-people me-1"></i>${world.player_count} jugadores
+                        </span>` : ''}
+                    </div>
+                    
+                    <div class="text-muted small">
+                        <i class="bi bi-clock me-1"></i>
+                        Última vez: ${lastPlayed}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm ${isActive ? 'btn-success' : 'btn-primary'} w-100" 
+                            onclick="activateWorld('${world.slug}', '${escapeHtml(world.name)}')"
+                            ${isActive ? 'disabled' : ''}>
+                        <i class="bi ${isActive ? 'bi-check-circle' : 'bi-play-circle'} me-2"></i>
+                        ${isActive ? 'Mundo Activo' : 'Activar Mundo'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Mostrar modal de crear mundo
+function showCreateWorldModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createWorldModal'));
+    document.getElementById('createWorldForm').reset();
+    document.getElementById('createWorldError').classList.add('d-none');
+    modal.show();
+}
+
+// Enviar formulario de crear mundo
+async function submitCreateWorld() {
+    const form = document.getElementById('createWorldForm');
+    const errorDiv = document.getElementById('createWorldError');
+    const formData = new FormData(form);
+    
+    const data = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        template: formData.get('template'),
+        seed: formData.get('seed'),
+        gamemode: formData.get('gamemode'),
+        difficulty: formData.get('difficulty'),
+        motd: formData.get('motd'),
+        isRPG: document.getElementById('worldIsRPG').checked
+    };
+    
+    // Si isRPG está activado, incluir configuración RPG
+    if (data.isRPG) {
+        data.rpgConfig = {
+            classesEnabled: document.getElementById('rpgClasses').checked,
+            questsEnabled: document.getElementById('rpgQuests').checked,
+            npcsEnabled: document.getElementById('rpgNPCs').checked,
+            economyEnabled: document.getElementById('rpgEconomy').checked
+        };
+    }
+    
+    // Validación
+    if (!data.name) {
+        errorDiv.textContent = 'El nombre del mundo es requerido';
+        errorDiv.classList.remove('d-none');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/worlds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Cerrar modal
+            bootstrap.Modal.getInstance(document.getElementById('createWorldModal')).hide();
+            
+            // Mostrar notificación de éxito
+            showToast('Mundo creado correctamente', 'success');
+            
+            // Recargar lista de mundos
+            loadWorlds();
+        } else {
+            errorDiv.textContent = result.error || 'Error al crear mundo';
+            errorDiv.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error creating world:', error);
+        errorDiv.textContent = 'Error de conexión al crear mundo';
+        errorDiv.classList.remove('d-none');
+    }
+}
+
+// Activar mundo
+async function activateWorld(slug, name) {
+    // Guardar datos para confirmar después
+    pendingWorldSwitch = slug;
+    
+    // Actualizar nombre en el modal
+    document.getElementById('targetWorldName').textContent = name;
+    
+    // Cargar configuración de backups para actualizar el checkbox
+    try {
+        const response = await fetch('/api/backup-config');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('createBackupBeforeSwitch').checked = data.config.auto_backup_enabled;
+        }
+    } catch (error) {
+        console.error('Error loading backup config:', error);
+    }
+    
+    // Mostrar modal de confirmación
+    const modal = new bootstrap.Modal(document.getElementById('confirmSwitchModal'));
+    modal.show();
+}
+
+// Confirmar cambio de mundo
+async function confirmSwitchWorld() {
+    console.log('confirmSwitchWorld called');
+    const slug = pendingWorldSwitch;
+    const createBackup = document.getElementById('createBackupBeforeSwitch').checked;
+    
+    console.log('Switching to world:', slug, 'with backup:', createBackup);
+    
+    if (!slug) {
+        console.error('No slug defined for world switch');
+        return;
+    }
+    
+    try {
+        showToast('Cambiando de mundo...', 'info');
+        
+        const response = await fetch(`/api/worlds/${slug}/activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ create_backup: createBackup })
+        });
+        
+        const data = await response.json();
+        console.log('World switch response:', data);
+        
+        // Cerrar modal
+        const modalElement = document.getElementById('confirmSwitchModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
+        
+        if (data.success) {
+            showToast('Mundo activado correctamente. El servidor se está reiniciando...', 'success');
+            
+            // Recargar mundos después de 3 segundos
+            setTimeout(() => {
+                loadWorlds();
+                loadServerStatus();
+                // Actualizar mundo activo en dashboard
+                loadActiveWorldDashboard();
+            }, 3000);
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error activating world:', error);
+        showToast('Error de conexión al activar mundo', 'error');
+    }
+}
+
+// Editar configuración del mundo
+async function editWorld(slug) {
+    currentEditingWorld = slug;
+    
+    try {
+        const response = await fetch(`/api/worlds/${slug}/config`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Renderizar configuración
+            const contentDiv = document.getElementById('worldConfigContent');
+            const properties = data.properties;
+            
+            contentDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Modo de Juego</label>
+                        <select class="form-control" name="gamemode">
+                            <option value="survival" ${properties.gamemode === 'survival' ? 'selected' : ''}>Survival</option>
+                            <option value="creative" ${properties.gamemode === 'creative' ? 'selected' : ''}>Creative</option>
+                            <option value="adventure" ${properties.gamemode === 'adventure' ? 'selected' : ''}>Adventure</option>
+                            <option value="spectator" ${properties.gamemode === 'spectator' ? 'selected' : ''}>Spectator</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Dificultad</label>
+                        <select class="form-control" name="difficulty">
+                            <option value="peaceful" ${properties.difficulty === 'peaceful' ? 'selected' : ''}>Peaceful</option>
+                            <option value="easy" ${properties.difficulty === 'easy' ? 'selected' : ''}>Easy</option>
+                            <option value="normal" ${properties.difficulty === 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="hard" ${properties.difficulty === 'hard' ? 'selected' : ''}>Hard</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">PvP</label>
+                        <select class="form-control" name="pvp">
+                            <option value="true" ${properties.pvp === 'true' ? 'selected' : ''}>Activado</option>
+                            <option value="false" ${properties.pvp === 'false' ? 'selected' : ''}>Desactivado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Máximo de Jugadores</label>
+                        <input type="number" class="form-control" name="max-players" value="${properties['max-players'] || 20}">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">MOTD (Mensaje del Día)</label>
+                                            <input type="text" class="form-control" name="motd" value="${properties['motd'] || 'A Minecraft Server'}" maxlength="59">
+                                            <small class="text-muted">Este mensaje aparece en la lista de servidores de Minecraft</small>
+                                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('editWorldConfigModal'));
+            modal.show();
+        } else {
+            showToast('Error al cargar configuración: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error loading world config:', error);
+        showToast('Error de conexión al cargar configuración', 'error');
+    }
+}
+
+// Guardar configuración del mundo
+async function saveWorldConfig() {
+    if (!currentEditingWorld) return;
+    
+    const form = document.getElementById('editWorldConfigForm');
+    const formData = new FormData(form);
+    const properties = {};
+    
+    for (let [key, value] of formData.entries()) {
+        properties[key] = value;
+    }
+    
+    try {
+        const response = await fetch(`/api/worlds/${currentEditingWorld}/config`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ properties })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editWorldConfigModal')).hide();
+            showToast('Configuración guardada correctamente', 'success');
+            loadWorlds();
+        } else {
+            showToast('Error: ' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Error saving world config:', error);
+        showToast('Error de conexión al guardar configuración', 'error');
+    }
+}
+
+// Duplicar mundo
+async function duplicateWorld(slug, originalName) {
+    const newName = prompt(`Ingresa el nombre para el duplicado de "${originalName}":`, `${originalName} (Copia)`);
+    
+    if (!newName) return;
+    
+    try {
+        showToast('Duplicando mundo...', 'info');
+        
+        const response = await fetch(`/api/worlds/${slug}/duplicate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_name: newName })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Mundo duplicado correctamente', 'success');
+            loadWorlds();
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error duplicating world:', error);
+        showToast('Error de conexión al duplicar mundo', 'error');
+    }
+}
+
+// Crear backup del mundo
+async function backupWorld(slug) {
+    try {
+        // Buscar información del mundo
+        const worldsResponse = await fetch('/api/worlds');
+        const worldsData = await worldsResponse.json();
+        const world = worldsData.worlds.find(w => w.slug === slug);
+        
+        if (!world) {
+            showToast('Mundo no encontrado', 'error');
+            return;
+        }
+        
+        // Mostrar modal de backups
+        showWorldBackupsModal(slug, world.name);
+        
+    } catch (error) {
+        console.error('Error loading backups:', error);
+        showToast('Error al cargar backups', 'error');
+    }
+}
+
+// Mostrar modal de backups de un mundo
+async function showWorldBackupsModal(slug, worldName) {
+    currentBackupsWorld = slug;
+    
+    // Actualizar título del modal
+    document.getElementById('backupsWorldName').textContent = worldName;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('worldBackupsModal'));
+    modal.show();
+    
+    // Cargar lista de backups
+    await loadWorldBackups(slug);
+}
+
+// Cargar lista de backups de un mundo
+async function loadWorldBackups(slug) {
+    try {
+        const response = await fetch(`/api/worlds/${slug}/backups`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar estadísticas
+            document.getElementById('totalBackupsCount').textContent = data.total_count;
+            document.getElementById('totalBackupsSize').textContent = data.total_size_mb + ' MB';
+            
+            // Renderizar lista
+            renderWorldBackupsList(data.backups);
+        } else {
+            showBackupsError(data.error || 'Error al cargar backups');
+        }
+    } catch (error) {
+        console.error('Error loading backups:', error);
+        showBackupsError('Error de conexión al cargar backups');
+    }
+}
+
+// Renderizar lista de backups
+function renderWorldBackupsList(backups) {
+    const container = document.getElementById('worldBackupsList');
+    
+    if (backups.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No hay backups disponibles para este mundo.
+                <br><small>Crea tu primer backup usando el botón de arriba.</small>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    
+    backups.forEach(backup => {
+        const date = new Date(backup.created_at);
+        const dateStr = date.toLocaleString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const typeClass = backup.type === 'auto' ? 'bg-info' : 'bg-primary';
+        const typeText = backup.type === 'auto' ? 'Automático' : 'Manual';
+        
+        html += `
+            <div class="list-group-item border-secondary">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            <i class="bi bi-archive"></i> ${escapeHtml(backup.description || 'Backup')}
+                            <span class="badge ${typeClass} ms-2">${typeText}</span>
+                        </h6>
+                        <p class="mb-1 text-muted small">
+                            <i class="bi bi-calendar"></i> ${dateStr}
+                            <span class="ms-3"><i class="bi bi-hdd"></i> ${backup.size_mb} MB</span>
+                        </p>
+                        <small class="text-muted">${escapeHtml(backup.filename)}</small>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-success" onclick="restoreWorldBackup('${backup.filename}', '${escapeHtml(backup.description || 'este backup')}')">
+                            <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteWorldBackup('${backup.filename}', '${escapeHtml(backup.description || 'este backup')}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Crear backup desde el modal
+async function createWorldBackupFromModal() {
+    if (!currentBackupsWorld) return;
+    
+    const description = prompt('Descripción del backup (opcional):');
+    if (description === null) return; // Usuario canceló
+    
+    try {
+        showToast('Creando backup...', 'info');
+        
+        const response = await fetch(`/api/worlds/${currentBackupsWorld}/backup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                description: description || ''
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Backup creado correctamente', 'success');
+            // Recargar lista de backups
+            await loadWorldBackups(currentBackupsWorld);
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        showToast('Error de conexión al crear backup', 'error');
+    }
+}
+
+// Restaurar backup de mundo
+async function restoreWorldBackup(filename, description) {
+    const confirmed = confirm(`¿Restaurar desde "${description}"?\n\nADVERTENCIA: Esto reemplazará el mundo actual. Se creará un backup de seguridad automáticamente.`);
+    if (!confirmed) return;
+    
+    try {
+        showToast('Restaurando backup...', 'info');
+        
+        const response = await fetch(`/api/worlds/${currentBackupsWorld}/restore`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                backup_filename: filename
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Mundo restaurado correctamente', 'success');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('worldBackupsModal'));
+            if (modal) modal.hide();
+            
+            // Recargar lista de mundos
+            loadWorlds();
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error restoring backup:', error);
+        showToast('Error de conexión al restaurar backup', 'error');
+    }
+}
+
+// Eliminar backup de mundo
+async function deleteWorldBackup(filename, description) {
+    const confirmed = confirm(`¿Eliminar el backup "${description}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmed) return;
+    
+    try {
+        showToast('Eliminando backup...', 'info');
+        
+        const response = await fetch(`/api/backups/${filename}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Backup eliminado correctamente', 'success');
+            // Recargar lista de backups
+            await loadWorldBackups(currentBackupsWorld);
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting backup:', error);
+        showToast('Error de conexión al eliminar backup', 'error');
+    }
+}
+
+// Mostrar error en lista de backups
+function showBackupsError(message) {
+    const container = document.getElementById('worldBackupsList');
+    container.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> ${escapeHtml(message)}
+        </div>
+    `;
+}
+
+// Eliminar mundo
+async function deleteWorld(slug, name) {
+    const confirmed = confirm(`¿Estás seguro de eliminar el mundo "${name}"?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmed) return;
+    
+    const createBackup = confirm('¿Deseas crear un backup antes de eliminar?');
+    
+    try {
+        showToast('Eliminando mundo...', 'info');
+        
+        const response = await fetch(`/api/worlds/${slug}?backup=${createBackup}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Mundo eliminado correctamente', 'success');
+            loadWorlds();
+        } else {
+            showToast('Error: ' + (data.error || 'Error desconocido'), 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting world:', error);
+        showToast('Error de conexión al eliminar mundo', 'error');
+    }
+}
+
+// Mostrar error en grid de mundos
+function showWorldsError(message) {
+    const grid = document.getElementById('worldsGrid');
+    grid.innerHTML = `
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> ${escapeHtml(message)}
+            </div>
+        </div>
+    `;
+}
+
+// Función auxiliar para escapar HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Cargar mundos cuando se abre la sección
+const originalShowSection = window.showSection;
+window.showSection = function(section) {
+    if (originalShowSection) {
+        originalShowSection(section);
+    }
+    
+    // Si se abre la sección de mundos, cargarlos
+    if (section === 'worlds') {
+        loadWorlds();
+    }
+};
+
+// ==================== RPG SECTION ====================
+
+async function loadRPGSection() {
+    // Detener refresh anterior si existe
+    stopRPGRefresh();
+    
+    // Obtener mundo activo
+    try {
+        const response = await fetch('/api/worlds/active');
+        const data = await response.json();
+        
+        if (!data.success || !data.world) {
+            showRPGError('No hay un mundo activo');
+            return;
+        }
+        
+        const worldSlug = data.world.slug;
+        const worldName = data.world.name;
+        
+        // Actualizar nombre del mundo en el header
+        const worldNameBadge = document.getElementById('rpg-world-name');
+        if (worldNameBadge) {
+            worldNameBadge.textContent = worldName;
+        }
+        
+        // Iniciar sección RPG
+        await initRPGSection(worldSlug);
+        
+    } catch (error) {
+        console.error('Error loading RPG section:', error);
+        showRPGError('Error al cargar datos del mundo activo');
+    }
+}
+

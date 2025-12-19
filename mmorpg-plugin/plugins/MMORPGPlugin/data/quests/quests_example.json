@@ -1,0 +1,7 @@
+[
+    { "id": "quest_1", "name": "El Tesoro Perdido", "objectives": ["Encuentra el cofre en la mazmorra", "Derrota al Esqueleto Guerrero"], "rewards": ["100 monedas", "espada rara"], "difficulty": "MEDIUM" },
+    { "id": "quest_2", "name": "Ayuda al Comerciante", "objectives": ["Recolecta 10 pociones", "Entrega a Hugo"], "rewards": ["50 monedas", "poción especial"], "difficulty": "EASY" },
+    { "id": "quest_3", "name": "Defensa del Pueblo", "objectives": ["Derrota 5 bandidos", "Habla con Boris"], "rewards": ["escudo", "200 monedas"], "difficulty": "HARD" },
+    { "id": "quest_4", "name": "El Rey Slime", "objectives": ["Derrota al Rey Slime", "Recoge la corona"], "rewards": ["crown", "300 monedas"], "difficulty": "BOSS" },
+    { "id": "quest_5", "name": "Entrenamiento Especial", "objectives": ["Habla con Lara", "Completa el circuito de agilidad"], "rewards": ["habilidad agilidad", "50 monedas"], "difficulty": "MEDIUM" }
+]
