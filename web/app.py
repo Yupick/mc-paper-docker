@@ -1616,6 +1616,23 @@ def activate_world(slug):
         # Reiniciar servidor si estaba corriendo
         if server_was_running:
             container.start()
+            
+            # Si el mundo activado es RPG, esperar a que el servidor inicie y recargar mundos RPG
+            if world.metadata.get('isRPG', False):
+                try:
+                    import time
+                    # Esperar 15 segundos a que el servidor termine de iniciar
+                    print(f"Esperando a que el servidor inicie para recargar mundos RPG...")
+                    time.sleep(15)
+                    
+                    # Recargar mundos RPG en el plugin
+                    result = execute_rcon_command(container, 'rpg reload')
+                    if result.exit_code == 0:
+                        print(f"✓ Mundos RPG recargados automáticamente después de activar '{world.metadata['name']}'")
+                    else:
+                        print(f"⚠ No se pudo ejecutar 'rpg reload': {result.output}")
+                except Exception as e:
+                    print(f"Advertencia: No se pudo recargar mundos RPG automáticamente: {e}")
         
         return jsonify({
             'success': True,

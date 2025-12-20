@@ -53,6 +53,14 @@ public class RPGCommand implements CommandExecutor {
             case "info":
                 showWorldInfo(player, worldName);
                 break;
+            case "reload":
+                if (!player.hasPermission("rpg.admin.reload")) {
+                    player.sendMessage("§cNo tienes permiso para usar este comando.");
+                    return true;
+                }
+                plugin.reloadRPGWorlds();
+                player.sendMessage("§a✓ Mundos RPG recargados correctamente.");
+                break;
             default:
                 player.sendMessage("§cComando desconocido. Usa /rpg help");
         }
@@ -65,6 +73,7 @@ public class RPGCommand implements CommandExecutor {
         player.sendMessage("§e/rpg help §7- Muestra esta ayuda");
         player.sendMessage("§e/rpg status §7- Muestra tu estado RPG");
         player.sendMessage("§e/rpg info §7- Información del mundo RPG actual");
+        player.sendMessage("§e/rpg reload §7- Recargar mundos RPG §c(Admin)");
         player.sendMessage("§7Más comandos disponibles próximamente...");
     }
     

@@ -272,6 +272,15 @@ public class MMORPGPlugin extends JavaPlugin {
     }
     
     /**
+     * Recarga la detección de mundos RPG (para uso desde el panel web)
+     */
+    public void reloadRPGWorlds() {
+        getLogger().info("Recargando mundos RPG...");
+        detectRPGWorlds();
+        getLogger().info("Mundos RPG recargados correctamente.");
+    }
+    
+    /**
      * Inicia la sincronización periódica con el panel web
      */
     private void startWebPanelSync() {
