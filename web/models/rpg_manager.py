@@ -396,19 +396,26 @@ class RPGManager:
                     print(f"Creado {filename} vacío en datos universales")
             
             # 4. Crear archivos locales con estructura base
+            from datetime import datetime
+            timestamp = datetime.utcnow().isoformat() + "Z"
+            
             local_files = {
+                'status.json': {
+                    "active": True,
+                    "created_at": timestamp,
+                    "last_active": timestamp,
+                    "total_players": 0,
+                    "total_quests_completed": 0
+                },
+                'players.json': {"players": {}},
                 'npcs.json': {"npcs": []},
                 'quests.json': {"quests": []},
                 'spawns.json': {"spawns": []},
                 'dungeons.json': {"dungeons": []},
-                'status.json': {
-                    "active": True,
-                    "created_at": "",
-                    "last_active": "",
-                    "total_players": 0,
-                    "total_quests_completed": 0
-                },
-                'players.json': {"players": {}}
+                'invasions.json': {"invasions": []},
+                'kills.json': {"kills": [], "playerStats": {}},
+                'respawn.json': {"respawnPoints": []},
+                'squads.json': {"squads": []}
             }
             
             for filename, default_data in local_files.items():
