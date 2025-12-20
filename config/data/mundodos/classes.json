@@ -1,0 +1,34 @@
+{
+  "classes": [
+    {
+      "name": "Guerrero",
+      "icon": "⚔",
+      "description": "Maestro del combate cuerpo a cuerpo"
+    },
+    {
+      "name": "Mago",
+      "icon": "✦",
+      "description": "Manipulador de energía arcana"
+    },
+    {
+      "name": "Arquero",
+      "icon": "➶",
+      "description": "Experto en ataques a distancia"
+    },
+    {
+      "name": "Asesino",
+      "icon": "🗡",
+      "description": "Maestro del sigilo y ataques críticos"
+    },
+    {
+      "name": "Clérigo",
+      "icon": "✝",
+      "description": "Sanador sagrado y protector"
+    },
+    {
+      "name": "Paladín",
+      "icon": "🛡",
+      "description": "Guerrero sagrado con poderes divinos"
+    }
+  ]
+}
