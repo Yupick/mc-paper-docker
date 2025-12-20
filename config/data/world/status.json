@@ -1,9 +1,9 @@
 {
-  "world": "active",
+  "world": "world",
   "rpg_enabled": true,
   "players_online": 0,
   "classes_active": 0,
   "quests_active": 0,
   "npcs_spawned": 0,
-  "last_updated": 1766255672049
+  "last_updated": 1766255672060
 }
