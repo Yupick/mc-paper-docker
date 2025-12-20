@@ -18,7 +18,8 @@ import java.util.*;
 
 /**
  * Gestiona todos los NPCs del sistema RPG
- * Lee desde: worlds/{worldName}/data/npcs.json (local por mundo)
+ * Lee desde: worlds/active/data/npcs.json (mundo activo)
+ * Archivos universales en: plugins/MMORPGPlugin/data/npcs.json
  */
 public class NPCManager implements Listener {
     private final MMORPGPlugin plugin;

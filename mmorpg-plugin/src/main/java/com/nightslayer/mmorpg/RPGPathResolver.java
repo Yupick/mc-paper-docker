@@ -40,12 +40,14 @@ public class RPGPathResolver {
     }
     
     /**
-     * Obtiene el directorio de datos locales de un mundo
-     * @param worldName Nombre del mundo
-     * @return File apuntando a worlds/{worldName}/data/
+     * Obtiene el directorio de datos locales del mundo ACTIVO
+     * IMPORTANTE: Siempre usa 'active' independientemente del worldName
+     * porque worlds/active es un symlink al mundo actualmente activo
+     * @param worldName Nombre del mundo (ignorado, siempre usa 'active')
+     * @return File apuntando a worlds/active/data/
      */
     public File getWorldDataDir(String worldName) {
-        return new File(worldsBasePath + "/" + worldName + "/data");
+        return new File(worldsBasePath + "/active/data");
     }
     
     /**

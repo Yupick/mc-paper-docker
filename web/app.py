@@ -61,8 +61,12 @@ CONTAINER_NAME = os.getenv('DOCKER_CONTAINER_NAME', 'minecraft-paper')
 app.config['UPLOAD_FOLDER'] = PLUGINS_DIR
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
-# Inicializar RPGManager primero
-rpg_manager = RPGManager()
+# Inicializar RPGManager primero con rutas relativas
+rpg_manager = RPGManager(
+    base_path=BASE_DIR,
+    plugin_data_path=os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data'),
+    worlds_path=WORLDS_DIR
+)
 
 # Inicializar ResourcePackManager
 resource_pack_manager = ResourcePackManager(BASE_DIR)
@@ -2492,10 +2496,10 @@ def _get_data_location(world_slug, data_type, scope='local'):
     # Data exclusive-local (solo per-mundo)
     exclusive_local_data = {'players', 'status', 'invasions', 'kills', 'respawn', 'squads'}
     
-    # Ubicación base
+    # Ubicación base para archivos universales
     plugin_data_dir = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data')
     
-    # Obtener level-name del mundo activo
+    # Obtener level-name del mundo activo para archivos locales
     level_name = None
     try:
         world_manager = WorldManager(os.path.join(MINECRAFT_DIR, 'worlds'))
@@ -2509,8 +2513,11 @@ def _get_data_location(world_slug, data_type, scope='local'):
         print(f"Error obteniendo level-name: {e}")
     
     # Fallback al slug si no hay level-name
-    world_data_dir = level_name or world_slug
-    local_path = os.path.join(plugin_data_dir, world_data_dir)
+    world_name = level_name or world_slug
+    
+    # CORRECCIÓN: Archivos locales SIEMPRE en worlds/active/data/ (mundo activo)
+    # No importa qué mundo esté activo, siempre usar 'active'
+    local_path = os.path.join(WORLDS_DIR, 'active', 'data')
     universal_path = os.path.join(plugin_data_dir)
     
     # Resolver según clasificación
@@ -2562,53 +2569,35 @@ def _get_active_world_data_candidates():
 
 def _get_rpg_file_paths(filename):
     """
-    Retorna las rutas local (del mundo) y universal (raíz)
+    Retorna las rutas local (del mundo activo) y universal (raíz)
+    Local: worlds/active/data/{filename} (mundo actualmente activo)
+    Universal: plugins/MMORPGPlugin/data/{filename}
     """
-    data_dir = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data')
-    candidates = _get_active_world_data_candidates()
-
-    local_path = None
-    # Preferir la primera coincidencia que exista (normalmente level-name)
-    for candidate in candidates:
-        candidate_path = os.path.join(data_dir, candidate, filename)
-        if os.path.exists(candidate_path):
-            local_path = candidate_path
-            break
-
-    # Si ninguna existe, usar el primer candidato para crear
-    if not local_path and candidates:
-        local_path = os.path.join(data_dir, candidates[0], filename)
-
-    universal_path = os.path.join(data_dir, filename)
+    # Ruta universal (plugins/MMORPGPlugin/data/)
+    universal_path = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data', filename)
+    
+    # Ruta local (SIEMPRE worlds/active/data/ - mundo activo)
+    local_path = os.path.join(WORLDS_DIR, 'active', 'data', filename)
 
     return local_path, universal_path
 
 def _resolve_rpg_file_path(filename):
     """
     Resuelve la ruta correcta para archivos RPG
-    Busca primero en el mundo activo, luego en la raíz de /data/
+    Busca primero en el mundo activo (worlds/active/data/), luego en plugins/MMORPGPlugin/data/
     """
-    data_dir = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data')
+    # Intentar primero en worlds/active/data/{filename} (mundo activo)
+    local_path = os.path.join(WORLDS_DIR, 'active', 'data', filename)
+    if os.path.exists(local_path):
+        return local_path
 
-    candidates = _get_active_world_data_candidates()
+    # Fallback: plugins/MMORPGPlugin/data/{filename} (universal)
+    universal_path = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'data', filename)
+    if os.path.exists(universal_path):
+        return universal_path
 
-    # Intentar en orden de candidatos
-    for candidate in candidates:
-        candidate_path = os.path.join(data_dir, candidate, filename)
-        if os.path.exists(candidate_path):
-            return candidate_path
-
-    # Fallback: raíz /data/
-    root_path = os.path.join(data_dir, filename)
-    if os.path.exists(root_path):
-        return root_path
-
-    # Si no existe, retornar la ruta con el primer candidato para creación
-    if candidates:
-        return os.path.join(data_dir, candidates[0], filename)
-
-    # Último fallback
-    return root_path
+    # Si no existe, retornar la ruta local para creación
+    return local_path
 
 def _get_rpg_data_by_scope(filename, data_key):
     """

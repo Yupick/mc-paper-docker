@@ -50,6 +50,7 @@ public class DataInitializer {
     
     /**
      * Inicializa datos universales (se crea una sola vez)
+     * Estos archivos se comparten entre todos los mundos
      */
     private void initializeUniversalData() {
         initializeDataFile("items", "universal");

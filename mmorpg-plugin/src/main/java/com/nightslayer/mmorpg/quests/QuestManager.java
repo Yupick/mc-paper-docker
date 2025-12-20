@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 
 /**
  * Gestor del sistema de quests
- * Lee desde: worlds/{worldName}/data/quests.json (local por mundo)
+ * Lee desde: worlds/active/data/quests.json (mundo activo)
+ * Archivos universales en: plugins/MMORPGPlugin/data/quests.json
  * Nota: El progreso de jugadores se mantiene en archivos individuales por compatibilidad
  */
 public class QuestManager {

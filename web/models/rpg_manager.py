@@ -27,18 +27,25 @@ class RPGManager:
     """
     
     def __init__(self, 
-                 base_path: str = "/home/mkd/contenedores/mc-paper",
+                 base_path: str = None,
                  plugin_data_path: str = None,
                  worlds_path: str = None):
         """
         Inicializa el RPGManager
         
         Args:
-            base_path: Ruta base del proyecto
+            base_path: Ruta base del proyecto (opcional, se detecta automáticamente)
             plugin_data_path: Ruta a plugins/MMORPGPlugin/data (opcional)
             worlds_path: Ruta a worlds/ (opcional)
         """
-        self.base_path = Path(base_path)
+        # Detectar base_path automáticamente desde la ubicación del script
+        if base_path is None:
+            # Obtener directorio padre de 'web/' (donde está este archivo)
+            current_dir = Path(__file__).resolve().parent.parent
+            self.base_path = current_dir
+        else:
+            self.base_path = Path(base_path)
+        
         self.plugin_data_path = Path(plugin_data_path) if plugin_data_path else self.base_path / "plugins" / "MMORPGPlugin" / "data"
         self.worlds_path = Path(worlds_path) if worlds_path else self.base_path / "worlds"
         self.config_path = self.base_path / "config"
@@ -49,15 +56,17 @@ class RPGManager:
 
     def _get_world_data_dir(self, world_name: str) -> Path:
         """
-        Obtiene el directorio de datos locales de un mundo
+        Obtiene el directorio de datos locales del mundo ACTIVO
+        IMPORTANTE: Siempre usa 'active' independientemente del world_name
+        porque worlds/active es un symlink al mundo actualmente activo
         
         Args:
-            world_name: Nombre del mundo
+            world_name: Nombre del mundo (ignorado, siempre usa 'active')
             
         Returns:
-            Path al directorio worlds/{world_name}/data/
+            Path al directorio worlds/active/data/
         """
-        return self.worlds_path / world_name / "data"
+        return self.worlds_path / "active" / "data"
     
     def _get_universal_data_dir(self) -> Path:
         """
