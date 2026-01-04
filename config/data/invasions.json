@@ -1,0 +1,50 @@
+{
+  "invasions": [
+    {
+      "invasionId": "undead_siege",
+      "displayName": "§4§lAsedio de los No-Muertos",
+      "description": "Hordas de esqueletos y zombis atacan el mundo",
+      "targetWorlds": ["world"],
+      "waves": [
+        {
+          "waveNumber": 1,
+          "mobType": "ZOMBIE",
+          "mobCount": 30,
+          "mobLevel": 25,
+          "delaySeconds": 300
+        },
+        {
+          "waveNumber": 2,
+          "mobType": "SKELETON",
+          "mobCount": 20,
+          "mobLevel": 30,
+          "delaySeconds": 480
+        },
+        {
+          "waveNumber": 3,
+          "mobType": "WITHER_SKELETON",
+          "mobCount": 15,
+          "mobLevel": 35,
+          "delaySeconds": 420,
+          "isBossWave": true,
+          "bossName": "§4Rey No-Muerto",
+          "bossHealthMultiplier": 3.0
+        }
+      ],
+      "rewards": {
+        "xpPerWave": 500,
+        "coinsPerWave": 50,
+        "xpBonus": 2000,
+        "coinsBonus": 200,
+        "specialItems": []
+      },
+      "schedule": {
+        "scheduleType": "FIXED",
+        "fixedTimes": ["20:00", "22:00"],
+        "randomMinHours": 4,
+        "randomMaxHours": 8,
+        "durationMinutes": 30
+      }
+    }
+  ]
+}

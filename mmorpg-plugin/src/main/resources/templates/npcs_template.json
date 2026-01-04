@@ -1,0 +1,257 @@
+{
+  "npcs": [
+    {
+      "id": "quest_master",
+      "name": "§6§lMaestro de Misiones",
+      "type": "VILLAGER",
+      "profession": "CLERIC",
+      "location": {
+        "world": "world",
+        "x": 100,
+        "y": 65,
+        "z": 200
+      },
+      "skin": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNWQ2YzZlZGE5NDI1ZGE1YWI1ZGMxYzgzY2UzYWJhYjU0N2I5YWEwYTQ2YWY4OTIzMTYzNjAzY2M2MjA3ZGM1In19fQ==",
+      "dialogues": [
+        "§e¡Bienvenido, aventurero!",
+        "§7Tengo muchas misiones para ti.",
+        "§7¿Estás listo para enfrentar desafíos?"
+      ],
+      "interactions": [
+        {
+          "type": "QUEST_GIVER",
+          "quests": ["first_steps", "monster_hunter", "treasure_seeker"]
+        }
+      ]
+    },
+    {
+      "id": "weapon_merchant",
+      "name": "§c§lMercader de Armas",
+      "type": "VILLAGER",
+      "profession": "WEAPONSMITH",
+      "location": {
+        "world": "world",
+        "x": 95,
+        "y": 65,
+        "z": 205
+      },
+      "dialogues": [
+        "§e¡Las mejores armas del reino!",
+        "§7Cada espada forjada con maestría.",
+        "§7¿Buscas algo especial?"
+      ],
+      "interactions": [
+        {
+          "type": "SHOP",
+          "items": [
+            {"item_id": "frozen_sword", "currency": "emerald", "price": 500},
+            {"item_id": "witch_broom", "currency": "emerald", "price": 800},
+            {"item_id": "cupids_bow", "currency": "emerald", "price": 650}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "potion_master",
+      "name": "§5§lMaestro de Pociones",
+      "type": "VILLAGER",
+      "profession": "CLERIC",
+      "location": {
+        "world": "world",
+        "x": 110,
+        "y": 65,
+        "z": 200
+      },
+      "dialogues": [
+        "§e¡Pociones mágicas y elíxires!",
+        "§7Cada brebaje cuidadosamente preparado.",
+        "§7¿Necesitas curación o poder?"
+      ],
+      "interactions": [
+        {
+          "type": "SHOP",
+          "items": [
+            {"item_id": "love_potion", "currency": "gold", "price": 50},
+            {"item_id": "golden_egg", "currency": "gold", "price": 100}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pet_trainer",
+      "name": "§2§lEntrenador de Mascotas",
+      "type": "VILLAGER",
+      "profession": "SHEPHERD",
+      "location": {
+        "world": "world",
+        "x": 120,
+        "y": 65,
+        "z": 195
+      },
+      "dialogues": [
+        "§e¡Adopta una mascota hoy!",
+        "§7Todas están bien entrenadas.",
+        "§7¿Quieres un compañero leal?"
+      ],
+      "interactions": [
+        {
+          "type": "PET_ADOPTION",
+          "available_pets": ["wolf_pup", "cat_mystic", "parrot_scout"]
+        }
+      ]
+    },
+    {
+      "id": "blacksmith",
+      "name": "§8§lHerrero Maestro",
+      "type": "VILLAGER",
+      "profession": "ARMORER",
+      "location": {
+        "world": "world",
+        "x": 105,
+        "y": 65,
+        "z": 210
+      },
+      "dialogues": [
+        "§e¡Armaduras y mejoras!",
+        "§7Puedo mejorar tu equipo.",
+        "§7Tráeme los materiales necesarios."
+      ],
+      "interactions": [
+        {
+          "type": "ITEM_UPGRADE",
+          "upgrade_recipes": [
+            {
+              "base_item": "IRON_SWORD",
+              "result_item": "frozen_sword",
+              "materials": [
+                {"item": "DIAMOND", "amount": 5},
+                {"item": "fire_crystal", "amount": 3}
+              ],
+              "cost": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "event_coordinator",
+      "name": "§d§lCoordinador de Eventos",
+      "type": "VILLAGER",
+      "profession": "NITWIT",
+      "location": {
+        "world": "world",
+        "x": 90,
+        "y": 65,
+        "z": 200
+      },
+      "dialogues": [
+        "§e¡Eventos especiales todo el año!",
+        "§7Intercambia tu moneda de evento aquí.",
+        "§7¡No te pierdas las recompensas!"
+      ],
+      "interactions": [
+        {
+          "type": "EVENT_SHOP",
+          "events": ["halloween_2026", "christmas_2026", "easter_2026"]
+        }
+      ]
+    },
+    {
+      "id": "dungeon_keeper",
+      "name": "§4§lGuardián de Mazmorras",
+      "type": "VILLAGER",
+      "profession": "CLERIC",
+      "location": {
+        "world": "world",
+        "x": 115,
+        "y": 65,
+        "z": 215
+      },
+      "dialogues": [
+        "§e¡Mazmorras peligrosas te esperan!",
+        "§7Solo los más valientes entran.",
+        "§7¿Tienes lo necesario?"
+      ],
+      "interactions": [
+        {
+          "type": "DUNGEON_TELEPORTER",
+          "dungeons": ["shadow_crypt", "frozen_temple", "volcano_chamber"]
+        }
+      ]
+    },
+    {
+      "id": "bank_manager",
+      "name": "§e§lGerente del Banco",
+      "type": "VILLAGER",
+      "profession": "CARTOGRAPHER",
+      "location": {
+        "world": "world",
+        "x": 125,
+        "y": 65,
+        "z": 200
+      },
+      "dialogues": [
+        "§e¡Guarda tus objetos valiosos!",
+        "§7Tu inventario estará seguro aquí.",
+        "§7Expansiones de espacio disponibles."
+      ],
+      "interactions": [
+        {
+          "type": "BANK",
+          "storage_slots": 54,
+          "expansion_cost": 1000
+        }
+      ]
+    },
+    {
+      "id": "teleporter",
+      "name": "§b§lTeletransportador",
+      "type": "VILLAGER",
+      "profession": "LIBRARIAN",
+      "location": {
+        "world": "world",
+        "x": 100,
+        "y": 65,
+        "z": 190
+      },
+      "dialogues": [
+        "§e¡Viaja a cualquier destino!",
+        "§7Servicio de teletransporte rápido.",
+        "§7¿A dónde quieres ir?"
+      ],
+      "interactions": [
+        {
+          "type": "TELEPORTER",
+          "destinations": [
+            {"name": "Spawn", "world": "world", "x": 0, "y": 65, "z": 0, "cost": 0},
+            {"name": "Arena PvP", "world": "world", "x": 500, "y": 70, "z": 500, "cost": 50},
+            {"name": "Minas", "world": "world", "x": -200, "y": 30, "z": -200, "cost": 20}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lore_keeper",
+      "name": "§5§lGuardián del Conocimiento",
+      "type": "VILLAGER",
+      "profession": "LIBRARIAN",
+      "location": {
+        "world": "world",
+        "x": 130,
+        "y": 65,
+        "z": 205
+      },
+      "dialogues": [
+        "§e¡Los secretos del mundo revelados!",
+        "§7Cada historia tiene un precio.",
+        "§7¿Buscas conocimiento antiguo?"
+      ],
+      "interactions": [
+        {
+          "type": "LORE_INFO",
+          "topics": ["dragon_history", "nether_legends", "ancient_artifacts"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de NPCs - MMORPG Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-user-tie"></i> Gestión de NPCs</h2>
+        <div>
+            <button class="btn btn-primary" onclick="openCreateNpcModal()">
+                <i class="fas fa-plus"></i> Crear NPC
+            </button>
+            <button class="btn btn-info" onclick="loadNpcs()">
+                <i class="fas fa-sync"></i> Recargar
+            </button>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>Total NPCs</h5>
+                    <h2 id="total-npcs-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>NPCs de Quest</h5>
+                    <h2 id="quest-npcs-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5>Comerciantes</h5>
+                    <h2 id="merchant-npcs-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Entrenadores</h5>
+                    <h2 id="trainer-npcs-count">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" id="search-input" class="form-control" placeholder="Buscar NPC..." onkeyup="filterNpcs()">
+                </div>
+                <div class="col-md-3">
+                    <select id="type-filter" class="form-control" onchange="filterNpcs()">
+                        <option value="">Todos los tipos</option>
+                        <option value="QUEST_GIVER">Quest</option>
+                        <option value="MERCHANT">Comerciante</option>
+                        <option value="TRAINER">Entrenador</option>
+                        <option value="BANKER">Banquero</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="world-filter" class="form-control" onchange="filterNpcs()">
+                        <option value="">Todos los mundos</option>
+                        <option value="world">Overworld</option>
+                        <option value="world_nether">Nether</option>
+                        <option value="world_the_end">The End</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-secondary btn-block" onclick="clearFilters()">Limpiar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de NPCs -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Mundo</th>
+                        <th>Ubicación</th>
+                        <th>Diálogos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="npcs-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal NPC -->
+<div class="modal fade" id="npcModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="npcModalTitle">Crear NPC</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="npc-form">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>ID *</label>
+                            <input type="text" class="form-control" id="npc-id" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Nombre *</label>
+                            <input type="text" class="form-control" id="npc-name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Tipo</label>
+                            <select class="form-control" id="npc-type">
+                                <option value="QUEST_GIVER">Quest Giver</option>
+                                <option value="MERCHANT">Comerciante</option>
+                                <option value="TRAINER">Entrenador</option>
+                                <option value="BANKER">Banquero</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Skin</label>
+                            <input type="text" class="form-control" id="npc-skin" placeholder="Nombre del jugador">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Mundo</label>
+                            <select class="form-control" id="npc-world">
+                                <option value="world">Overworld</option>
+                                <option value="world_nether">Nether</option>
+                                <option value="world_the_end">The End</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>X</label>
+                            <input type="number" class="form-control" id="npc-x" value="0" step="0.1">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Y</label>
+                            <input type="number" class="form-control" id="npc-y" value="64" step="0.1">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Z</label>
+                            <input type="number" class="form-control" id="npc-z" value="0" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6>Diálogos</h6>
+                    <div id="dialogues-container"></div>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addDialogue()">
+                        <i class="fas fa-plus"></i> Añadir Diálogo
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveNpc()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/npcs.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        loadNpcs();
+        setInterval(() => !$('#npcModal').is(':visible') && loadNpcs(), 60000);
+    });
+</script>
+{% endblock %}

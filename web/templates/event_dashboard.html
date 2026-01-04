@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard de Eventos - Panel MMORPG{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-tachometer-alt"></i> Dashboard de Eventos en Tiempo Real</h2>
+        </div>
+        <div class="col-md-4 text-right">
+            <button class="btn btn-info mr-2" onclick="loadDashboard()">
+                <i class="fas fa-sync"></i> Actualizar
+            </button>
+            <a href="/events-manager" class="btn btn-primary">
+                <i class="fas fa-cog"></i> Gestionar Eventos
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Eventos Activos</h6>
+                            <h2 id="active-events-count">0</h2>
+                        </div>
+                        <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Jugadores Participando</h6>
+                            <h2 id="total-participants-count">0</h2>
+                        </div>
+                        <i class="fas fa-users fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Kills Totales (Hoy)</h6>
+                            <h2 id="total-kills-count">0</h2>
+                        </div>
+                        <i class="fas fa-skull fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Monedas Distribuidas</h6>
+                            <h2 id="total-coins-count">0</h2>
+                        </div>
+                        <i class="fas fa-coins fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eventos activos -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="fas fa-play-circle"></i> Eventos Activos Ahora</h5>
+                </div>
+                <div class="card-body">
+                    <div id="active-events-container">
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p>Cargando eventos activos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Participación por Evento (Últimas 24h)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="participationChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Kills por Evento (Últimas 24h)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="killsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de leaderboard -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-trophy"></i> Top 10 Jugadores (Monedas de Evento)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Posición</th>
+                                    <th>Jugador</th>
+                                    <th>Monedas de Evento</th>
+                                    <th>Kills</th>
+                                    <th>Último Evento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-tbody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando leaderboard...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial reciente -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Historial Reciente de Eventos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Evento</th>
+                                    <th>Estado</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Participantes</th>
+                                    <th>Kills</th>
+                                    <th>Duración</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-tbody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/event_dashboard.js') }}"></script>
+<script>
+    // Inicializar dashboard
+    $(document).ready(function() {
+        loadDashboard();
+        
+        // Auto-actualización cada 15 segundos
+        setInterval(function() {
+            loadDashboard();
+        }, 15000);
+    });
+</script>
+{% endblock %}

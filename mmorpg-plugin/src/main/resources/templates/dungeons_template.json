@@ -1,0 +1,234 @@
+{
+  "dungeons": [
+    {
+      "id": "shadow_crypt",
+      "name": "§8§lCripta de las Sombras",
+      "description": "Una mazmorra oscura llena de esqueletos y espíritus malignos",
+      "difficulty": "MEDIUM",
+      "min_level": 25,
+      "max_players": 5,
+      "estimated_time": 30,
+      "entrance": {
+        "world": "world",
+        "x": -150,
+        "y": 40,
+        "z": -150
+      },
+      "spawn_point": {
+        "x": -150,
+        "y": 41,
+        "z": -140
+      },
+      "bosses": [
+        {
+          "mob_id": "shadow_assassin",
+          "name": "§8§lSeñor de las Sombras",
+          "location": {"x": -150, "y": 45, "z": -120},
+          "health_multiplier": 3.0,
+          "damage_multiplier": 1.5
+        }
+      ],
+      "waves": [
+        {
+          "wave_number": 1,
+          "mobs": [
+            {"mob_id": "shadow_assassin", "count": 3},
+            {"type": "SKELETON", "count": 5}
+          ]
+        },
+        {
+          "wave_number": 2,
+          "mobs": [
+            {"mob_id": "shadow_assassin", "count": 5},
+            {"type": "WITHER_SKELETON", "count": 3}
+          ]
+        },
+        {
+          "wave_number": 3,
+          "mobs": [
+            {"mob_id": "shadow_assassin", "count": 2},
+            {"type": "WITHER_SKELETON", "count": 5}
+          ]
+        }
+      ],
+      "rewards": {
+        "completion": {
+          "xp": 5000,
+          "money": 1000,
+          "items": [
+            {"item_id": "dragon_scale", "chance": 0.05},
+            {"item_id": "frozen_sword", "chance": 0.10},
+            {"item": "DIAMOND", "min": 3, "max": 8, "chance": 0.50}
+          ]
+        },
+        "first_completion": {
+          "xp": 10000,
+          "money": 2500,
+          "title": "§8Conquistador de Sombras"
+        }
+      }
+    },
+    {
+      "id": "frozen_temple",
+      "name": "§b§lTemplo Congelado",
+      "description": "Ruinas antiguas cubiertas de hielo eterno, hogar del Titán de Hielo",
+      "difficulty": "HARD",
+      "min_level": 45,
+      "max_players": 5,
+      "estimated_time": 45,
+      "entrance": {
+        "world": "world",
+        "x": 300,
+        "y": 120,
+        "z": 300
+      },
+      "spawn_point": {
+        "x": 300,
+        "y": 121,
+        "z": 310
+      },
+      "bosses": [
+        {
+          "mob_id": "ice_titan",
+          "name": "§b§lTitán de Hielo Ancestral",
+          "location": {"x": 300, "y": 125, "z": 350},
+          "health_multiplier": 5.0,
+          "damage_multiplier": 2.0,
+          "abilities": ["ice_storm", "freeze_aura", "blizzard"]
+        }
+      ],
+      "waves": [
+        {
+          "wave_number": 1,
+          "mobs": [
+            {"mob_id": "frozen_elf", "count": 6},
+            {"mob_id": "corrupted_snowman", "count": 4}
+          ]
+        },
+        {
+          "wave_number": 2,
+          "mobs": [
+            {"mob_id": "frozen_elf", "count": 8},
+            {"type": "STRAY", "count": 6}
+          ]
+        },
+        {
+          "wave_number": 3,
+          "mobs": [
+            {"mob_id": "ice_titan", "count": 1},
+            {"mob_id": "frozen_elf", "count": 4}
+          ]
+        }
+      ],
+      "environmental_effects": [
+        {
+          "type": "SLOWNESS",
+          "amplifier": 1,
+          "message": "§b¡El frío te ralentiza!"
+        }
+      ],
+      "rewards": {
+        "completion": {
+          "xp": 15000,
+          "money": 3000,
+          "items": [
+            {"item_id": "frozen_sword", "chance": 0.30},
+            {"item_id": "dragon_scale", "chance": 0.10},
+            {"item": "DIAMOND_BLOCK", "min": 1, "max": 3, "chance": 0.40}
+          ]
+        },
+        "first_completion": {
+          "xp": 30000,
+          "money": 7500,
+          "title": "§bDomador del Hielo"
+        }
+      }
+    },
+    {
+      "id": "volcano_chamber",
+      "name": "§4§lCámara del Volcán",
+      "description": "Cámara ardiente en el corazón de un volcán activo, dominio del Señor de la Guerra",
+      "difficulty": "EXTREME",
+      "min_level": 70,
+      "max_players": 5,
+      "estimated_time": 60,
+      "entrance": {
+        "world": "world_nether",
+        "x": 0,
+        "y": 64,
+        "z": 0
+      },
+      "spawn_point": {
+        "x": 5,
+        "y": 65,
+        "z": 5
+      },
+      "bosses": [
+        {
+          "mob_id": "nether_warlord",
+          "name": "§4§lSeñor de la Guerra Supremo",
+          "location": {"x": 0, "y": 70, "z": 50},
+          "health_multiplier": 8.0,
+          "damage_multiplier": 3.0,
+          "abilities": ["fire_nova", "wither_aura", "magma_eruption", "summon_minions"]
+        }
+      ],
+      "waves": [
+        {
+          "wave_number": 1,
+          "mobs": [
+            {"mob_id": "fire_elemental", "count": 8},
+            {"type": "BLAZE", "count": 10}
+          ]
+        },
+        {
+          "wave_number": 2,
+          "mobs": [
+            {"mob_id": "nether_warlord", "count": 2},
+            {"type": "WITHER_SKELETON", "count": 8}
+          ]
+        },
+        {
+          "wave_number": 3,
+          "mobs": [
+            {"mob_id": "fire_elemental", "count": 10},
+            {"type": "MAGMA_CUBE", "count": 6}
+          ]
+        },
+        {
+          "wave_number": 4,
+          "mobs": [
+            {"mob_id": "nether_warlord", "count": 1},
+            {"mob_id": "fire_elemental", "count": 5}
+          ]
+        }
+      ],
+      "environmental_effects": [
+        {
+          "type": "FIRE_RESISTANCE",
+          "amplifier": 0,
+          "message": "§c¡El calor extremo requiere protección!",
+          "damage_without": 2
+        }
+      ],
+      "rewards": {
+        "completion": {
+          "xp": 50000,
+          "money": 10000,
+          "items": [
+            {"item_id": "firework_wand", "chance": 0.25},
+            {"item_id": "dragon_scale", "chance": 0.20},
+            {"item": "NETHERITE_INGOT", "min": 2, "max": 5, "chance": 0.60},
+            {"item": "ANCIENT_DEBRIS", "min": 1, "max": 3, "chance": 0.30}
+          ]
+        },
+        "first_completion": {
+          "xp": 100000,
+          "money": 25000,
+          "title": "§4Conquistador del Infierno",
+          "item_id": "nether_crown"
+        }
+      }
+    }
+  ]
+}

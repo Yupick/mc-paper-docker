@@ -316,4 +316,13 @@ public class DatabaseManager {
         
         return stats.toString();
     }
+
+    /**
+     * Obtiene conexión a base de datos específica de un mundo
+     * Por ahora retorna la misma conexión universal
+     */
+    public Connection getWorldConnection(String worldName) {
+        // TODO: Implementar BDs separadas por mundo si es necesario
+        return connection;
+    }
 }

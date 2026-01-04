@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import sqlite3
 from pathlib import Path
 from typing import Optional, Dict, List
 
@@ -49,10 +50,27 @@ class RPGManager:
         self.plugin_data_path = Path(plugin_data_path) if plugin_data_path else self.base_path / "plugins" / "MMORPGPlugin" / "data"
         self.worlds_path = Path(worlds_path) if worlds_path else self.base_path / "worlds"
         self.config_path = self.base_path / "config"
+        self.universal_db_path = self.config_path / "universal.db"
         
         # Crear directorios si no existen
         self.plugin_data_path.mkdir(parents=True, exist_ok=True)
         self.worlds_path.mkdir(parents=True, exist_ok=True)
+
+    def _get_db_connection(self):
+        """
+        Obtiene conexión a la BD SQLite universal
+        
+        Returns:
+            sqlite3.Connection o None si la BD no existe
+        """
+        try:
+            if self.universal_db_path.exists():
+                conn = sqlite3.connect(str(self.universal_db_path))
+                conn.row_factory = sqlite3.Row  # Retornar filas como dicts
+                return conn
+        except Exception as e:
+            print(f"Error conectando a BD: {e}")
+        return None
 
     def _get_world_data_dir(self, world_name: str) -> Path:
         """
@@ -433,3 +451,272 @@ class RPGManager:
         except Exception as e:
             print(f"Error inicializando mundo RPG {world_name}: {e}")
             return False
+    # ====== MÉTODOS DE ACCESO A SQLITE ======
+    
+    def get_achievements(self) -> List[Dict]:
+        """
+        Obtiene todos los logros desde la BD SQLite
+        
+        Returns:
+            Lista de logros o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM achievements")
+            achievements = [dict(row) for row in cursor.fetchall()]
+            return achievements
+        except Exception as e:
+            print(f"Error obteniendo achievements: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_player_achievements(self, player_uuid: str) -> List[Dict]:
+        """
+        Obtiene los logros de un jugador desde la BD SQLite
+        
+        Args:
+            player_uuid: UUID del jugador
+            
+        Returns:
+            Lista de logros del jugador o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT pa.*, a.name, a.description, a.icon, a.xp_reward
+                FROM player_achievements pa
+                JOIN achievements a ON pa.achievement_id = a.achievement_id
+                WHERE pa.player_uuid = ?
+                ORDER BY pa.unlocked_at DESC
+            """, (player_uuid,))
+            achievements = [dict(row) for row in cursor.fetchall()]
+            return achievements
+        except Exception as e:
+            print(f"Error obteniendo logros del jugador: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_crafting_recipes(self) -> List[Dict]:
+        """
+        Obtiene todas las recetas de crafteo desde la BD SQLite
+        
+        Returns:
+            Lista de recetas o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM crafting_recipes")
+            recipes = [dict(row) for row in cursor.fetchall()]
+            return recipes
+        except Exception as e:
+            print(f"Error obteniendo recetas de crafteo: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_bestiary_entries(self) -> List[Dict]:
+        """
+        Obtiene todas las entradas del bestiario desde la BD SQLite
+        
+        Returns:
+            Lista de entradas del bestiario o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM bestiary_entries")
+            entries = [dict(row) for row in cursor.fetchall()]
+            return entries
+        except Exception as e:
+            print(f"Error obteniendo entradas del bestiario: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_player_bestiary(self, player_uuid: str) -> List[Dict]:
+        """
+        Obtiene el progreso del bestiario de un jugador
+        
+        Args:
+            player_uuid: UUID del jugador
+            
+        Returns:
+            Lista de entradas descubiertas o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT pb.*, be.mob_id, be.display_name
+                FROM player_bestiary pb
+                JOIN bestiary_entries be ON pb.entry_id = be.entry_id
+                WHERE pb.player_uuid = ?
+            """, (player_uuid,))
+            entries = [dict(row) for row in cursor.fetchall()]
+            return entries
+        except Exception as e:
+            print(f"Error obteniendo bestiario del jugador: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_enchantments(self) -> List[Dict]:
+        """
+        Obtiene todos los encantamientos personalizados desde la BD SQLite
+        
+        Returns:
+            Lista de encantamientos o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM enchantments")
+            enchantments = [dict(row) for row in cursor.fetchall()]
+            return enchantments
+        except Exception as e:
+            print(f"Error obteniendo encantamientos: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_squads(self) -> List[Dict]:
+        """
+        Obtiene todos los squads desde la BD SQLite
+        
+        Returns:
+            Lista de squads o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM squads")
+            squads = [dict(row) for row in cursor.fetchall()]
+            return squads
+        except Exception as e:
+            print(f"Error obteniendo squads: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_squad_members(self, squad_id: str) -> List[Dict]:
+        """
+        Obtiene los miembros de un squad
+        
+        Args:
+            squad_id: ID del squad
+            
+        Returns:
+            Lista de miembros o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM squad_members
+                WHERE squad_id = ?
+            """, (squad_id,))
+            members = [dict(row) for row in cursor.fetchall()]
+            return members
+        except Exception as e:
+            print(f"Error obteniendo miembros del squad: {e}")
+            return []
+        finally:
+            conn.close()
+    
+    def get_player_balance(self, player_uuid: str) -> Dict:
+        """
+        Obtiene el balance de un jugador desde la BD SQLite
+        
+        Args:
+            player_uuid: UUID del jugador
+            
+        Returns:
+            Dict con balance o {"coins": 0, "bank": 0} si no existe
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return {"coins": 0, "bank": 0}
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT coins, bank
+                FROM player_economy
+                WHERE player_uuid = ?
+            """, (player_uuid,))
+            row = cursor.fetchone()
+            if row:
+                return {"coins": row["coins"], "bank": row["bank"]}
+            return {"coins": 0, "bank": 0}
+        except Exception as e:
+            print(f"Error obteniendo balance del jugador: {e}")
+            return {"coins": 0, "bank": 0}
+        finally:
+            conn.close()
+    
+    def get_economy_transactions(self, player_uuid: str = None, limit: int = 100) -> List[Dict]:
+        """
+        Obtiene historial de transacciones económicas
+        
+        Args:
+            player_uuid: UUID del jugador (opcional, si None obtiene todas)
+            limit: Cantidad máxima de transacciones
+            
+        Returns:
+            Lista de transacciones o [] si no hay
+        """
+        conn = self._get_db_connection()
+        if not conn:
+            return []
+        
+        try:
+            cursor = conn.cursor()
+            if player_uuid:
+                cursor.execute("""
+                    SELECT * FROM economy_transactions
+                    WHERE player_uuid = ?
+                    ORDER BY transaction_time DESC
+                    LIMIT ?
+                """, (player_uuid, limit))
+            else:
+                cursor.execute("""
+                    SELECT * FROM economy_transactions
+                    ORDER BY transaction_time DESC
+                    LIMIT ?
+                """, (limit,))
+            transactions = [dict(row) for row in cursor.fetchall()]
+            return transactions
+        except Exception as e:
+            print(f"Error obteniendo transacciones: {e}")
+            return []
+        finally:
+            conn.close()

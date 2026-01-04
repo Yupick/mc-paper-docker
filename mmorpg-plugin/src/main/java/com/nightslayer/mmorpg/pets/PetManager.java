@@ -462,4 +462,45 @@ public class PetManager {
         Object value = settings.get("max_active_pets");
         return value instanceof Number ? ((Number) value).intValue() : 1;
     }
+
+    public boolean releasePet(String playerUuid, String petId) {
+        PlayerPetData data = getPlayerData(playerUuid);
+        if (data == null) return false;
+        
+        boolean removed = data.removePet(petId);
+        if (removed) {
+            savePlayerData(playerUuid);
+        }
+        return removed;
+    }
+
+    public boolean setActivePet(String playerUuid, String petId) {
+        PlayerPetData data = getPlayerData(playerUuid);
+        if (data == null) return false;
+        
+        data.setActivePet(petId);
+        savePlayerData(playerUuid);
+        return true;
+    }
+
+    public boolean unlockMount(String playerUuid, String mountId, int level, int cost) {
+        PlayerPetData data = getPlayerData(playerUuid);
+        if (data == null) return false;
+        
+        Mount mount = getMount(mountId);
+        if (mount == null) return false;
+        
+        data.addMount(mountId);
+        savePlayerData(playerUuid);
+        return true;
+    }
+
+    public boolean setActiveMount(String playerUuid, String mountId) {
+        PlayerPetData data = getPlayerData(playerUuid);
+        if (data == null) return false;
+        
+        data.setActiveMount(mountId);
+        savePlayerData(playerUuid);
+        return true;
+    }
 }

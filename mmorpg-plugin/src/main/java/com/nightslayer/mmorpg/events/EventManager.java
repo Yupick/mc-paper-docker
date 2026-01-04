@@ -520,4 +520,79 @@ public class EventManager {
             stopEvent(eventId);
         }
     }
+
+    public List<Map<String, Object>> getCurrencyHistory(UUID playerId, int limit) {
+        List<Map<String, Object>> history = new ArrayList<>();
+        String sql = "SELECT event_id, event_coins_earned, kills FROM event_participants WHERE player_uuid = ? ORDER BY id DESC LIMIT ?";
+        
+        try (Connection conn = plugin.getDatabase().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, playerId.toString());
+            stmt.setInt(2, limit);
+            
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> entry = new HashMap<>();
+                entry.put("event_id", rs.getString("event_id"));
+                entry.put("coins", rs.getInt("event_coins_earned"));
+                entry.put("kills", rs.getInt("kills"));
+                history.add(entry);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error obteniendo historial de monedas: " + e.getMessage());
+        }
+        
+        return history;
+    }
+
+    public void addEventCurrency(UUID playerId, int amount, String eventId, String reason) {
+        int current = eventCurrency.getOrDefault(playerId, 0);
+        eventCurrency.put(playerId, current + amount);
+        
+        // Actualizar en BD si hay sesión activa
+        EventSession session = activeSessions.get(eventId);
+        if (session != null && session.getHistoryId() > 0) {
+            String sql = "UPDATE event_participants SET event_coins_earned = event_coins_earned + ? WHERE event_history_id = ? AND player_uuid = ?";
+            try (Connection conn = plugin.getDatabase().getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, amount);
+                stmt.setInt(2, session.getHistoryId());
+                stmt.setString(3, playerId.toString());
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Error actualizando monedas de evento: " + e.getMessage());
+            }
+        }
+    }
+
+    public boolean spendEventCurrency(UUID playerId, int amount, String reason) {
+        int current = eventCurrency.getOrDefault(playerId, 0);
+        if (current < amount) {
+            return false;
+        }
+        
+        eventCurrency.put(playerId, current - amount);
+        return true;
+    }
+
+    public int getEventCurrency(UUID playerId) {
+        return eventCurrency.getOrDefault(playerId, 0);
+    }
+
+    public boolean validateEventMobs(String eventId, MobManager mobManager) {
+        EventConfig config = eventConfigs.get(eventId);
+        if (config == null) {
+            return false;
+        }
+        
+        // Verificar que todos los mobs del evento existen
+        for (String mobId : config.getCustomMobs().keySet()) {
+            if (mobManager.getMobConfig(mobId) == null) {
+                plugin.getLogger().warning("Mob no encontrado en evento " + eventId + ": " + mobId);
+                return false;
+            }
+        }
+        
+        return true;
+    }
 }

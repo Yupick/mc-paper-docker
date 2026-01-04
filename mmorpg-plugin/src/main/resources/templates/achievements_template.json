@@ -1,0 +1,370 @@
+{
+  "achievements": [
+    {
+      "id": "first_steps",
+      "name": "Primeros Pasos",
+      "description": "Completa tu primera misión RPG",
+      "category": "PROGRESSION",
+      "points": 10,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 1
+      },
+      "rewards": {
+        "experience": 50,
+        "coins": 100,
+        "xp": 50,
+        "money": 100,
+        "item_id": "health_potion_strong",
+        "items": [
+          {
+            "item_id": "health_potion_strong",
+            "amount": 2
+          }
+        ]
+      },
+      "icon": "BOOK",
+      "display_order": 1,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§e{player} §aha dado sus primeros pasos en el mundo RPG!"
+    },
+    {
+      "id": "novice_adventurer",
+      "name": "Aventurero Novato",
+      "description": "Alcanza el nivel 10",
+      "category": "PROGRESSION",
+      "points": 25,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 10
+      },
+      "rewards": {
+        "experience": 200,
+        "coins": 500,
+        "xp": 200,
+        "money": 500,
+        "item_id": "iron_sword_rpg",
+        "skill_points": 2,
+        "items": [
+          {
+            "item_id": "iron_sword_rpg",
+            "amount": 1
+          },
+          {
+            "item_id": "health_potion_strong",
+            "amount": 5
+          }
+        ]
+      },
+      "icon": "IRON_SWORD",
+      "display_order": 2,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§e{player} §aha alcanzado el nivel 10 y se ha convertido en un Aventurero Novato!"
+    },
+    {
+      "id": "monster_slayer",
+      "name": "Cazador de Monstruos",
+      "description": "Derrota 100 monstruos hostiles",
+      "category": "COMBAT",
+      "points": 30,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 100
+      },
+      "rewards": {
+        "experience": 300,
+        "coins": 750,
+        "xp": 300,
+        "money": 750,
+        "item_id": "diamond_armor_chestplate",
+        "items": [
+          {
+            "item_id": "diamond_armor_chestplate",
+            "amount": 1
+          }
+        ]
+      },
+      "icon": "DIAMOND_SWORD",
+      "display_order": 10,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§e{player} §aha eliminado 100 monstruos y ganado el título de §cCazador de Monstruos§e!"
+    },
+    {
+      "id": "wealthy_trader",
+      "name": "Comerciante Adinerado",
+      "description": "Acumula 10,000 monedas de oro",
+      "category": "ECONOMY",
+      "points": 40,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 100
+      },
+      "rewards": {
+        "experience": 500,
+        "coins": 2500,
+        "xp": 500,
+        "money": 2500,
+        "item_id": "EMERALD",
+        "items": [
+          {
+            "item_id": "EMERALD",
+            "amount": 10
+          }
+        ]
+      },
+      "icon": "GOLD_INGOT",
+      "display_order": 20,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§e{player} §aha acumulado una fortuna y es ahora un §6Comerciante Adinerado§e!"
+    },
+    {
+      "id": "master_crafter",
+      "name": "Maestro Artesano",
+      "description": "Craftea 50 items RPG",
+      "category": "CRAFTING",
+      "points": 35,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 50
+      },
+      "rewards": {
+        "experience": 400,
+        "coins": 1000,
+        "xp": 400,
+        "money": 1000,
+        "item_id": "mana_crystal",
+        "skill_points": 3,
+        "items": [
+          {
+            "item_id": "mana_crystal",
+            "amount": 10
+          }
+        ]
+      },
+      "icon": "CRAFTING_TABLE",
+      "display_order": 30,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§e{player} §aha dominado el arte del crafteo y es ahora un §bMaestro Artesano§e!"
+    },
+    {
+      "id": "dragon_slayer",
+      "name": "Cazador de Dragones",
+      "description": "Derrota a una Cría de Dragón",
+      "category": "COMBAT",
+      "points": 75,
+      "requirements": {
+        "type": "KILL_MOB",
+        "mobId": "dragon_whelp",
+        "count": 1
+      },
+      "rewards": {
+        "experience": 1000,
+        "coins": 5000,
+        "xp": 1000,
+        "money": 5000,
+        "item_id": "legendary_bow_inferno",
+        "skill_points": 5,
+        "items": [
+          {
+            "item_id": "legendary_bow_inferno",
+            "amount": 1
+          },
+          {
+            "item_id": "DRAGON_BREATH",
+            "amount": 5
+          }
+        ]
+      },
+      "icon": "DRAGON_HEAD",
+      "display_order": 50,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§e{player} §aha derrotado a una Cría de Dragón y ganado el título de §6§l⚔ CAZADOR DE DRAGONES ⚔§e!"
+    },
+    {
+      "id": "boss_vanquisher",
+      "name": "Vencedor de Jefes",
+      "description": "Derrota al Nigromante Oscuro",
+      "category": "COMBAT",
+      "points": 100,
+      "requirements": {
+        "type": "KILL_MOB",
+        "mobId": "necromancer_boss",
+        "count": 1
+      },
+      "rewards": {
+        "experience": 2500,
+        "coins": 10000,
+        "xp": 2500,
+        "money": 10000,
+        "item_id": "mystic_staff",
+        "skill_points": 10,
+        "items": [
+          {
+            "item_id": "mystic_staff",
+            "amount": 1
+          },
+          {
+            "item_id": "NETHER_STAR",
+            "amount": 3
+          },
+          {
+            "item_id": "DIAMOND",
+            "amount": 20
+          }
+        ],
+        "title": "§5§lNigromante Derrotado"
+      },
+      "icon": "WITHER_SKELETON_SKULL",
+      "display_order": 100,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§5§l¡ÉPICO! §e{player} §aha derrotado al §5Nigromante Oscuro §ey salvado el reino!"
+    },
+    {
+      "id": "enchanter_apprentice",
+      "name": "Aprendiz de Encantador",
+      "description": "Encanta tu primer item",
+      "category": "CRAFTING",
+      "points": 15,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 1
+      },
+      "rewards": {
+        "experience": 100,
+        "coins": 250,
+        "xp": 100,
+        "money": 250,
+        "item_id": "LAPIS_LAZULI",
+        "items": [
+          {
+            "item_id": "LAPIS_LAZULI",
+            "amount": 32
+          },
+          {
+            "item_id": "mana_crystal",
+            "amount": 3
+          }
+        ]
+      },
+      "icon": "ENCHANTING_TABLE",
+      "display_order": 15,
+      "hidden": false,
+      "broadcast_on_complete": false,
+      "broadcast_message": null
+    },
+    {
+      "id": "speed_demon",
+      "name": "Demonio de Velocidad",
+      "description": "Equipa las Botas del Viento y corre 10,000 bloques",
+      "category": "EXPLORATION",
+      "points": 20,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 100
+      },
+      "rewards": {
+        "experience": 250,
+        "coins": 600,
+        "xp": 250,
+        "money": 600,
+        "item_id": "speed_boots",
+        "items": [
+          {
+            "item_id": "speed_boots",
+            "amount": 1
+          }
+        ]
+      },
+      "icon": "LEATHER_BOOTS",
+      "display_order": 35,
+      "hidden": false,
+      "broadcast_on_complete": false,
+      "broadcast_message": null
+    },
+    {
+      "id": "legendary_collector",
+      "name": "Coleccionista Legendario",
+      "description": "Obtén un item de rareza Legendaria",
+      "category": "COLLECTION",
+      "points": 50,
+      "requirements": {
+        "type": "KILL_ANY",
+        "count": 1
+      },
+      "rewards": {
+        "experience": 750,
+        "coins": 2000,
+        "xp": 750,
+        "money": 2000,
+        "item_id": "NETHER_STAR",
+        "skill_points": 3,
+        "items": [
+          {
+            "item_id": "DIAMOND",
+            "amount": 5
+          },
+          {
+            "item_id": "EMERALD",
+            "amount": 5
+          }
+        ]
+      },
+      "icon": "NETHER_STAR",
+      "display_order": 60,
+      "hidden": false,
+      "broadcast_on_complete": true,
+      "broadcast_message": "§e{player} §aha obtenido un item §6§lLEGENDARIO§e!"
+    }
+  ],
+  "categories": [
+    {
+      "id": "PROGRESSION",
+      "name": "Progresión",
+      "description": "Logros relacionados con el avance en el juego",
+      "icon": "EXPERIENCE_BOTTLE",
+      "color": "GREEN"
+    },
+    {
+      "id": "COMBAT",
+      "name": "Combate",
+      "description": "Logros relacionados con batallas y enemigos derrotados",
+      "icon": "DIAMOND_SWORD",
+      "color": "RED"
+    },
+    {
+      "id": "ECONOMY",
+      "name": "Economía",
+      "description": "Logros relacionados con riqueza y comercio",
+      "icon": "GOLD_INGOT",
+      "color": "GOLD"
+    },
+    {
+      "id": "CRAFTING",
+      "name": "Artesanía",
+      "description": "Logros relacionados con crafteo y encantamientos",
+      "icon": "CRAFTING_TABLE",
+      "color": "AQUA"
+    },
+    {
+      "id": "EXPLORATION",
+      "name": "Exploración",
+      "description": "Logros relacionados con descubrimientos y viajes",
+      "icon": "MAP",
+      "color": "BLUE"
+    },
+    {
+      "id": "COLLECTION",
+      "name": "Colección",
+      "description": "Logros relacionados con recolección de items raros",
+      "icon": "CHEST",
+      "color": "LIGHT_PURPLE"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "events": [
+    {
+      "id": "halloween_2025",
+      "name": "Halloween Nightmare",
+      "description": "Los espíritus malévolos han invadido el mundo!",
+      "startDate": "2025-10-25T00:00:00",
+      "endDate": "2025-11-01T23:59:59",
+      "enabled": true,
+      "autoStart": true,
+      "customMobs": [
+        {
+          "mobId": "ghost",
+          "spawnChance": 0.3,
+          "spawnRadius": 50
+        },
+        {
+          "mobId": "pumpkin_king",
+          "spawnChance": 0.05,
+          "spawnRadius": 100
+        }
+      ],
+      "exclusiveDrops": [
+        {
+          "itemName": "Halloween Candy",
+          "dropChance": 0.5,
+          "minAmount": 1,
+          "maxAmount": 5
+        }
+      ],
+      "rewards": {
+        "eventCoinsPerKill": 5,
+        "bonusXPMultiplier": 1.5,
+        "bossEventCoins": 100
+      }
+    },
+    {
+      "id": "christmas_2025",
+      "name": "Winter Wonderland",
+      "description": "La magia navideña se ha vuelto oscura...",
+      "startDate": "2025-12-20T00:00:00",
+      "endDate": "2025-12-26T23:59:59",
+      "enabled": true,
+      "autoStart": true,
+      "customMobs": [
+        {
+          "mobId": "corrupted_snowman",
+          "spawnChance": 0.4,
+          "spawnRadius": 50
+        },
+        {
+          "mobId": "evil_santa",
+          "spawnChance": 0.02,
+          "spawnRadius": 150
+        }
+      ],
+      "exclusiveDrops": [
+        {
+          "itemName": "Christmas Gift",
+          "dropChance": 0.3,
+          "minAmount": 1,
+          "maxAmount": 3
+        }
+      ],
+      "rewards": {
+        "eventCoinsPerKill": 7,
+        "bonusXPMultiplier": 2.0,
+        "bossEventCoins": 200
+      }
+    }
+  ]
+}

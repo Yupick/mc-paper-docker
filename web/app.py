@@ -3453,7 +3453,7 @@ def get_player_bestiary(player):
     try:
         # Conectar a BD SQLite del plugin
         import sqlite3
-        db_path = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'rpg.db')
+        db_path = os.path.join(CONFIG_DIR, 'universal.db')
         
         if not os.path.exists(db_path):
             return jsonify({'success': False, 'message': 'Base de datos no existe'}), 404
@@ -3574,7 +3574,7 @@ def get_bestiary_stats():
     """Obtiene estadísticas globales del bestiario"""
     try:
         import sqlite3
-        db_path = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'rpg.db')
+        db_path = os.path.join(CONFIG_DIR, 'universal.db')
         
         if not os.path.exists(db_path):
             return jsonify({'success': False, 'message': 'Base de datos no existe'}), 404
@@ -3729,7 +3729,7 @@ def get_player_achievements(player):
     """Obtiene el progreso de logros de un jugador"""
     try:
         import sqlite3
-        db_path = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'rpg.db')
+        db_path = os.path.join(CONFIG_DIR, 'universal.db')
 
         if not os.path.exists(db_path):
             return jsonify({'success': False, 'message': 'Base de datos no existe'}), 404
@@ -3829,7 +3829,7 @@ def update_achievements_config():
 def get_achievements_stats():
     try:
         import sqlite3
-        db_path = os.path.join(PLUGINS_DIR, 'MMORPGPlugin', 'rpg.db')
+        db_path = os.path.join(CONFIG_DIR, 'universal.db')
 
         if not os.path.exists(db_path):
             return jsonify({'success': False, 'message': 'Base de datos no existe'}), 404
@@ -3840,7 +3840,7 @@ def get_achievements_stats():
         cursor.execute("""
             SELECT achievement_id, COUNT(*) as completions
             FROM player_achievements
-            WHERE completed = 1
+            WHERE unlocked = 1
             GROUP BY achievement_id
             ORDER BY completions DESC
         """)
@@ -5283,7 +5283,7 @@ def start_crafting():
 def get_active_crafting_sessions():
     """Obtener crafteos activos del jugador"""
     try:
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5354,7 +5354,7 @@ def complete_crafting():
 def get_crafting_stats():
     """Obtener estadísticas de crafteo del jugador"""
     try:
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5409,7 +5409,7 @@ def get_crafting_history():
     """Obtener historial de crafteos"""
     try:
         limit = request.args.get('limit', 20, type=int)
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5530,7 +5530,7 @@ def apply_enchantment():
         success = random.randint(1, 100) <= success_rate
         
         # Guardar en base de datos
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         cursor = conn.cursor()
         
         # Crear tabla si no existe
@@ -5591,7 +5591,7 @@ def apply_enchantment():
 def get_enchanted_items():
     """Obtener items encantados del jugador"""
     try:
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5637,7 +5637,7 @@ def get_enchanted_items():
 def get_enchanting_stats():
     """Obtener estadísticas de encantamientos del jugador"""
     try:
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5680,7 +5680,7 @@ def get_enchanting_history():
     """Obtener historial de encantamientos"""
     try:
         limit = request.args.get('limit', 10, type=int)
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5776,7 +5776,7 @@ def list_pets():
 def get_my_pets():
     """Obtener mascotas del jugador"""
     try:
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5851,7 +5851,7 @@ def adopt_pet():
         adoption_cost = pet_config.get('adoption_cost', 0)
         
         # Verificar límite de mascotas
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5931,7 +5931,7 @@ def feed_pet():
         if not pet_id:
             return jsonify({'success': False, 'message': 'Falta el ID de mascota'}), 400
         
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -5999,7 +5999,7 @@ def evolve_pet():
         if not pet_id:
             return jsonify({'success': False, 'message': 'Falta el ID de mascota'}), 400
         
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -6088,7 +6088,7 @@ def equip_pet():
         if not pet_id:
             return jsonify({'success': False, 'message': 'Falta el ID de mascota'}), 400
         
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         cursor = conn.cursor()
         
         # Desactivar todas las mascotas
@@ -6137,7 +6137,7 @@ def get_mounts():
         all_mounts = config.get('mounts', [])
         
         # Cargar monturas desbloqueadas del jugador
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -6196,7 +6196,7 @@ def unlock_mount():
         # TODO: Verificar nivel del jugador
         # Por ahora solo insertamos la montura
         
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS player_mounts (
@@ -6240,7 +6240,7 @@ def unlock_mount():
 def get_pet_stats():
     """Obtener estadísticas de mascotas del jugador"""
     try:
-        conn = sqlite3.connect(MINECRAFT_DIR + '/minecraft_rpg.db')
+        conn = sqlite3.connect(os.path.join(CONFIG_DIR, 'universal.db'))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('''

@@ -1,0 +1,29 @@
+{
+    "enchantments": [
+        {
+            "id": "sharpness_rpg",
+            "name": "Filo RPG",
+            "description": "Aumenta el daño cuerpo a cuerpo",
+            "max_level": 5,
+            "rarity": "COMMON",
+            "applicable_items": ["SWORD", "AXE"],
+            "cost_per_level": 100
+        },
+        {
+            "id": "protection_rpg",
+            "name": "Protección RPG",
+            "description": "Reduce el daño recibido",
+            "max_level": 4,
+            "rarity": "COMMON",
+            "applicable_items": ["HELMET", "CHESTPLATE", "LEGGINGS", "BOOTS"],
+            "cost_per_level": 150
+        }
+    ],
+    "stations": [
+        { "id": "altar_basic", "name": "Altar Básico", "max_tier": "UNCOMMON", "success": 90 }
+    ],
+    "rules": {
+        "base_success": 80,
+        "tier_scaling": { "UNCOMMON": 100, "RARE": 90, "EPIC": 80, "LEGENDARY": 70 }
+    }
+}

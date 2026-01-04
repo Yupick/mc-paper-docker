@@ -1,0 +1,633 @@
+{
+    "pet_settings": {
+        "max_pets_per_player": 10,
+        "max_active_pets": 1
+    },
+    "pets": [
+        {
+            "id": "wolf_pup",
+            "name": "Lobezno",
+            "type": "COMBAT",
+            "rarity": "COMMON",
+            "description": "Un joven lobo leal que te seguirá a todas partes",
+            "base_stats": {
+                "health": 20,
+                "damage": 3,
+                "speed": 0.2
+            },
+            "adoption_cost": 100,
+            "feed_restore_health": 5,
+            "food_preferences": ["COOKED_BEEF", "COOKED_PORKCHOP", "COOKED_MUTTON"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Lobezno",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": []
+                },
+                {
+                    "level": 2,
+                    "name": "Lobo Joven",
+                    "required_xp": 500,
+                    "stats_multiplier": 1.3,
+                    "abilities": ["bite"]
+                },
+                {
+                    "level": 3,
+                    "name": "Lobo Adulto",
+                    "required_xp": 1500,
+                    "stats_multiplier": 1.6,
+                    "abilities": ["bite", "howl"]
+                }
+            ]
+        },
+        {
+            "id": "cat_mystic",
+            "name": "Gato Místico",
+            "type": "SUPPORT",
+            "rarity": "COMMON",
+            "description": "Un felino misterioso con poderes ocultos",
+            "base_stats": {
+                "health": 15,
+                "damage": 2,
+                "speed": 0.3
+            },
+            "adoption_cost": 150,
+            "feed_restore_health": 4,
+            "food_preferences": ["COD", "SALMON", "TROPICAL_FISH"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Gato Común",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["stealth"]
+                },
+                {
+                    "level": 2,
+                    "name": "Gato Místico",
+                    "required_xp": 600,
+                    "stats_multiplier": 1.4,
+                    "abilities": ["stealth", "night_vision"]
+                }
+            ]
+        },
+        {
+            "id": "hawk_scout",
+            "name": "Halcón Explorador",
+            "type": "GATHERING",
+            "rarity": "UNCOMMON",
+            "description": "Un ave rapaz que localiza recursos desde las alturas",
+            "base_stats": {
+                "health": 18,
+                "damage": 4,
+                "speed": 0.4
+            },
+            "adoption_cost": 300,
+            "feed_restore_health": 6,
+            "food_preferences": ["RABBIT", "CHICKEN"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Halcón Joven",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["scout"]
+                },
+                {
+                    "level": 2,
+                    "name": "Halcón Explorador",
+                    "required_xp": 800,
+                    "stats_multiplier": 1.5,
+                    "abilities": ["scout", "treasure_finder"]
+                },
+                {
+                    "level": 3,
+                    "name": "Águila Real",
+                    "required_xp": 2000,
+                    "stats_multiplier": 2.0,
+                    "abilities": ["scout", "treasure_finder", "dive_attack"]
+                }
+            ]
+        },
+        {
+            "id": "bear_guardian",
+            "name": "Oso Guardián",
+            "type": "COMBAT",
+            "rarity": "UNCOMMON",
+            "description": "Un poderoso oso que protege a su dueño",
+            "base_stats": {
+                "health": 35,
+                "damage": 6,
+                "speed": 0.15
+            },
+            "adoption_cost": 400,
+            "feed_restore_health": 8,
+            "food_preferences": ["HONEY_BOTTLE", "SWEET_BERRIES", "COOKED_BEEF"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Osezno",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": []
+                },
+                {
+                    "level": 2,
+                    "name": "Oso Guardián",
+                    "required_xp": 1000,
+                    "stats_multiplier": 1.4,
+                    "abilities": ["roar", "thick_skin"]
+                },
+                {
+                    "level": 3,
+                    "name": "Oso Ancestral",
+                    "required_xp": 2500,
+                    "stats_multiplier": 1.8,
+                    "abilities": ["roar", "thick_skin", "ground_slam"]
+                }
+            ]
+        },
+        {
+            "id": "fox_mage",
+            "name": "Zorro Mago",
+            "type": "SUPPORT",
+            "rarity": "UNCOMMON",
+            "description": "Un astuto zorro con afinidad mágica",
+            "base_stats": {
+                "health": 22,
+                "damage": 3,
+                "speed": 0.35
+            },
+            "adoption_cost": 500,
+            "feed_restore_health": 7,
+            "food_preferences": ["SWEET_BERRIES", "GLOW_BERRIES"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Zorro Común",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["agility"]
+                },
+                {
+                    "level": 2,
+                    "name": "Zorro Mago",
+                    "required_xp": 1200,
+                    "stats_multiplier": 1.6,
+                    "abilities": ["agility", "mana_regen"]
+                },
+                {
+                    "level": 3,
+                    "name": "Kitsune",
+                    "required_xp": 3000,
+                    "stats_multiplier": 2.2,
+                    "abilities": ["agility", "mana_regen", "illusion"]
+                }
+            ]
+        },
+        {
+            "id": "phoenix_fire",
+            "name": "Fénix de Fuego",
+            "type": "COMBAT",
+            "rarity": "RARE",
+            "description": "Ave legendaria que renace de sus cenizas",
+            "base_stats": {
+                "health": 30,
+                "damage": 8,
+                "speed": 0.4
+            },
+            "adoption_cost": 1000,
+            "feed_restore_health": 10,
+            "food_preferences": ["BLAZE_POWDER", "FIRE_CHARGE"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Polluelo de Fénix",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["flame_touch"]
+                },
+                {
+                    "level": 2,
+                    "name": "Fénix Joven",
+                    "required_xp": 2000,
+                    "stats_multiplier": 1.5,
+                    "abilities": ["flame_touch", "fire_immunity"]
+                },
+                {
+                    "level": 3,
+                    "name": "Fénix de Fuego",
+                    "required_xp": 5000,
+                    "stats_multiplier": 2.0,
+                    "abilities": ["flame_touch", "fire_immunity", "rebirth"]
+                }
+            ]
+        },
+        {
+            "id": "wolf_ice",
+            "name": "Lobo de Hielo",
+            "type": "COMBAT",
+            "rarity": "RARE",
+            "description": "Lobo místico de las tierras congeladas",
+            "base_stats": {
+                "health": 28,
+                "damage": 7,
+                "speed": 0.3
+            },
+            "adoption_cost": 1200,
+            "feed_restore_health": 9,
+            "food_preferences": ["PACKED_ICE", "BLUE_ICE", "COOKED_BEEF"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Cachorro Ártico",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["frost_bite"]
+                },
+                {
+                    "level": 2,
+                    "name": "Lobo de Hielo",
+                    "required_xp": 2500,
+                    "stats_multiplier": 1.6,
+                    "abilities": ["frost_bite", "frozen_aura"]
+                },
+                {
+                    "level": 3,
+                    "name": "Alfa Glacial",
+                    "required_xp": 6000,
+                    "stats_multiplier": 2.3,
+                    "abilities": ["frost_bite", "frozen_aura", "ice_storm"]
+                }
+            ]
+        },
+        {
+            "id": "golem_stone",
+            "name": "Gólem de Piedra",
+            "type": "SUPPORT",
+            "rarity": "RARE",
+            "description": "Ser ancestral de roca viviente",
+            "base_stats": {
+                "health": 50,
+                "damage": 5,
+                "speed": 0.1
+            },
+            "adoption_cost": 1500,
+            "feed_restore_health": 12,
+            "food_preferences": ["IRON_INGOT", "GOLD_INGOT", "DIAMOND"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Gólem Pequeño",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["stone_skin"]
+                },
+                {
+                    "level": 2,
+                    "name": "Gólem de Piedra",
+                    "required_xp": 3000,
+                    "stats_multiplier": 1.5,
+                    "abilities": ["stone_skin", "taunt"]
+                },
+                {
+                    "level": 3,
+                    "name": "Gólem Ancestral",
+                    "required_xp": 7000,
+                    "stats_multiplier": 2.0,
+                    "abilities": ["stone_skin", "taunt", "earthquake"]
+                }
+            ]
+        },
+        {
+            "id": "dragon_shadow",
+            "name": "Dragón de Sombras",
+            "type": "COMBAT",
+            "rarity": "LEGENDARY",
+            "description": "Dragón oscuro de inmeso poder",
+            "base_stats": {
+                "health": 60,
+                "damage": 15,
+                "speed": 0.35
+            },
+            "adoption_cost": 5000,
+            "feed_restore_health": 15,
+            "food_preferences": ["ENDER_PEARL", "ENDER_EYE", "DRAGON_BREATH"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Dragoncillo",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["shadow_step"]
+                },
+                {
+                    "level": 2,
+                    "name": "Dragón Joven",
+                    "required_xp": 5000,
+                    "stats_multiplier": 1.5,
+                    "abilities": ["shadow_step", "dark_breath"]
+                },
+                {
+                    "level": 3,
+                    "name": "Dragón de Sombras",
+                    "required_xp": 10000,
+                    "stats_multiplier": 2.0,
+                    "abilities": ["shadow_step", "dark_breath", "void_roar"]
+                },
+                {
+                    "level": 4,
+                    "name": "Dragón Anciano",
+                    "required_xp": 20000,
+                    "stats_multiplier": 2.5,
+                    "abilities": ["shadow_step", "dark_breath", "void_roar", "dimension_rift"]
+                }
+            ]
+        },
+        {
+            "id": "unicorn_celestial",
+            "name": "Unicornio Celestial",
+            "type": "SUPPORT",
+            "rarity": "LEGENDARY",
+            "description": "Criatura divina de pureza y luz",
+            "base_stats": {
+                "health": 45,
+                "damage": 8,
+                "speed": 0.4
+            },
+            "adoption_cost": 6000,
+            "feed_restore_health": 20,
+            "food_preferences": ["GOLDEN_APPLE", "ENCHANTED_GOLDEN_APPLE", "GLOWSTONE_DUST"],
+            "evolution_levels": [
+                {
+                    "level": 1,
+                    "name": "Potrillo Celestial",
+                    "required_xp": 0,
+                    "stats_multiplier": 1.0,
+                    "abilities": ["healing_aura"]
+                },
+                {
+                    "level": 2,
+                    "name": "Unicornio Joven",
+                    "required_xp": 6000,
+                    "stats_multiplier": 1.6,
+                    "abilities": ["healing_aura", "purify"]
+                },
+                {
+                    "level": 3,
+                    "name": "Unicornio Celestial",
+                    "required_xp": 12000,
+                    "stats_multiplier": 2.2,
+                    "abilities": ["healing_aura", "purify", "divine_protection"]
+                },
+                {
+                    "level": 4,
+                    "name": "Unicornio Divino",
+                    "required_xp": 25000,
+                    "stats_multiplier": 3.0,
+                    "abilities": ["healing_aura", "purify", "divine_protection", "resurrection"]
+                }
+            ]
+        }
+    ],
+    "mounts": [
+        {
+            "id": "horse_brown",
+            "name": "Corcel Marrón",
+            "rarity": "COMMON",
+            "description": "Caballo común, ideal para viajes cortos",
+            "speed": 1.2,
+            "jump_strength": 0.5,
+            "health": 20.0,
+            "special_ability": null,
+            "unlock_cost": 250,
+            "unlock_level": 1
+        },
+        {
+            "id": "horse_swift",
+            "name": "Corcel Veloz",
+            "rarity": "UNCOMMON",
+            "description": "Caballo rápido entrenado para largas distancias",
+            "speed": 1.6,
+            "jump_strength": 0.7,
+            "health": 25.0,
+            "special_ability": "sprint_boost",
+            "unlock_cost": 800,
+            "unlock_level": 10
+        },
+        {
+            "id": "pegasus_sky",
+            "name": "Pegaso Celeste",
+            "rarity": "RARE",
+            "description": "Caballo alado que puede volar por los cielos",
+            "speed": 2.0,
+            "jump_strength": 1.5,
+            "health": 30.0,
+            "special_ability": "flight",
+            "unlock_cost": 2500,
+            "unlock_level": 25
+        },
+        {
+            "id": "wyvern_storm",
+            "name": "Wyvern de Tormenta",
+            "rarity": "RARE",
+            "description": "Bestia alada con control sobre el clima",
+            "speed": 2.2,
+            "jump_strength": 2.0,
+            "health": 40.0,
+            "special_ability": "lightning_dash",
+            "unlock_cost": 4000,
+            "unlock_level": 40
+        },
+        {
+            "id": "dragon_void",
+            "name": "Dragón del Vacío",
+            "rarity": "LEGENDARY",
+            "description": "Dragón ancestral del End, el más rápido de todos",
+            "speed": 2.8,
+            "jump_strength": 3.0,
+            "health": 60.0,
+            "special_ability": "teleport",
+            "unlock_cost": 10000,
+            "unlock_level": 60
+        }
+    ],
+    "abilities": [
+        {
+            "id": "bite",
+            "name": "Mordisco",
+            "description": "Ataque rápido que causa sangrado",
+            "cooldown": 5,
+            "passive": false,
+            "damage_multiplier": 1.5,
+            "bleed_duration": 3
+        },
+        {
+            "id": "howl",
+            "name": "Aullido",
+            "description": "Aumenta el daño del grupo temporalmente",
+            "cooldown": 30,
+            "passive": false,
+            "damage_boost": 0.2,
+            "duration": 10
+        },
+        {
+            "id": "stealth",
+            "name": "Sigilo",
+            "description": "Aumenta la velocidad de movimiento pasivamente",
+            "cooldown": 0,
+            "passive": true,
+            "speed_boost": 0.15
+        },
+        {
+            "id": "night_vision",
+            "name": "Visión Nocturna",
+            "description": "Otorga visión nocturna al jugador",
+            "cooldown": 0,
+            "passive": true,
+            "duration": -1
+        },
+        {
+            "id": "scout",
+            "name": "Explorar",
+            "description": "Revela entidades cercanas en el mapa",
+            "cooldown": 15,
+            "passive": false,
+            "range": 50
+        },
+        {
+            "id": "treasure_finder",
+            "name": "Buscador de Tesoros",
+            "description": "Aumenta la probabilidad de encontrar objetos raros",
+            "cooldown": 0,
+            "passive": true,
+            "luck_bonus": 2
+        },
+        {
+            "id": "roar",
+            "name": "Rugido",
+            "description": "Aturde enemigos cercanos",
+            "cooldown": 20,
+            "passive": false,
+            "stun_duration": 2,
+            "range": 8
+        },
+        {
+            "id": "thick_skin",
+            "name": "Piel Gruesa",
+            "description": "Reduce el daño recibido pasivamente",
+            "cooldown": 0,
+            "passive": true,
+            "damage_reduction": 0.15
+        },
+        {
+            "id": "mana_regen",
+            "name": "Regeneración de Maná",
+            "description": "Aumenta la regeneración de maná del jugador",
+            "cooldown": 0,
+            "passive": true,
+            "regen_rate": 2
+        },
+        {
+            "id": "flame_touch",
+            "name": "Toque Flamígero",
+            "description": "Los ataques prenden fuego a los enemigos",
+            "cooldown": 0,
+            "passive": true,
+            "fire_duration": 5
+        },
+        {
+            "id": "fire_immunity",
+            "name": "Inmunidad al Fuego",
+            "description": "Otorga resistencia al fuego al jugador",
+            "cooldown": 0,
+            "passive": true
+        },
+        {
+            "id": "rebirth",
+            "name": "Renacer",
+            "description": "Revive al jugador al morir (cooldown largo)",
+            "cooldown": 600,
+            "passive": false,
+            "health_restored": 50
+        },
+        {
+            "id": "frost_bite",
+            "name": "Mordida Helada",
+            "description": "Ralentiza enemigos con cada ataque",
+            "cooldown": 0,
+            "passive": true,
+            "slow_duration": 3,
+            "slow_amount": 0.3
+        },
+        {
+            "id": "frozen_aura",
+            "name": "Aura Congelada",
+            "description": "Ralentiza enemigos cercanos constantemente",
+            "cooldown": 0,
+            "passive": true,
+            "range": 5,
+            "slow_amount": 0.2
+        },
+        {
+            "id": "stone_skin",
+            "name": "Piel de Piedra",
+            "description": "Reduce daño recibido significativamente",
+            "cooldown": 0,
+            "passive": true,
+            "damage_reduction": 0.25
+        },
+        {
+            "id": "taunt",
+            "name": "Provocar",
+            "description": "Fuerza a enemigos a atacar al gólem",
+            "cooldown": 25,
+            "passive": false,
+            "duration": 6,
+            "range": 10
+        },
+        {
+            "id": "shadow_step",
+            "name": "Paso Sombrío",
+            "description": "Teletransporta al jugador una corta distancia",
+            "cooldown": 10,
+            "passive": false,
+            "range": 10
+        },
+        {
+            "id": "dark_breath",
+            "name": "Aliento Oscuro",
+            "description": "Proyectil de energía oscura",
+            "cooldown": 8,
+            "passive": false,
+            "damage": 15,
+            "range": 20
+        },
+        {
+            "id": "healing_aura",
+            "name": "Aura Sanadora",
+            "description": "Regenera salud del jugador constantemente",
+            "cooldown": 0,
+            "passive": true,
+            "heal_per_second": 0.5
+        },
+        {
+            "id": "purify",
+            "name": "Purificar",
+            "description": "Elimina efectos negativos del jugador",
+            "cooldown": 30,
+            "passive": false
+        },
+        {
+            "id": "divine_protection",
+            "name": "Protección Divina",
+            "description": "Escudo que absorbe daño",
+            "cooldown": 45,
+            "passive": false,
+            "shield_amount": 20,
+            "duration": 10
+        }
+    ]
+}

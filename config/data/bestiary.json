@@ -1,0 +1,141 @@
+{
+  "bestiary": [
+    {
+      "mob_id": "pumpkin_king",
+      "category": "EVENT_BOSS",
+      "discovered": false,
+      "kills_required": 1,
+      "lore": [
+        "§7El monarca supremo de las calabazas",
+        "§7emerge solo durante Halloween.",
+        "§7Se dice que fue un granjero maldito",
+        "§7que fusionó su alma con una calabaza."
+      ],
+      "stats": {
+        "health": 800,
+        "damage": 45,
+        "defense": 30,
+        "weaknesses": ["FIRE", "SMITE"],
+        "resistances": ["KNOCKBACK"]
+      },
+      "drops": [
+        {"item": "pumpkin_helmet", "chance": 0.05},
+        {"item": "cursed_candy", "chance": 0.15},
+        {"item": "CARVED_PUMPKIN", "chance": 0.80}
+      ],
+      "rewards": {
+        "xp": 250,
+        "title": "§6Cazador de Calabazas"
+      }
+    },
+    {
+      "mob_id": "ancient_dragon",
+      "category": "WORLD_BOSS",
+      "discovered": false,
+      "kills_required": 1,
+      "lore": [
+        "§7El dragón más antiguo conocido,",
+        "§7guardián de tesoros legendarios.",
+        "§7Ha vivido por milenios y posee",
+        "§7sabiduría y poder inimaginables."
+      ],
+      "stats": {
+        "health": 5000,
+        "damage": 150,
+        "defense": 80,
+        "weaknesses": ["DRAGON_SLAYER_WEAPONS"],
+        "resistances": ["FIRE", "EXPLOSION", "MAGIC"]
+      },
+      "drops": [
+        {"item": "dragon_scale", "chance": 1.0, "min": 5, "max": 15},
+        {"item": "DRAGON_EGG", "chance": 0.30},
+        {"item": "ELYTRA", "chance": 0.80}
+      ],
+      "rewards": {
+        "xp": 5000,
+        "title": "§5§lMatador de Dragones"
+      }
+    },
+    {
+      "mob_id": "nether_warlord",
+      "category": "DIMENSION_BOSS",
+      "discovered": false,
+      "kills_required": 1,
+      "lore": [
+        "§7Comandante supremo de las legiones",
+        "§7del Nether, un guerrero implacable.",
+        "§7Controla el fuego y la oscuridad,",
+        "§7y nunca ha sido derrotado en combate."
+      ],
+      "stats": {
+        "health": 3200,
+        "damage": 95,
+        "defense": 65,
+        "weaknesses": ["WATER", "ICE"],
+        "resistances": ["FIRE", "LAVA", "WITHER"]
+      },
+      "drops": [
+        {"item": "firework_wand", "chance": 0.25},
+        {"item": "NETHERITE_INGOT", "chance": 0.60, "min": 2, "max": 5}
+      ],
+      "rewards": {
+        "xp": 2800,
+        "title": "§4Conquistador del Infierno"
+      }
+    },
+    {
+      "mob_id": "ice_titan",
+      "category": "BIOME_BOSS",
+      "discovered": false,
+      "kills_required": 1,
+      "lore": [
+        "§7Gigante congelado que duerme en",
+        "§7los picos más altos del mundo.",
+        "§7Su despertar trae tempestades de",
+        "§7hielo capaces de congelar todo."
+      ],
+      "stats": {
+        "health": 4000,
+        "damage": 120,
+        "defense": 75,
+        "weaknesses": ["FIRE", "LAVA"],
+        "resistances": ["ICE", "WATER", "SLOWNESS"]
+      },
+      "drops": [
+        {"item": "frozen_sword", "chance": 0.30},
+        {"item": "DIAMOND_BLOCK", "chance": 0.40, "min": 1, "max": 3}
+      ],
+      "rewards": {
+        "xp": 3500,
+        "title": "§bDomador del Hielo"
+      }
+    },
+    {
+      "mob_id": "shadow_assassin",
+      "category": "ELITE",
+      "discovered": false,
+      "kills_required": 10,
+      "lore": [
+        "§7Maestro del sigilo que ataca",
+        "§7desde las sombras sin ser visto.",
+        "§7Se mueve entre dimensiones y",
+        "§7es casi imposible de detectar."
+      ],
+      "stats": {
+        "health": 1500,
+        "damage": 72,
+        "defense": 45,
+        "weaknesses": ["LIGHT", "SMITE"],
+        "resistances": ["DARKNESS", "BLINDNESS"]
+      },
+      "drops": [
+        {"item": "dragon_scale", "chance": 0.05},
+        {"item": "DIAMOND", "chance": 0.50, "min": 1, "max": 3}
+      ],
+      "rewards": {
+        "xp": 800,
+        "title": "§8Cazador de Sombras"
+      }
+    }
+  ]
+}

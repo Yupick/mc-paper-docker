@@ -1,0 +1,358 @@
+{
+  "rarities": {
+    "COMMON": {
+      "color": "§f",
+      "dropMultiplier": 1.0,
+      "attributeMultiplier": 1.0,
+      "dropChance": 0.6,
+      "description": "Objeto común"
+    },
+    "UNCOMMON": {
+      "color": "§a",
+      "dropMultiplier": 1.2,
+      "attributeMultiplier": 1.1,
+      "dropChance": 0.25,
+      "description": "Objeto poco común"
+    },
+    "RARE": {
+      "color": "§9",
+      "dropMultiplier": 1.5,
+      "attributeMultiplier": 1.3,
+      "dropChance": 0.1,
+      "description": "Objeto raro"
+    },
+    "EPIC": {
+      "color": "§6",
+      "dropMultiplier": 2.0,
+      "attributeMultiplier": 1.6,
+      "dropChance": 0.04,
+      "description": "Objeto épico"
+    },
+    "LEGENDARY": {
+      "color": "§d",
+      "dropMultiplier": 3.0,
+      "attributeMultiplier": 2.0,
+      "dropChance": 0.01,
+      "description": "Objeto legendario"
+    }
+  },
+  "items": [
+    {
+      "id": "pumpkin_helmet",
+      "name": "§6§lCasco de Calabaza Encantada",
+      "type": "HELMET",
+      "material": "CARVED_PUMPKIN",
+      "rarity": "EPIC",
+      "level_requirement": 25,
+      "stats": {
+        "defense": 15,
+        "health": 50
+      },
+      "lore": [
+        "§7Casco forjado con la esencia",
+        "§7del Rey Calabaza",
+        "§6§lÉPICO"
+      ],
+      "enchantments": [
+        {"type": "PROTECTION_ENVIRONMENTAL", "level": 3},
+        {"type": "DURABILITY", "level": 2}
+      ]
+    },
+    {
+      "id": "cursed_candy",
+      "name": "§5§lCaramelo Maldito",
+      "type": "CONSUMABLE",
+      "material": "SWEET_BERRIES",
+      "rarity": "UNCOMMON",
+      "level_requirement": 1,
+      "effects": [
+        {
+          "type": "SPEED",
+          "duration": 300,
+          "amplifier": 1
+        },
+        {
+          "type": "POISON",
+          "duration": 60,
+          "amplifier": 0
+        }
+      ],
+      "lore": [
+        "§7Dulce... pero peligroso",
+        "§7¿Te atreves a probarlo?",
+        "§5§lPOCO COMÚN"
+      ]
+    },
+    {
+      "id": "witch_broom",
+      "name": "§5§lEscoba de Bruja",
+      "type": "WEAPON",
+      "material": "STICK",
+      "rarity": "LEGENDARY",
+      "level_requirement": 35,
+      "stats": {
+        "damage": 25,
+        "magic_damage": 40,
+        "speed": 0.3
+      },
+      "lore": [
+        "§7Arma mística de las brujas",
+        "§7¡Permite volar brevemente!",
+        "§d§lLEGENDARIO"
+      ],
+      "enchantments": [
+        {"type": "KNOCKBACK", "level": 2},
+        {"type": "FIRE_ASPECT", "level": 1}
+      ],
+      "abilities": ["flight_burst"]
+    },
+    {
+      "id": "santa_hat",
+      "name": "§c§lGorro de Santa",
+      "type": "HELMET",
+      "material": "LEATHER_HELMET",
+      "rarity": "RARE",
+      "level_requirement": 20,
+      "stats": {
+        "defense": 12,
+        "luck": 5
+      },
+      "lore": [
+        "§7Trae la suerte navideña",
+        "§7+5% drop rate",
+        "§9§lRARO"
+      ],
+      "enchantments": [
+        {"type": "PROTECTION_ENVIRONMENTAL", "level": 2},
+        {"type": "DURABILITY", "level": 3}
+      ]
+    },
+    {
+      "id": "gift_box",
+      "name": "§e§lCaja de Regalo Navideña",
+      "type": "CONSUMABLE",
+      "material": "CHEST",
+      "rarity": "UNCOMMON",
+      "level_requirement": 1,
+      "lore": [
+        "§7¿Qué habrá dentro?",
+        "§7Click derecho para abrir",
+        "§5§lPOCO COMÚN"
+      ],
+      "random_rewards": [
+        {"item": "DIAMOND", "min": 1, "max": 5, "chance": 0.15},
+        {"item": "EMERALD", "min": 1, "max": 3, "chance": 0.20},
+        {"item": "GOLD_INGOT", "min": 2, "max": 8, "chance": 0.30},
+        {"item": "EXPERIENCE_BOTTLE", "min": 5, "max": 15, "chance": 0.35}
+      ]
+    },
+    {
+      "id": "frozen_sword",
+      "name": "§b§lEspada Congelada",
+      "type": "WEAPON",
+      "material": "DIAMOND_SWORD",
+      "rarity": "LEGENDARY",
+      "level_requirement": 40,
+      "stats": {
+        "damage": 55,
+        "critical_chance": 0.15,
+        "ice_damage": 30
+      },
+      "lore": [
+        "§7Espada forjada con hielo eterno",
+        "§7Congela a los enemigos",
+        "§d§lLEGENDARIO"
+      ],
+      "enchantments": [
+        {"type": "DAMAGE_ALL", "level": 5},
+        {"type": "KNOCKBACK", "level": 1},
+        {"type": "DURABILITY", "level": 3}
+      ],
+      "abilities": ["freeze_strike"]
+    },
+    {
+      "id": "bunny_ears",
+      "name": "§e§lOrejas de Conejo",
+      "type": "HELMET",
+      "material": "LEATHER_HELMET",
+      "rarity": "RARE",
+      "level_requirement": 15,
+      "stats": {
+        "defense": 8,
+        "speed": 0.2,
+        "jump_boost": 1
+      },
+      "lore": [
+        "§7Te hacen saltar más alto",
+        "§7¡Hop hop!",
+        "§9§lRARO"
+      ],
+      "enchantments": [
+        {"type": "PROTECTION_ENVIRONMENTAL", "level": 2}
+      ]
+    },
+    {
+      "id": "golden_egg",
+      "name": "§6§lHuevo Dorado",
+      "type": "CONSUMABLE",
+      "material": "EGG",
+      "rarity": "EPIC",
+      "level_requirement": 10,
+      "effects": [
+        {
+          "type": "REGENERATION",
+          "duration": 600,
+          "amplifier": 2
+        },
+        {
+          "type": "ABSORPTION",
+          "duration": 300,
+          "amplifier": 1
+        }
+      ],
+      "lore": [
+        "§7Huevo místico de Pascua",
+        "§7Restaura salud rápidamente",
+        "§6§lÉPICO"
+      ]
+    },
+    {
+      "id": "tropical_helmet",
+      "name": "§b§lCasco Tropical",
+      "type": "HELMET",
+      "material": "TURTLE_HELMET",
+      "rarity": "RARE",
+      "level_requirement": 18,
+      "stats": {
+        "defense": 10,
+        "water_breathing": true
+      },
+      "lore": [
+        "§7Ideal para explorar océanos",
+        "§7Respiración acuática permanente",
+        "§9§lRARO"
+      ],
+      "enchantments": [
+        {"type": "PROTECTION_ENVIRONMENTAL", "level": 3},
+        {"type": "WATER_WORKER", "level": 1}
+      ]
+    },
+    {
+      "id": "fire_crystal",
+      "name": "§c§lCristal de Fuego",
+      "type": "CRAFTING_MATERIAL",
+      "material": "FIRE_CHARGE",
+      "rarity": "EPIC",
+      "level_requirement": 1,
+      "lore": [
+        "§7Cristal ardiente del verano",
+        "§7Material de crafteo legendario",
+        "§6§lÉPICO"
+      ]
+    },
+    {
+      "id": "party_hat",
+      "name": "§d§lGorro de Fiesta",
+      "type": "HELMET",
+      "material": "LEATHER_HELMET",
+      "rarity": "RARE",
+      "level_requirement": 10,
+      "stats": {
+        "defense": 8,
+        "charisma": 10
+      },
+      "lore": [
+        "§7¡Feliz Año Nuevo!",
+        "§7+10% XP ganada",
+        "§9§lRARO"
+      ],
+      "enchantments": [
+        {"type": "PROTECTION_ENVIRONMENTAL", "level": 2}
+      ]
+    },
+    {
+      "id": "firework_wand",
+      "name": "§d§lVarita de Fuegos Artificiales",
+      "type": "WEAPON",
+      "material": "BLAZE_ROD",
+      "rarity": "LEGENDARY",
+      "level_requirement": 35,
+      "stats": {
+        "damage": 30,
+        "magic_damage": 50,
+        "explosion_damage": 20
+      },
+      "lore": [
+        "§7Lanza explosiones de colores",
+        "§7¡Perfecta para celebrar!",
+        "§d§lLEGENDARIO"
+      ],
+      "enchantments": [
+        {"type": "KNOCKBACK", "level": 3}
+      ],
+      "abilities": ["firework_blast"]
+    },
+    {
+      "id": "cupids_bow",
+      "name": "§c§lArco de Cupido",
+      "type": "WEAPON",
+      "material": "BOW",
+      "rarity": "LEGENDARY",
+      "level_requirement": 38,
+      "stats": {
+        "damage": 45,
+        "critical_chance": 0.20,
+        "life_steal": 0.10
+      },
+      "lore": [
+        "§7Arco del amor... o del desamor",
+        "§7Roba vida de los enemigos",
+        "§d§lLEGENDARIO"
+      ],
+      "enchantments": [
+        {"type": "ARROW_DAMAGE", "level": 5},
+        {"type": "ARROW_INFINITE", "level": 1},
+        {"type": "ARROW_FIRE", "level": 1}
+      ],
+      "abilities": ["love_arrow"]
+    },
+    {
+      "id": "love_potion",
+      "name": "§c§lPoción del Amor",
+      "type": "CONSUMABLE",
+      "material": "POTION",
+      "rarity": "UNCOMMON",
+      "level_requirement": 1,
+      "effects": [
+        {
+          "type": "REGENERATION",
+          "duration": 300,
+          "amplifier": 1
+        },
+        {
+          "type": "HEALTH_BOOST",
+          "duration": 600,
+          "amplifier": 2
+        }
+      ],
+      "lore": [
+        "§7Aumenta tu vitalidad",
+        "§7temporalmente",
+        "§5§lPOCO COMÚN"
+      ]
+    },
+    {
+      "id": "dragon_scale",
+      "name": "§5§lEscama de Dragón",
+      "type": "CRAFTING_MATERIAL",
+      "material": "DRAGON_BREATH",
+      "rarity": "LEGENDARY",
+      "level_requirement": 50,
+      "lore": [
+        "§7Escama del Dragón Ancestral",
+        "§7Material legendario único",
+        "§d§lLEGENDARIO"
+      ]
+    }
+  ]
+}

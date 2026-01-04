@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Mobs - Panel MMORPG{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-dragon"></i> Gestión de Mobs</h2>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="openCreateMobModal()">
+                    <i class="fas fa-plus"></i> Crear Mob
+                </button>
+                <button class="btn btn-info" onclick="loadMobs()">
+                    <i class="fas fa-sync"></i> Recargar
+                </button>
+                <button class="btn btn-secondary" onclick="exportMobs()">
+                    <i class="fas fa-download"></i> Exportar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Total Mobs</h5>
+                    <h2 id="total-mobs-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Mobs de Jefe</h5>
+                    <h2 id="boss-mobs-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Nivel Promedio</h5>
+                    <h2 id="avg-level">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">XP Total</h5>
+                    <h2 id="total-xp">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="search-input" placeholder="Buscar por ID o nombre..." onkeyup="filterMobs()">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="world-filter" onchange="filterMobs()">
+                                <option value="">Todos los mundos</option>
+                                <option value="world">world</option>
+                                <option value="world_nether">world_nether</option>
+                                <option value="world_the_end">world_the_end</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="level-filter" onchange="filterMobs()">
+                                <option value="">Todos los niveles</option>
+                                <option value="1-10">1-10</option>
+                                <option value="11-25">11-25</option>
+                                <option value="26-50">26-50</option>
+                                <option value="51+">51+</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="boss-filter" onchange="filterMobs()">
+                                <option value="">Todos los tipos</option>
+                                <option value="boss">Solo Jefes</option>
+                                <option value="normal">Solo Normales</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-secondary btn-block" onclick="clearFilters()">
+                                <i class="fas fa-times"></i> Limpiar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de mobs -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Listado de Mobs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Nivel</th>
+                                    <th>HP</th>
+                                    <th>Daño</th>
+                                    <th>XP</th>
+                                    <th>Tipo</th>
+                                    <th>Mundo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mobs-tbody">
+                                <tr>
+                                    <td colspan="9" class="text-center">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear/editar mob -->
+<div class="modal fade" id="mobModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mobModalTitle">Crear Mob</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="mob-form">
+                    <!-- Información Básica -->
+                    <h6 class="text-primary">Información Básica</h6>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>ID del Mob *</label>
+                            <input type="text" class="form-control" id="mob-id" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Nombre para Mostrar *</label>
+                            <input type="text" class="form-control" id="mob-name" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Mundo</label>
+                            <input type="text" class="form-control" id="mob-world" placeholder="Dejar vacío para todos">
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Stats de Combate -->
+                    <h6 class="text-primary">Stats de Combate</h6>
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>Nivel *</label>
+                            <input type="number" class="form-control" id="mob-level" value="1" min="1" required>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Salud (HP) *</label>
+                            <input type="number" class="form-control" id="mob-health" value="100" min="1" required>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Daño *</label>
+                            <input type="number" class="form-control" id="mob-damage" value="10" min="0" step="0.1" required>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Experiencia *</label>
+                            <input type="number" class="form-control" id="mob-xp" value="50" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>Defensa</label>
+                            <input type="number" class="form-control" id="mob-defense" value="0" min="0" step="0.1">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Velocidad</label>
+                            <input type="number" class="form-control" id="mob-speed" value="1.0" min="0" step="0.1">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>
+                                <input type="checkbox" id="mob-is-boss"> Es Jefe
+                            </label>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>
+                                <input type="checkbox" id="mob-is-mythic"> Es Mítico
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Drops -->
+                    <h6 class="text-primary">Sistema de Drops</h6>
+                    <div id="drops-container"></div>
+                    <button type="button" class="btn btn-sm btn-secondary mb-3" onclick="addDrop()">
+                        <i class="fas fa-plus"></i> Agregar Drop
+                    </button>
+
+                    <hr>
+
+                    <!-- Habilidades -->
+                    <h6 class="text-primary">Habilidades</h6>
+                    <div id="abilities-container"></div>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addAbility()">
+                        <i class="fas fa-plus"></i> Agregar Habilidad
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveMob()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/mobs.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        loadMobs();
+        
+        // Auto-refresh cada 60 segundos
+        setInterval(function() {
+            if (!$('#mobModal').is(':visible')) {
+                loadMobs();
+            }
+        }, 60000);
+    });
+</script>
+{% endblock %}

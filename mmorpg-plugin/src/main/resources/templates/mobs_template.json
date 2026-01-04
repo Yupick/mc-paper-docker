@@ -1,0 +1,366 @@
+{
+  "mobs": [
+    {
+      "id": "pumpkin_king",
+      "name": "§6§lRey Calabaza",
+      "type": "ZOMBIE",
+      "level": 35,
+      "health": 800,
+      "damage": 45,
+      "defense": 30,
+      "xp_reward": 250,
+      "lore": [
+        "§7El monarca de las calabazas",
+        "§7emerge solo en Halloween",
+        "§6§lJEFE DE EVENTO"
+      ],
+      "equipment": {
+        "helmet": "CARVED_PUMPKIN",
+        "chestplate": "GOLDEN_CHESTPLATE",
+        "leggings": "GOLDEN_LEGGINGS",
+        "boots": "GOLDEN_BOOTS",
+        "mainhand": "DIAMOND_SWORD"
+      },
+      "abilities": ["FIRE_RESISTANCE", "SPEED"],
+      "spawn_biomes": ["PLAINS", "FOREST", "DARK_FOREST"]
+    },
+    {
+      "id": "evil_witch",
+      "name": "§5§lBruja Malvada",
+      "type": "WITCH",
+      "level": 28,
+      "health": 600,
+      "damage": 35,
+      "defense": 25,
+      "xp_reward": 180,
+      "lore": [
+        "§7Una bruja corrompida por",
+        "§7la oscuridad de Halloween"
+      ],
+      "abilities": ["POISON", "SLOWNESS"],
+      "spawn_biomes": ["SWAMP", "DARK_FOREST"]
+    },
+    {
+      "id": "shadow_phantom",
+      "name": "§8§lFantasma Sombrío",
+      "type": "PHANTOM",
+      "level": 40,
+      "health": 500,
+      "damage": 55,
+      "defense": 20,
+      "xp_reward": 300,
+      "lore": [
+        "§7Espíritu de la noche",
+        "§7que acecha en Halloween"
+      ],
+      "abilities": ["INVISIBILITY", "SPEED"],
+      "spawn_biomes": ["PLAINS", "FOREST", "MOUNTAINS"]
+    },
+    {
+      "id": "evil_santa",
+      "name": "§c§lSanta Malvado",
+      "type": "ZOMBIE_VILLAGER",
+      "level": 42,
+      "health": 900,
+      "damage": 50,
+      "defense": 35,
+      "xp_reward": 320,
+      "lore": [
+        "§7El lado oscuro de la Navidad",
+        "§c§lJEFE DE EVENTO"
+      ],
+      "equipment": {
+        "helmet": "RED_WOOL",
+        "chestplate": "LEATHER_CHESTPLATE",
+        "leggings": "LEATHER_LEGGINGS",
+        "boots": "LEATHER_BOOTS",
+        "mainhand": "DIAMOND_AXE"
+      },
+      "abilities": ["STRENGTH", "RESISTANCE"],
+      "spawn_biomes": ["SNOWY_PLAINS", "SNOWY_TAIGA", "ICE_SPIKES"]
+    },
+    {
+      "id": "corrupted_snowman",
+      "name": "§b§lMuñeco de Nieve Corrupto",
+      "type": "SNOW_GOLEM",
+      "level": 25,
+      "health": 550,
+      "damage": 30,
+      "defense": 28,
+      "xp_reward": 150,
+      "lore": [
+        "§7Un muñeco de nieve animado",
+        "§7por magia oscura navideña"
+      ],
+      "abilities": ["SLOWNESS"],
+      "spawn_biomes": ["SNOWY_PLAINS", "SNOWY_TAIGA", "FROZEN_RIVER"]
+    },
+    {
+      "id": "frozen_elf",
+      "name": "§3§lElfo Congelado",
+      "type": "VEX",
+      "level": 32,
+      "health": 480,
+      "damage": 42,
+      "defense": 22,
+      "xp_reward": 200,
+      "lore": [
+        "§7Elfo corrompido por el",
+        "§7hielo eterno del norte"
+      ],
+      "abilities": ["SPEED", "JUMP_BOOST"],
+      "spawn_biomes": ["SNOWY_TAIGA", "FROZEN_PEAKS"]
+    },
+    {
+      "id": "evil_bunny",
+      "name": "§e§lConejo Malvado",
+      "type": "RABBIT",
+      "level": 30,
+      "health": 650,
+      "damage": 38,
+      "defense": 26,
+      "xp_reward": 190,
+      "lore": [
+        "§7No todos los conejos",
+        "§7son tiernos en Pascua..."
+      ],
+      "abilities": ["SPEED", "JUMP_BOOST"],
+      "spawn_biomes": ["PLAINS", "MEADOW", "FLOWER_FOREST"]
+    },
+    {
+      "id": "chocolate_golem",
+      "name": "§6§lGolem de Chocolate",
+      "type": "IRON_GOLEM",
+      "level": 38,
+      "health": 850,
+      "damage": 48,
+      "defense": 40,
+      "xp_reward": 280,
+      "lore": [
+        "§7Dulce por fuera,",
+        "§7peligroso por dentro",
+        "§6§lMINI-JEFE"
+      ],
+      "abilities": ["RESISTANCE", "STRENGTH"],
+      "spawn_biomes": ["PLAINS", "FOREST"]
+    },
+    {
+      "id": "fire_elemental",
+      "name": "§c§lElemental de Fuego",
+      "type": "BLAZE",
+      "level": 36,
+      "health": 700,
+      "damage": 52,
+      "defense": 24,
+      "xp_reward": 240,
+      "lore": [
+        "§7Espíritu del fuego del verano",
+        "§7que arde eternamente"
+      ],
+      "abilities": ["FIRE_RESISTANCE", "SPEED"],
+      "spawn_biomes": ["DESERT", "BADLANDS", "SAVANNA"]
+    },
+    {
+      "id": "beach_crab",
+      "name": "§b§lCangrejo Playero",
+      "type": "SILVERFISH",
+      "level": 22,
+      "health": 400,
+      "damage": 28,
+      "defense": 32,
+      "xp_reward": 120,
+      "lore": [
+        "§7Pequeño pero agresivo",
+        "§7guardián de las playas"
+      ],
+      "abilities": ["WATER_BREATHING"],
+      "spawn_biomes": ["BEACH", "WARM_OCEAN"]
+    },
+    {
+      "id": "firework_imp",
+      "name": "§d§lDiablillo Pirotécnico",
+      "type": "VEX",
+      "level": 34,
+      "health": 520,
+      "damage": 46,
+      "defense": 20,
+      "xp_reward": 220,
+      "lore": [
+        "§7Causa caos con fuegos",
+        "§7artificiales en Año Nuevo"
+      ],
+      "abilities": ["SPEED", "GLOWING"],
+      "spawn_biomes": ["PLAINS", "FOREST", "MOUNTAINS"]
+    },
+    {
+      "id": "party_slime",
+      "name": "§a§lSlime Festivo",
+      "type": "SLIME",
+      "level": 26,
+      "health": 480,
+      "damage": 32,
+      "defense": 18,
+      "xp_reward": 140,
+      "lore": [
+        "§7Slime que celebra",
+        "§7el Año Nuevo con estilo"
+      ],
+      "abilities": ["JUMP_BOOST"],
+      "spawn_biomes": ["PLAINS", "SWAMP"]
+    },
+    {
+      "id": "corrupt_cupid",
+      "name": "§c§lCupido Corrupto",
+      "type": "SKELETON",
+      "level": 39,
+      "health": 720,
+      "damage": 58,
+      "defense": 28,
+      "xp_reward": 290,
+      "lore": [
+        "§7Sus flechas ya no traen amor,",
+        "§7sino dolor",
+        "§c§lJEFE DE EVENTO"
+      ],
+      "equipment": {
+        "helmet": "PINK_STAINED_GLASS",
+        "chestplate": "LEATHER_CHESTPLATE",
+        "mainhand": "BOW"
+      },
+      "abilities": ["SPEED", "REGENERATION"],
+      "spawn_biomes": ["PLAINS", "FLOWER_FOREST", "MEADOW"]
+    },
+    {
+      "id": "broken_heart",
+      "name": "§4§lCorazón Roto",
+      "type": "VEX",
+      "level": 31,
+      "health": 580,
+      "damage": 40,
+      "defense": 24,
+      "xp_reward": 185,
+      "lore": [
+        "§7Manifestación física",
+        "§7del desamor"
+      ],
+      "abilities": ["WITHER", "SLOWNESS"],
+      "spawn_biomes": ["PLAINS", "FOREST"]
+    },
+    {
+      "id": "ancient_dragon",
+      "name": "§5§lDragón Ancestral",
+      "type": "ENDER_DRAGON",
+      "level": 100,
+      "health": 5000,
+      "damage": 150,
+      "defense": 80,
+      "xp_reward": 5000,
+      "lore": [
+        "§7El dragón más antiguo",
+        "§7guardián de tesoros legendarios",
+        "§5§lJEFE DE MUNDO"
+      ],
+      "abilities": ["FIRE_RESISTANCE", "REGENERATION", "STRENGTH"],
+      "spawn_biomes": ["THE_END"]
+    },
+    {
+      "id": "nether_warlord",
+      "name": "§4§lSeñor de la Guerra Infernal",
+      "type": "WITHER_SKELETON",
+      "level": 75,
+      "health": 3200,
+      "damage": 95,
+      "defense": 65,
+      "xp_reward": 2800,
+      "lore": [
+        "§7Comandante supremo de las",
+        "§7legiones del Nether",
+        "§4§lJEFE DE DIMENSIÓN"
+      ],
+      "equipment": {
+        "helmet": "NETHERITE_HELMET",
+        "chestplate": "NETHERITE_CHESTPLATE",
+        "leggings": "NETHERITE_LEGGINGS",
+        "boots": "NETHERITE_BOOTS",
+        "mainhand": "NETHERITE_SWORD"
+      },
+      "abilities": ["FIRE_RESISTANCE", "STRENGTH", "WITHER"],
+      "spawn_biomes": ["NETHER_WASTES", "CRIMSON_FOREST"]
+    },
+    {
+      "id": "ice_titan",
+      "name": "§b§lTitán de Hielo",
+      "type": "GIANT",
+      "level": 85,
+      "health": 4000,
+      "damage": 120,
+      "defense": 75,
+      "xp_reward": 3500,
+      "lore": [
+        "§7Gigante congelado que duerme",
+        "§7en los picos más altos",
+        "§b§lJEFE DE BIOMA"
+      ],
+      "abilities": ["SLOWNESS", "RESISTANCE", "STRENGTH"],
+      "spawn_biomes": ["FROZEN_PEAKS", "ICE_SPIKES"]
+    },
+    {
+      "id": "shadow_assassin",
+      "name": "§8§lAsesino de las Sombras",
+      "type": "HUSK",
+      "level": 55,
+      "health": 1500,
+      "damage": 72,
+      "defense": 45,
+      "xp_reward": 800,
+      "lore": [
+        "§7Maestro del sigilo",
+        "§7ataca desde la oscuridad",
+        "§8§lÉLITE"
+      ],
+      "equipment": {
+        "helmet": "LEATHER_HELMET",
+        "chestplate": "LEATHER_CHESTPLATE",
+        "leggings": "LEATHER_LEGGINGS",
+        "boots": "LEATHER_BOOTS",
+        "mainhand": "IRON_SWORD"
+      },
+      "abilities": ["INVISIBILITY", "SPEED", "JUMP_BOOST"],
+      "spawn_biomes": ["DARK_FOREST", "DEEP_DARK"]
+    },
+    {
+      "id": "forest_guardian",
+      "name": "§2§lGuardián del Bosque",
+      "type": "IRON_GOLEM",
+      "level": 48,
+      "health": 1800,
+      "damage": 60,
+      "defense": 55,
+      "xp_reward": 650,
+      "lore": [
+        "§7Protector ancestral de los bosques",
+        "§7hostil a los invasores",
+        "§2§lGUARDIÁN"
+      ],
+      "abilities": ["REGENERATION", "RESISTANCE"],
+      "spawn_biomes": ["FOREST", "FLOWER_FOREST", "BIRCH_FOREST"]
+    },
+    {
+      "id": "desert_scorpion",
+      "name": "§e§lEscorpión del Desierto",
+      "type": "SPIDER",
+      "level": 42,
+      "health": 1200,
+      "damage": 56,
+      "defense": 38,
+      "xp_reward": 450,
+      "lore": [
+        "§7Depredador mortal",
+        "§7de las arenas ardientes",
+        "§e§lÉLITE"
+      ],
+      "abilities": ["POISON", "SPEED"],
+      "spawn_biomes": ["DESERT", "BADLANDS"]
+    }
+  ]
+}
