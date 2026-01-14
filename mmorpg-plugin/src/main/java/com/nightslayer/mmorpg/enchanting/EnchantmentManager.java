@@ -18,7 +18,7 @@ public class EnchantmentManager {
     private final Map<UUID, List<EnchantmentSession>> activeSessions;
     private final Map<UUID, List<EnchantedItem>> playerEnchantedItems;
     private final JsonObject configData;
-    private final String dbPath;
+    private final Connection dbConnection;
     private static final String TABLE_ENCHANTMENT_HISTORY = "enchantment_history";
     private static final String TABLE_ENCHANTED_ITEMS = "enchanted_items";
 
@@ -27,7 +27,9 @@ public class EnchantmentManager {
         this.enchantments = new ConcurrentHashMap<>();
         this.activeSessions = new ConcurrentHashMap<>();
         this.playerEnchantedItems = new ConcurrentHashMap<>();
-        this.dbPath = plugin.getDataFolder() + "/minecraft_rpg.db";
+        // Usar conexión de DatabaseManager en lugar de crear una propia
+        com.nightslayer.mmorpg.MMORPGPlugin mmorpgPlugin = (com.nightslayer.mmorpg.MMORPGPlugin) plugin;
+        this.dbConnection = mmorpgPlugin.getDatabaseManager().getConnection();
         this.configData = loadConfigFile();
         loadEnchantments();
         initializeDatabase();
@@ -263,6 +265,6 @@ public class EnchantmentManager {
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+        return dbConnection;
     }
 }

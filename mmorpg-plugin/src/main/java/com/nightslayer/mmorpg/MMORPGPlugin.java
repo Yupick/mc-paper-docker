@@ -28,6 +28,7 @@ import com.nightslayer.mmorpg.spawns.SpawnManager;
 import com.nightslayer.mmorpg.npcs.NPCManager;
 import com.nightslayer.mmorpg.quests.QuestManager;
 import com.nightslayer.mmorpg.squads.SquadManager;
+import com.nightslayer.mmorpg.database.WorldDatabaseManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.World;
 
@@ -64,6 +65,7 @@ public class MMORPGPlugin extends JavaPlugin {
     private RPGAdminAPI adminAPI;
     private LanguageManager languageManager;
     private DatabaseManager databaseManager;
+    private WorldDatabaseManager worldDatabaseManager;
     
     @Override
     public void onEnable() {
@@ -86,6 +88,13 @@ public class MMORPGPlugin extends JavaPlugin {
         // Inicializar gestores
         languageManager = new LanguageManager(this);
         databaseManager = new DatabaseManager(this);
+        worldDatabaseManager = new WorldDatabaseManager(this);
+        // Forzar inicialización de la BD local del mundo activo
+        if (worldDatabaseManager.getWorldConnection() != null) {
+            getLogger().info("BD local del mundo activo inicializada correctamente");
+        } else {
+            getLogger().warning("No se pudo inicializar la BD local del mundo activo");
+        }
         worldRPGManager = new WorldRPGManager(this);
         dataManager = new DataManager(this);
         
@@ -149,10 +158,15 @@ public class MMORPGPlugin extends JavaPlugin {
     
     @Override
     public void onDisable() {
-                // Cerrar base de datos
-                if (databaseManager != null) {
-                    databaseManager.close();
-                }
+        // Cerrar base de datos universal
+        if (databaseManager != null) {
+            databaseManager.close();
+        }
+        
+        // Cerrar base de datos del mundo
+        if (worldDatabaseManager != null) {
+            worldDatabaseManager.closeAll();
+        }
         
         // Guardar datos antes de desactivar
         if (dataManager != null) {
@@ -430,6 +444,10 @@ public class MMORPGPlugin extends JavaPlugin {
 
     public DatabaseManager getDatabase() {
         return databaseManager;
+    }
+    
+    public WorldDatabaseManager getWorldDatabaseManager() {
+        return worldDatabaseManager;
     }
     
     public PathResolver getPathResolver() {

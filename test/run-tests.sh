@@ -114,6 +114,8 @@ echo ""
 # 5. Probar BackupService
 echo "5. Probando BackupService..."
 
+export PYTHONPATH="web:${PYTHONPATH}"
+
 if python3 test_backup_service.py > /dev/null 2>&1; then
     log_info "✓ BackupService funciona correctamente"
 else

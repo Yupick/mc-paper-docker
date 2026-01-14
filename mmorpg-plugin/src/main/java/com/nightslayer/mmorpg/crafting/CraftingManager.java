@@ -15,7 +15,7 @@ public class CraftingManager {
     private final CraftingConfig config;
     private final Map<UUID, List<CraftingSession>> activeSessions;
     private final Map<UUID, Set<String>> unlockedRecipes;
-    private final String dbPath;
+    private final Connection dbConnection;
     private static final String TABLE_CRAFTING_HISTORY = "crafting_history";
     private static final String TABLE_UNLOCKED_RECIPES = "unlocked_recipes";
 
@@ -24,7 +24,9 @@ public class CraftingManager {
         this.config = new CraftingConfig(plugin);
         this.activeSessions = new ConcurrentHashMap<>();
         this.unlockedRecipes = new ConcurrentHashMap<>();
-        this.dbPath = plugin.getDataFolder() + "/minecraft_rpg.db";
+        // Usar conexión de DatabaseManager en lugar de crear una propia
+        com.nightslayer.mmorpg.MMORPGPlugin mmorpgPlugin = (com.nightslayer.mmorpg.MMORPGPlugin) plugin;
+        this.dbConnection = mmorpgPlugin.getDatabaseManager().getConnection();
         initializeDatabase();
         loadUnlockedRecipes();
     }
@@ -265,6 +267,6 @@ public class CraftingManager {
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+        return dbConnection;
     }
 }

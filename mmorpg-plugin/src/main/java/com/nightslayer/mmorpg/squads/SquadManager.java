@@ -34,78 +34,21 @@ public class SquadManager {
         this.activeSessions = new ConcurrentHashMap<>();
         this.dbFile = new File(plugin.getDataFolder(), "squads.db");
         this.configFile = new File(plugin.getDataFolder(), "squad_config.json");
-        initializeDatabase();
+        // Usar conexión de DatabaseManager en lugar de crear una propia
+        this.dbConnection = plugin.getDatabaseManager().getConnection();
+        createTables();
         loadConfig();
         startAutoSave();
     }
 
-    private void initializeDatabase() {
-        try {
-            Class.forName("org.sqlite.JDBC");
-            if (!dbFile.getParentFile().exists()) {
-                dbFile.getParentFile().mkdirs();
-            }
-            dbConnection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
-            createTables();
-        } catch (Exception e) {
-            plugin.getLogger().severe("Error al conectar a base de datos de escuadras: " + e.getMessage());
-        }
-    }
-
     private void createTables() {
-        String[] tables = {
-            "CREATE TABLE IF NOT EXISTS squads (" +
-                "id TEXT PRIMARY KEY, " +
-                "name TEXT NOT NULL, " +
-                "captain_uuid TEXT NOT NULL, " +
-                "description TEXT, " +
-                "level INTEGER DEFAULT 1, " +
-                "treasury_coins BIGINT DEFAULT 0, " +
-                "treasury_xp BIGINT DEFAULT 0, " +
-                "max_members INTEGER DEFAULT 5, " +
-                "created_at TEXT NOT NULL, " +
-                "disbanded_at TEXT" +
-            ")",
-            "CREATE TABLE IF NOT EXISTS squad_members (" +
-                "id TEXT PRIMARY KEY, " +
-                "squad_id TEXT NOT NULL, " +
-                "player_uuid TEXT NOT NULL, " +
-                "player_name TEXT NOT NULL, " +
-                "role TEXT NOT NULL, " +
-                "joined_at TEXT NOT NULL, " +
-                "contributions_coins BIGINT DEFAULT 0, " +
-                "contributions_xp BIGINT DEFAULT 0, " +
-                "FOREIGN KEY(squad_id) REFERENCES squads(id)" +
-            ")",
-            "CREATE TABLE IF NOT EXISTS squad_treasury_history (" +
-                "id TEXT PRIMARY KEY, " +
-                "squad_id TEXT NOT NULL, " +
-                "action TEXT NOT NULL, " +
-                "amount BIGINT NOT NULL, " +
-                "resource_type TEXT NOT NULL, " +
-                "player_name TEXT, " +
-                "timestamp TEXT NOT NULL, " +
-                "FOREIGN KEY(squad_id) REFERENCES squads(id)" +
-            ")",
-            "CREATE TABLE IF NOT EXISTS squad_log (" +
-                "id TEXT PRIMARY KEY, " +
-                "squad_id TEXT NOT NULL, " +
-                "event_type TEXT NOT NULL, " +
-                "description TEXT NOT NULL, " +
-                "player_name TEXT, " +
-                "timestamp TEXT NOT NULL, " +
-                "FOREIGN KEY(squad_id) REFERENCES squads(id)" +
-            ")"
-        };
-
-        try (Statement stmt = dbConnection.createStatement()) {
-            for (String table : tables) {
-                stmt.execute(table);
-            }
-            plugin.getLogger().info("Tablas de escuadras creadas/verificadas");
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Error al crear tablas: " + e.getMessage());
+        if (dbConnection == null) {
+            plugin.getLogger().severe("ERROR en SquadManager: dbConnection es NULL!");
+            return;
         }
+        // Las tablas ya están creadas por DatabaseManager.createTables()
+        // Este método se mantiene por compatibilidad pero no hace nada
+        plugin.getLogger().info("Tablas de escuadras creadas/verificadas");
     }
 
     private void loadConfig() {
@@ -377,14 +320,16 @@ public class SquadManager {
         if (autoSaveTask != null) {
             autoSaveTask.cancel();
         }
+        // NO cerrar la conexión compartida de DatabaseManager
+        // Solo guardar sesiones si la conexión está disponible
         if (dbConnection != null) {
             try {
                 if (!dbConnection.isClosed()) {
                     saveSessions();
-                    dbConnection.close();
+                    // NO llamar a dbConnection.close() - es una conexión compartida
                 }
             } catch (SQLException e) {
-                plugin.getLogger().warning("Error al cerrar conexión de escuadras: " + e.getMessage());
+                plugin.getLogger().warning("Error al guardar escuadras: " + e.getMessage());
             }
         }
     }

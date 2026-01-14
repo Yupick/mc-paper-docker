@@ -575,10 +575,6 @@ public class EventManager {
         return true;
     }
 
-    public int getEventCurrency(UUID playerId) {
-        return eventCurrency.getOrDefault(playerId, 0);
-    }
-
     public boolean validateEventMobs(String eventId, MobManager mobManager) {
         EventConfig config = eventConfigs.get(eventId);
         if (config == null) {
@@ -586,9 +582,9 @@ public class EventManager {
         }
         
         // Verificar que todos los mobs del evento existen
-        for (String mobId : config.getCustomMobs().keySet()) {
-            if (mobManager.getMobConfig(mobId) == null) {
-                plugin.getLogger().warning("Mob no encontrado en evento " + eventId + ": " + mobId);
+        for (EventConfig.EventMob eventMob : config.getCustomMobs()) {
+            if (mobManager.getMob(eventMob.getMobId()) == null) {
+                plugin.getLogger().warning("Mob no encontrado en evento " + eventId + ": " + eventMob.getMobId());
                 return false;
             }
         }

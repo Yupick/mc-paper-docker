@@ -48,14 +48,12 @@ public class InvasionManager {
         this.activeSessions = new HashMap<>();
         this.scheduledTasks = new HashMap<>();
         this.invasionMobs = new HashMap<>();
-
-        // Initialize database
+        // Usar conexión de DatabaseManager en lugar de crear una propia
+        this.dbConnection = plugin.getDatabaseManager().getConnection();
         try {
-            File dbFile = new File(plugin.getDataFolder(), "rpgdata.db");
-            this.dbConnection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
             createTables();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to initialize invasion database", e);
+            logger.severe("Error al crear tablas de invasiones: " + e.getMessage());
         }
 
         loadConfig();
@@ -66,34 +64,13 @@ public class InvasionManager {
      * Create database tables
      */
     private void createTables() throws SQLException {
-        String createInvasionsTable = "CREATE TABLE IF NOT EXISTS invasion_history (" +
-                "session_id TEXT PRIMARY KEY, " +
-                "invasion_id TEXT NOT NULL, " +
-                "world_name TEXT NOT NULL, " +
-                "start_time INTEGER NOT NULL, " +
-                "end_time INTEGER, " +
-                "total_waves INTEGER NOT NULL, " +
-                "completed_waves INTEGER NOT NULL, " +
-                "status TEXT NOT NULL, " +
-                "total_mobs_killed INTEGER NOT NULL, " +
-                "total_mobs_spawned INTEGER NOT NULL, " +
-                "success INTEGER NOT NULL, " +
-                "duration_seconds INTEGER, " +
-                "top_player_uuid TEXT, " +
-                "top_player_kills INTEGER" +
-                ")";
-
-        String createParticipantsTable = "CREATE TABLE IF NOT EXISTS invasion_participants (" +
-                "session_id TEXT NOT NULL, " +
-                "player_uuid TEXT NOT NULL, " +
-                "kills INTEGER NOT NULL, " +
-                "PRIMARY KEY (session_id, player_uuid)" +
-                ")";
-
-        try (Statement stmt = dbConnection.createStatement()) {
-            stmt.execute(createInvasionsTable);
-            stmt.execute(createParticipantsTable);
+        if (dbConnection == null) {
+            logger.severe("ERROR en InvasionManager: dbConnection es NULL!");
+            return;
         }
+        // Las tablas ya están creadas por DatabaseManager.createTables()
+        // Este método se mantiene por compatibilidad pero no hace nada
+        logger.info("Tablas de invasiones creadas/verificadas");
     }
 
     /**
@@ -642,12 +619,7 @@ public class InvasionManager {
             saveInvasionHistory(session);
         });
 
-        try {
-            if (dbConnection != null && !dbConnection.isClosed()) {
-                dbConnection.close();
-            }
-        } catch (SQLException e) {
-            logger.severe("Failed to close invasion database: " + e.getMessage());
-        }
+        // NO cerrar la conexión compartida de DatabaseManager
+        // La conexión será cerrada por DatabaseManager cuando el plugin se deshabilite
     }
 }

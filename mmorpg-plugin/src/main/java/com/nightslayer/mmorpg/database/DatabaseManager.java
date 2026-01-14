@@ -21,7 +21,13 @@ public class DatabaseManager {
     public DatabaseManager(MMORPGPlugin plugin) {
         this.plugin = plugin;
         this.executor = Executors.newFixedThreadPool(2);
-        this.databaseFile = new File(plugin.getDataFolder(), "rpgdata.db");
+
+        // Usar base de datos universal en config/data/universal.db (compartida)
+        File pluginDir = plugin.getDataFolder(); // /server/plugins/MMORPGPlugin
+        File serverDir = pluginDir.getParentFile().getParentFile(); // /server
+        File configDir = new File(serverDir, "config");
+        File dataDir = new File(configDir, "data");
+        this.databaseFile = new File(dataDir, "universal.db");
         
         initializeDatabase();
     }
@@ -40,7 +46,8 @@ public class DatabaseManager {
             String url = "jdbc:sqlite:" + databaseFile.getAbsolutePath();
             connection = DriverManager.getConnection(url);
             
-            plugin.getLogger().info("Conexión a base de datos SQLite establecida");
+            plugin.getLogger().info("Conexión a base de datos SQLite establecida: " + databaseFile.getAbsolutePath());
+            plugin.getLogger().info("DEBUG: Archivo BD existe=" + databaseFile.exists() + ", size=" + databaseFile.length());
             
             createTables();
             
@@ -53,6 +60,8 @@ public class DatabaseManager {
      * Crea las tablas necesarias si no existen
      */
     private void createTables() {
+        plugin.getLogger().info("DEBUG: Iniciando createTables(), connection=" + (connection != null ? "OK" : "NULL"));
+        
         executeUpdate("""
             CREATE TABLE IF NOT EXISTS players (
                 uuid TEXT PRIMARY KEY,
@@ -181,11 +190,29 @@ public class DatabaseManager {
      * Ejecuta una consulta UPDATE/INSERT/DELETE de forma síncrona
      */
     public int executeUpdate(String sql, Object... params) {
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                stmt.setObject(i + 1, params[i]);
+        try {
+            plugin.getLogger().info("DEBUG executeUpdate: sql=" + sql.substring(0, Math.min(50, sql.length())) + "..., params=" + params.length);
+            
+            if (params.length == 0) {
+                // Sin parámetros - usar Statement directo para DDL (CREATE, ALTER, DROP, etc)
+                try (Statement stmt = connection.createStatement()) {
+                    boolean result = stmt.execute(sql);
+                    plugin.getLogger().info("DEBUG: Execute result=" + result);
+                    // Debug log para CREATE TABLE
+                    if (sql.contains("CREATE TABLE")) {
+                        plugin.getLogger().info("DEBUG: Ejecutado CREATE TABLE exitosamente");
+                    }
+                    return 0; // DDL no retorna row count significativo
+                }
+            } else {
+                // Con parámetros - usar PreparedStatement
+                try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                    for (int i = 0; i < params.length; i++) {
+                        stmt.setObject(i + 1, params[i]);
+                    }
+                    return stmt.executeUpdate();
+                }
             }
-            return stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Error ejecutando update: " + sql, e);
             return 0;

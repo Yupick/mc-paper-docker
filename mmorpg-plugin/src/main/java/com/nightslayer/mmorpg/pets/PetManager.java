@@ -503,4 +503,59 @@ public class PetManager {
         savePlayerData(playerUuid);
         return true;
     }
+
+    public List<String> getAllPetIds() {
+        List<String> ids = new ArrayList<>();
+        for (Pet pet : pets.values()) {
+            ids.add(pet.getId());
+        }
+        return ids;
+    }
+
+    public List<String> getAllMountIds() {
+        List<String> ids = new ArrayList<>();
+        for (Mount mount : mounts.values()) {
+            ids.add(mount.getId());
+        }
+        return ids;
+    }
+
+    public boolean adoptPet(String playerUuid, String petId, int cost) {
+        Pet pet = getPet(petId);
+        if (pet == null) return false;
+        
+        PlayerPetData data = getPlayerData(playerUuid);
+        if (data == null) return false;
+        
+        if (data.hasPet(petId)) return false;
+        
+        data.adoptPet(petId);
+        savePlayerData(playerUuid);
+        return true;
+    }
+
+    public boolean feedPet(String playerUuid, String petId) {
+        PlayerPetData data = getPlayerData(playerUuid);
+        if (data == null) return false;
+        
+        PlayerPetData.OwnedPet ownedPet = data.getPet(petId);
+        if (ownedPet == null) return false;
+        
+        ownedPet.feed(25.0);
+        savePlayerData(playerUuid);
+        return true;
+    }
+
+    public boolean evolvePet(String playerUuid, String petId) {
+        PlayerPetData data = getPlayerData(playerUuid);
+        if (data == null) return false;
+        
+        PlayerPetData.OwnedPet ownedPet = data.getPet(petId);
+        if (ownedPet == null) return false;
+        
+        // TODO: Implement evolution logic
+        ownedPet.setLevel(ownedPet.getLevel() + 1);
+        savePlayerData(playerUuid);
+        return true;
+    }
 }
