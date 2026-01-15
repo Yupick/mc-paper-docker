@@ -6560,6 +6560,295 @@ def delete_local_resource_pack(filename):
             'error': str(e)
         }), 500
 
+# ==================== DATABASE VIEWER ====================
+@app.route('/database')
+@login_required
+def database_viewer():
+    """Página para visualizar contenido de las bases de datos"""
+    # Verificar si el plugin MMORPG está activo
+    plugin_folder = os.path.join(PLUGINS_DIR, 'MMORPGPlugin')
+    plugin_jar = os.path.join(PLUGINS_DIR, 'MMORPGPlugin.jar')
+    plugin_active = os.path.exists(plugin_folder) or os.path.exists(plugin_jar)
+    
+    if not plugin_active:
+        flash('El plugin MMORPG no está activo. Esta sección solo está disponible con el plugin instalado.', 'warning')
+        return redirect(url_for('index'))
+    
+    return render_template('database.html')
+
+@app.route('/api/database/check-plugin')
+@login_required
+def check_mmorpg_plugin():
+    """Verifica si MMORPGPlugin está activo"""
+    try:
+        plugin_folder = os.path.join(PLUGINS_DIR, 'MMORPGPlugin')
+        plugin_jar = os.path.join(PLUGINS_DIR, 'MMORPGPlugin.jar')
+        is_active = os.path.exists(plugin_folder) or os.path.exists(plugin_jar)
+        
+        return jsonify({
+            'success': True,
+            'plugin_active': is_active
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/database/universal/tables')
+@login_required
+def get_universal_tables():
+    """Obtiene la lista de tablas de la BD universal"""
+    try:
+        db_path = os.path.join(CONFIG_DIR, 'data', 'universal.db')
+        
+        if not os.path.exists(db_path):
+            return jsonify({
+                'success': False,
+                'error': 'Base de datos universal no encontrada'
+            }), 404
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        tables = [row[0] for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'tables': tables,
+            'database': 'universal.db'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/database/universal/table/<table_name>')
+@login_required
+def get_universal_table_data(table_name):
+    """Obtiene datos de una tabla específica de la BD universal"""
+    try:
+        db_path = os.path.join(CONFIG_DIR, 'data', 'universal.db')
+        
+        if not os.path.exists(db_path):
+            return jsonify({
+                'success': False,
+                'error': 'Base de datos universal no encontrada'
+            }), 404
+        
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Validar nombre de tabla (seguridad)
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': f'Tabla {table_name} no encontrada'
+            }), 404
+        
+        # Obtener estructura de la tabla
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        columns = [{'name': row[1], 'type': row[2]} for row in cursor.fetchall()]
+        
+        # Obtener datos (limitar a 100 filas)
+        limit = request.args.get('limit', 100, type=int)
+        offset = request.args.get('offset', 0, type=int)
+        
+        cursor.execute(f"SELECT * FROM {table_name} LIMIT ? OFFSET ?", (limit, offset))
+        rows = [dict(row) for row in cursor.fetchall()]
+        
+        # Obtener conteo total
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        total_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'table': table_name,
+            'columns': columns,
+            'rows': rows,
+            'total_count': total_count,
+            'limit': limit,
+            'offset': offset
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ===================================================================
+# NUEVOS ENDPOINTS PARA VISOR DE BASE DE DATOS
+# ===================================================================
+
+@app.route('/api/database/universal/stats')
+@login_required
+def get_universal_stats():
+    """Obtiene estadísticas de la BD universal"""
+    try:
+        db_path = os.path.join(CONFIG_DIR, 'data', 'universal.db')
+        
+        if not os.path.exists(db_path):
+            return jsonify({'error': 'BD no encontrada'}), 404
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        stats = {}
+        
+        # Contar jugadores
+        cursor.execute("SELECT COUNT(*) FROM players")
+        stats['Jugadores'] = cursor.fetchone()[0]
+        
+        # Contar quests
+        cursor.execute("SELECT COUNT(*) FROM quests")
+        stats['Quests'] = cursor.fetchone()[0]
+        
+        # Contar NPCs
+        cursor.execute("SELECT COUNT(*) FROM npcs")
+        stats['NPCs'] = cursor.fetchone()[0]
+        
+        # Contar items RPG
+        cursor.execute("SELECT COUNT(*) FROM rpg_items")
+        stats['Items RPG'] = cursor.fetchone()[0]
+        
+        # Contar mobs custom
+        cursor.execute("SELECT COUNT(*) FROM custom_mobs")
+        stats['Mobs Custom'] = cursor.fetchone()[0]
+        
+        # Tamaño de BD en KB
+        stats['Tamaño BD (KB)'] = os.path.getsize(db_path) // 1024
+        
+        conn.close()
+        
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/database/world/stats')
+@login_required
+def get_world_stats():
+    """Obtiene estadísticas de la BD del mundo activo"""
+    try:
+        # Buscar BD del mundo activo
+        world_active_path = os.path.join(WORLDS_DIR, 'active', 'data')
+        
+        if not os.path.exists(world_active_path):
+            return jsonify({'error': 'Directorio de mundo activo no encontrado'}), 404
+        
+        # Buscar archivo .db en el directorio
+        db_files = [f for f in os.listdir(world_active_path) if f.endswith('.db')]
+        
+        if not db_files:
+            return jsonify({'error': 'No se encontró BD del mundo'}), 404
+        
+        db_path = os.path.join(world_active_path, db_files[0])
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        stats = {}
+        
+        # Contar datos de jugadores por mundo
+        cursor.execute("SELECT COUNT(*) FROM player_world_data")
+        stats['Datos Jugadores'] = cursor.fetchone()[0]
+        
+        # Contar logros de jugadores
+        cursor.execute("SELECT COUNT(*) FROM world_player_achievements")
+        stats['Logros'] = cursor.fetchone()[0]
+        
+        # Contar inventarios
+        cursor.execute("SELECT COUNT(*) FROM world_inventory_items")
+        stats['Items Inventario'] = cursor.fetchone()[0]
+        
+        # Contar progreso de quests
+        cursor.execute("SELECT COUNT(*) FROM world_quest_progress")
+        stats['Quest Progress'] = cursor.fetchone()[0]
+        
+        # Tamaño de BD en KB
+        stats['Tamaño BD (KB)'] = os.path.getsize(db_path) // 1024
+        
+        conn.close()
+        
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/database/world/tables')
+@login_required
+def get_world_tables():
+    """Obtiene la lista de tablas de la BD del mundo activo"""
+    try:
+        world_active_path = os.path.join(WORLDS_DIR, 'active', 'data')
+        
+        if not os.path.exists(world_active_path):
+            return jsonify({'error': 'Directorio de mundo activo no encontrado'}), 404
+        
+        db_files = [f for f in os.listdir(world_active_path) if f.endswith('.db')]
+        
+        if not db_files:
+            return jsonify({'error': 'No se encontró BD del mundo'}), 404
+        
+        db_path = os.path.join(world_active_path, db_files[0])
+        
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        tables = [row[0] for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return jsonify(tables)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/database/world/table/<table_name>')
+@login_required
+def get_world_table_data(table_name):
+    """Obtiene datos de una tabla específica de la BD del mundo activo"""
+    try:
+        world_active_path = os.path.join(WORLDS_DIR, 'active', 'data')
+        
+        if not os.path.exists(world_active_path):
+            return jsonify({'error': 'Directorio de mundo activo no encontrado'}), 404
+        
+        db_files = [f for f in os.listdir(world_active_path) if f.endswith('.db')]
+        
+        if not db_files:
+            return jsonify({'error': 'No se encontró BD del mundo'}), 404
+        
+        db_path = os.path.join(world_active_path, db_files[0])
+        
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Validar tabla
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'Tabla {table_name} no encontrada'}), 404
+        
+        # Obtener datos
+        cursor.execute(f"SELECT * FROM {table_name} LIMIT 1000")
+        rows = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
