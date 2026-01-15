@@ -87,17 +87,18 @@ Gestiona tu servidor Minecraft de forma moderna y eficiente con interfaz web com
 - ✅ **Cache TTL** configurable
 - ✅ **Status UI** (Active/Paused)
 
-### 🎯 Normalización de Estructura de Archivos (FASE 2 - COMPLETADO)
-- ✅ **Centralización de configuraciones** en `config/plugin/`
-- ✅ **Datos universales** (globales) en `plugins/MMORPGPlugin/data/`
-- ✅ **Datos locales por mundo** en `plugins/MMORPGPlugin/data/{mundo}/`
-- ✅ **PathResolver.java** (230 líneas) - Resolución automática de rutas
-- ✅ **DataInitializer.java** (250 líneas) - Auto-inicialización de archivos
-- ✅ **Scope-based data access** - Python y Java sincronizados
-- ✅ **Auto-generación de datos** - Fallback a valores por defecto
-- ✅ **Eliminación de duplicados** - Una única fuente de verdad
-- ✅ **17 archivos .example** - Referencia para configuraciones
-- ✅ **6 datos universales** - items, mobs, npcs, quests, pets, enchantments
+### 🎯 Sistema de Base de Datos SQLite (FASE 3 - COMPLETADO)
+- ✅ **Migración completa de JSON a SQLite** - 30 tablas implementadas
+- ✅ **Base de datos universal** (`config/data/universal.db`) - Datos compartidos
+- ✅ **Base de datos local por mundo** (`worlds/{world}/data/{world}-rpg.db`)
+- ✅ **DatabaseManager.java** - Gestión de BD universal
+- ✅ **WorldDatabaseManager.java** - Gestión de BDs locales por mundo
+- ✅ **Auto-creación de tablas** al iniciar plugin
+- ✅ **17 Managers migrados a SQL** - PlayerManager, QuestManager, NPCManager, etc.
+- ✅ **Panel web de visualización** - Ver ambas BDs en tiempo real
+- ✅ **Índices optimizados** - Queries eficientes
+- ✅ **Tests de integración** - Validación completa
+- 📄 **Documentación:** Ver [docs/MIGRACION_SQLITE.md](docs/MIGRACION_SQLITE.md)
 
 ### 📁 Reorganización de Directorios (COMPLETADO)
 - ✅ **Raíz limpia** - Solo 7 scripts principales + README
@@ -1343,6 +1344,23 @@ Formato: `tipo: descripción`
 - [ ] Soporte para otros tipos de servidor (Spigot, Fabric, Forge)
 - [ ] Marketplace de configuraciones/modpacks
 - [ ] AI para optimización automática
+
+---
+
+## 📄 Documentación
+
+### Documentos Principales
+- 📘 **[Migración SQLite](docs/MIGRACION_SQLITE.md)** - Guía completa de migración a bases de datos
+- 📗 **[Arquitectura MMORPG](docs/ARQUITECTURA_MMORPG.md)** - Arquitectura del plugin
+- 📙 **[Sistema Multimundos](docs/GUIA_MULTIMUNDOS.md)** - Gestión de múltiples mundos
+- 📕 **[Sistema de Backups](docs/BACKUP_SYSTEM.md)** - Configuración de backups
+- 📔 **[Sistema de Configuración](docs/CONFIG_SYSTEM.md)** - Gestión de configuraciones
+
+### Índice Completo
+Ver **[docs/INDICE_DOCUMENTACION.md](docs/INDICE_DOCUMENTACION.md)** para acceso a toda la documentación organizada por categorías.
+
+### Documentación Histórica
+Los documentos de migración SQLite están archivados en: **[docs/migracion-sqlite/](docs/migracion-sqlite/)**
 
 ---
 
