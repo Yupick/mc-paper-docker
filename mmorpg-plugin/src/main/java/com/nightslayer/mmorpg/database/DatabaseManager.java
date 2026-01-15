@@ -176,12 +176,213 @@ public class DatabaseManager {
             )
         """);
         
+        // Tabla de items RPG (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS rpg_items (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                material TEXT NOT NULL,
+                rarity TEXT NOT NULL,
+                attributes TEXT,
+                enchantments TEXT,
+                lore TEXT,
+                created_at INTEGER
+            )
+        """);
+        
+        // Tabla de rarezas de items
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS item_rarities (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                color TEXT NOT NULL,
+                drop_multiplier REAL DEFAULT 1.0,
+                attribute_multiplier REAL DEFAULT 1.0,
+                drop_chance REAL DEFAULT 0.1,
+                description TEXT
+            )
+        """);
+        
+        // Tabla de mobs customizados (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS custom_mobs (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                health REAL NOT NULL,
+                damage REAL DEFAULT 0,
+                defense REAL DEFAULT 0,
+                level INTEGER DEFAULT 1,
+                experience_reward INTEGER DEFAULT 0,
+                is_boss INTEGER DEFAULT 0,
+                spawn_world TEXT,
+                spawn_x REAL,
+                spawn_y REAL,
+                spawn_z REAL,
+                attributes TEXT,
+                created_at INTEGER
+            )
+        """);
+        
+        // Tabla de drops de mobs
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS mob_drops (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mob_id TEXT NOT NULL,
+                item_type TEXT NOT NULL,
+                min_amount INTEGER DEFAULT 1,
+                max_amount INTEGER DEFAULT 1,
+                drop_chance REAL DEFAULT 1.0,
+                FOREIGN KEY (mob_id) REFERENCES custom_mobs(id)
+            )
+        """);
+        
+        // Tabla de dungeons (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS dungeon_definitions (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                min_level INTEGER DEFAULT 1,
+                max_level INTEGER DEFAULT 100,
+                min_players INTEGER DEFAULT 1,
+                max_players INTEGER DEFAULT 5,
+                time_limit_minutes INTEGER DEFAULT 60,
+                difficulty TEXT,
+                rewards TEXT,
+                created_at INTEGER
+            )
+        """);
+        
+        // Tabla de waves de dungeons
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS dungeon_waves (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                dungeon_id TEXT NOT NULL,
+                wave_number INTEGER NOT NULL,
+                mob_id TEXT NOT NULL,
+                mob_count INTEGER DEFAULT 1,
+                spawn_delay_seconds INTEGER DEFAULT 0,
+                FOREIGN KEY (dungeon_id) REFERENCES dungeon_definitions(id),
+                UNIQUE(dungeon_id, wave_number, mob_id)
+            )
+        """);
+        
+        // Tabla de invasiones (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS invasion_definitions (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                duration_minutes INTEGER DEFAULT 30,
+                min_players INTEGER DEFAULT 1,
+                difficulty TEXT,
+                rewards TEXT,
+                created_at INTEGER
+            )
+        """);
+        
+        // Tabla de waves de invasiones
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS invasion_waves (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                invasion_id TEXT NOT NULL,
+                wave_number INTEGER NOT NULL,
+                mob_ids TEXT NOT NULL,
+                mob_counts TEXT NOT NULL,
+                spawn_delay_seconds INTEGER DEFAULT 30,
+                FOREIGN KEY (invasion_id) REFERENCES invasion_definitions(id)
+            )
+        """);
+        
+        // Tabla de spawn points por mundo (local)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS spawn_points (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                world TEXT NOT NULL,
+                spawn_id TEXT NOT NULL,
+                mob_id TEXT NOT NULL,
+                x REAL NOT NULL,
+                y REAL NOT NULL,
+                z REAL NOT NULL,
+                spawn_radius REAL DEFAULT 5.0,
+                respawn_time_seconds INTEGER DEFAULT 300,
+                max_mobs INTEGER DEFAULT 1,
+                is_active INTEGER DEFAULT 1,
+                UNIQUE(world, spawn_id)
+            )
+        """);
+        
+        // Tabla de clases (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS player_classes (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                base_health REAL DEFAULT 100.0,
+                base_mana REAL DEFAULT 100.0,
+                base_damage REAL DEFAULT 1.0,
+                base_defense REAL DEFAULT 0.0,
+                abilities TEXT,
+                created_at INTEGER
+            )
+        """);
+        
+        // Tabla de rangos (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS player_ranks (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                required_level INTEGER DEFAULT 1,
+                required_achievements TEXT,
+                permissions TEXT,
+                rewards TEXT,
+                created_at INTEGER
+            )
+        """);
+        
+        // Tabla de tienda (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS shop_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item_id TEXT NOT NULL,
+                item_name TEXT NOT NULL,
+                item_type TEXT NOT NULL,
+                price REAL NOT NULL,
+                stock INTEGER DEFAULT -1,
+                min_level INTEGER DEFAULT 1,
+                category TEXT,
+                is_available INTEGER DEFAULT 1,
+                created_at INTEGER
+            )
+        """);
+        
+        // Tabla de eventos (universal)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS game_events (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                description TEXT,
+                start_time INTEGER,
+                end_time INTEGER,
+                is_active INTEGER DEFAULT 0,
+                rewards TEXT,
+                conditions TEXT,
+                created_at INTEGER
+            )
+        """);
+        
         // Crear índices para mejorar rendimiento
         executeUpdate("CREATE INDEX IF NOT EXISTS idx_player_class ON players(class_type)");
         executeUpdate("CREATE INDEX IF NOT EXISTS idx_player_level ON players(level)");
         executeUpdate("CREATE INDEX IF NOT EXISTS idx_quest_difficulty ON quests(difficulty)");
         executeUpdate("CREATE INDEX IF NOT EXISTS idx_player_quests_status ON player_quests(player_uuid, status)");
         executeUpdate("CREATE INDEX IF NOT EXISTS idx_transactions_player ON economy_transactions(player_uuid)");
+        executeUpdate("CREATE INDEX IF NOT EXISTS idx_spawn_points_world ON spawn_points(world)");
+        executeUpdate("CREATE INDEX IF NOT EXISTS idx_mob_drops_mob_id ON mob_drops(mob_id)");
+        executeUpdate("CREATE INDEX IF NOT EXISTS idx_dungeon_waves_dungeon ON dungeon_waves(dungeon_id)");
+        executeUpdate("CREATE INDEX IF NOT EXISTS idx_shop_items_category ON shop_items(category)");
         
         plugin.getLogger().info("Tablas de base de datos creadas/verificadas");
     }

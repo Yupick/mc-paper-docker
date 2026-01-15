@@ -100,6 +100,30 @@ public class PlayerPetData {
             unlockedMounts.add(mountId);
         }
     }
+    
+    public void addMount(String mountId) {
+        unlockMount(mountId);
+    }
+    
+    public void setActivePet(String petId) {
+        this.activePetId = petId;
+    }
+    
+    public void setActiveMount(String mountId) {
+        this.activeMountId = mountId;
+    }
+    
+    public List<String> getOwnedPetIds() {
+        List<String> ids = new ArrayList<>();
+        for (OwnedPet pet : ownedPets) {
+            ids.add(pet.getPetId());
+        }
+        return ids;
+    }
+    
+    public boolean removePet(String petId) {
+        return ownedPets.removeIf(p -> p.getPetId().equals(petId));
+    }
 
     public boolean hasPet(String petId) {
         return ownedPets.stream().anyMatch(p -> p.getPetId().equals(petId));

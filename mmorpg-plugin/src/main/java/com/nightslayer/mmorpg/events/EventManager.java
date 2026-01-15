@@ -575,20 +575,21 @@ public class EventManager {
         return true;
     }
 
-    public boolean validateEventMobs(String eventId, MobManager mobManager) {
+    public List<String> validateEventMobs(String eventId, MobManager mobManager) {
+        List<String> missingMobs = new ArrayList<>();
         EventConfig config = eventConfigs.get(eventId);
         if (config == null) {
-            return false;
+            return missingMobs;
         }
         
         // Verificar que todos los mobs del evento existen
         for (EventConfig.EventMob eventMob : config.getCustomMobs()) {
             if (mobManager.getMob(eventMob.getMobId()) == null) {
                 plugin.getLogger().warning("Mob no encontrado en evento " + eventId + ": " + eventMob.getMobId());
-                return false;
+                missingMobs.add(eventMob.getMobId());
             }
         }
         
-        return true;
+        return missingMobs;
     }
 }
