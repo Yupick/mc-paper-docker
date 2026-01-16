@@ -52,9 +52,16 @@ class RPGManager:
         self.config_path = self.base_path / "config"
         self.universal_db_path = self.config_path / "universal.db"
         
-        # Crear directorios si no existen
-        self.plugin_data_path.mkdir(parents=True, exist_ok=True)
-        self.worlds_path.mkdir(parents=True, exist_ok=True)
+        # Crear directorios si no existen (solo si tenemos permisos)
+        try:
+            self.plugin_data_path.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            pass  # Directorio ya existe o no tenemos permisos
+        
+        try:
+            self.worlds_path.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            pass  # Directorio ya existe o no tenemos permisos
 
     def _get_db_connection(self):
         """

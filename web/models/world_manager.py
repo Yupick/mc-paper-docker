@@ -27,9 +27,16 @@ class WorldManager:
         self.templates_path = self.worlds_base_path / "templates"
         self.rpg_manager = rpg_manager
         
-        # Asegurar que existen los directorios necesarios
-        self.worlds_base_path.mkdir(parents=True, exist_ok=True)
-        self.templates_path.mkdir(exist_ok=True)
+        # Asegurar que existen los directorios necesarios (solo si tenemos permisos)
+        try:
+            self.worlds_base_path.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            pass  # Directorio ya existe o no tenemos permisos
+        
+        try:
+            self.templates_path.mkdir(exist_ok=True)
+        except PermissionError:
+            pass  # Directorio ya existe o no tenemos permisos
         
         # Cargar configuración
         self.config = self._load_config()

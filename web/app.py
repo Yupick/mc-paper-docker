@@ -2458,6 +2458,86 @@ def _get_active_world_slug():
         print(f"Error obteniendo mundo activo: {e}")
     return None
 
+def _get_universal_db_path():
+    """Obtiene la ruta de la base de datos universal SQLite"""
+    return os.path.join(CONFIG_DIR, 'data', 'universal.db')
+
+def _get_world_db_path(world_slug=None):
+    """
+    Obtiene la ruta de la base de datos local del mundo
+    Si world_slug es None, usa el mundo activo
+    """
+    if not world_slug:
+        world_slug = _get_active_world_slug()
+    
+    if not world_slug:
+        return None
+    
+    # Obtener level-name del mundo
+    try:
+        world_manager = WorldManager(os.path.join(MINECRAFT_DIR, 'worlds'))
+        world = world_manager.get_world(world_slug)
+        if world:
+            props = world.get_server_properties()
+            level_name = props.get('level-name') or props.get('levelname') or world_slug
+            level_name = os.path.basename(level_name)
+            
+            # BD local en worlds/active/data/{level-name}-rpg.db
+            db_path = os.path.join(WORLDS_DIR, 'active', 'data', f'{level_name}-rpg.db')
+            return db_path
+    except Exception as e:
+        print(f"Error obteniendo ruta de BD local: {e}")
+    
+    return None
+
+def _query_universal_db(query, params=None):
+    """Ejecuta una consulta en la base de datos universal"""
+    db_path = _get_universal_db_path()
+    
+    if not os.path.exists(db_path):
+        return []
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        
+        results = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return results
+    except Exception as e:
+        print(f"Error ejecutando query en universal.db: {e}")
+        return []
+
+def _query_world_db(query, params=None, world_slug=None):
+    """Ejecuta una consulta en la base de datos local del mundo"""
+    db_path = _get_world_db_path(world_slug)
+    
+    if not db_path or not os.path.exists(db_path):
+        return []
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        
+        results = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return results
+    except Exception as e:
+        print(f"Error ejecutando query en BD local: {e}")
+        return []
+
 def _get_data_location(world_slug, data_type, scope='local'):
     """
     Resuelve la ruta de datos según el scope (local, universal, exclusive-local)
@@ -2655,33 +2735,42 @@ def _get_rpg_data_by_scope(filename, data_key):
 @app.route('/api/rpg/quests')
 @login_required
 def get_rpg_quests():
-    """Obtiene todas las quests registradas (separadas por scope: local y universal)"""
+    """Obtiene todas las quests registradas (desde base de datos SQLite)"""
     try:
         world_slug = _get_active_world_slug()
         if not world_slug:
             return jsonify({'success': False, 'message': 'No hay mundo activo'}), 400
         
-        # Obtener datos locales
-        local_path = _get_data_location(world_slug, 'quests', scope='local')
-        quests_local = []
-        if os.path.exists(local_path):
-            try:
-                with open(local_path, 'r') as f:
-                    data = json.load(f)
-                    quests_local = data.get('quests', [])
-            except Exception as e:
-                print(f"Error leyendo quests local: {e}")
+        # Obtener quests desde la base de datos universal
+        quests_universal = _query_universal_db("""
+            SELECT 
+                quest_id as id,
+                title,
+                description,
+                difficulty,
+                min_level,
+                max_level,
+                experience_reward,
+                coin_reward
+            FROM quests
+            ORDER BY quest_id
+        """)
         
-        # Obtener datos universales
-        universal_path = _get_data_location(world_slug, 'quests', scope='universal')
-        quests_universal = []
-        if os.path.exists(universal_path):
-            try:
-                with open(universal_path, 'r') as f:
-                    data = json.load(f)
-                    quests_universal = data.get('quests', [])
-            except Exception as e:
-                print(f"Error leyendo quests universal: {e}")
+        # Obtener objetivos de cada quest
+        for quest in quests_universal:
+            objectives = _query_universal_db("""
+                SELECT 
+                    objective_type as type,
+                    target,
+                    count
+                FROM quest_objectives
+                WHERE quest_id = ?
+                ORDER BY objective_id
+            """, (quest['id'],))
+            quest['objectives'] = objectives
+        
+        # Por ahora no hay quests locales, solo universales
+        quests_local = []
         
         return jsonify({
             'success': True,
@@ -2689,38 +2778,51 @@ def get_rpg_quests():
             'quests_universal': quests_universal
         })
     except Exception as e:
+        print(f"Error en get_rpg_quests: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/rpg/npcs')
 @login_required
 def get_rpg_npcs():
-    """Obtiene todos los NPCs registrados (separados por scope: local y universal)"""
+    """Obtiene todos los NPCs registrados (desde base de datos SQLite)"""
     try:
         world_slug = _get_active_world_slug()
         if not world_slug:
             return jsonify({'success': False, 'message': 'No hay mundo activo'}), 400
         
-        # Obtener datos locales
-        local_path = _get_data_location(world_slug, 'npcs', scope='local')
-        npcs_local = []
-        if os.path.exists(local_path):
-            try:
-                with open(local_path, 'r') as f:
-                    data = json.load(f)
-                    npcs_local = data.get('npcs', [])
-            except Exception as e:
-                print(f"Error leyendo npcs local: {e}")
+        # Obtener NPCs desde la base de datos universal
+        npcs_universal = _query_universal_db("""
+            SELECT 
+                npc_id as id,
+                name,
+                display_name,
+                entity_type,
+                location_x,
+                location_y,
+                location_z,
+                world_name,
+                dialogues_json as dialogues,
+                trades_json as trades,
+                quests_offered
+            FROM npcs
+            ORDER BY npc_id
+        """)
         
-        # Obtener datos universales
-        universal_path = _get_data_location(world_slug, 'npcs', scope='universal')
-        npcs_universal = []
-        if os.path.exists(universal_path):
-            try:
-                with open(universal_path, 'r') as f:
-                    data = json.load(f)
-                    npcs_universal = data.get('npcs', [])
-            except Exception as e:
-                print(f"Error leyendo npcs universal: {e}")
+        # Parsear JSON de dialogues y trades
+        for npc in npcs_universal:
+            if npc.get('dialogues'):
+                try:
+                    npc['dialogues'] = json.loads(npc['dialogues'])
+                except:
+                    npc['dialogues'] = []
+            if npc.get('trades'):
+                try:
+                    npc['trades'] = json.loads(npc['trades'])
+                except:
+                    npc['trades'] = []
+        
+        # Por ahora no hay NPCs locales, solo universales
+        npcs_local = []
         
         return jsonify({
             'success': True,
@@ -2728,49 +2830,45 @@ def get_rpg_npcs():
             'npcs_universal': npcs_universal
         })
     except Exception as e:
+        print(f"Error en get_rpg_npcs: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/rpg/mobs')
 @login_required
 def get_rpg_mobs():
-    """Obtiene todos los mobs custom registrados (separados por scope: local y universal)"""
+    """Obtiene todos los mobs custom registrados (desde base de datos SQLite)"""
     try:
         world_slug = _get_active_world_slug()
         if not world_slug:
             return jsonify({'success': False, 'message': 'No hay mundo activo'}), 400
         
-        # Obtener mobs locales
-        local_path = _get_data_location(world_slug, 'mobs', scope='local')
-        mobs_local = []
-        if os.path.exists(local_path):
-            try:
-                with open(local_path, 'r') as f:
-                    data = json.load(f)
-                    if isinstance(data, dict):
-                        # Si es dict, convertir a lista con ID
-                        for mob_id, mob_data in data.items():
-                            mob_data['id'] = mob_id
-                            mobs_local.append(mob_data)
-                    else:
-                        mobs_local = data if isinstance(data, list) else []
-            except Exception as e:
-                print(f"Error leyendo mobs local: {e}")
+        # Obtener mobs desde la base de datos universal
+        mobs_universal = _query_universal_db("""
+            SELECT 
+                mob_name as id,
+                mob_type as type,
+                display_name,
+                max_health,
+                base_damage,
+                level_required,
+                experience_reward,
+                is_boss,
+                spawn_egg_material,
+                abilities_json as abilities
+            FROM custom_mobs
+            ORDER BY mob_name
+        """)
         
-        # Obtener mobs universales
-        universal_path = _get_data_location(world_slug, 'mobs', scope='universal')
-        mobs_universal = []
-        if os.path.exists(universal_path):
-            try:
-                with open(universal_path, 'r') as f:
-                    data = json.load(f)
-                    if isinstance(data, dict):
-                        for mob_id, mob_data in data.items():
-                            mob_data['id'] = mob_id
-                            mobs_universal.append(mob_data)
-                    else:
-                        mobs_universal = data if isinstance(data, list) else []
-            except Exception as e:
-                print(f"Error leyendo mobs universal: {e}")
+        # Parsear JSON de abilities
+        for mob in mobs_universal:
+            if mob.get('abilities'):
+                try:
+                    mob['abilities'] = json.loads(mob['abilities'])
+                except:
+                    mob['abilities'] = []
+        
+        # Por ahora no hay mobs locales, solo universales
+        mobs_local = []
         
         return jsonify({
             'success': True,
@@ -2778,6 +2876,7 @@ def get_rpg_mobs():
             'mobs_universal': mobs_universal
         })
     except Exception as e:
+        print(f"Error en get_rpg_mobs: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/rpg/quest/create', methods=['POST'])
