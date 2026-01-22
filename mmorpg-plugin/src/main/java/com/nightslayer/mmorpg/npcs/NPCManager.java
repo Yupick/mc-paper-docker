@@ -2,28 +2,32 @@ package com.nightslayer.mmorpg.npcs;
 
 import com.nightslayer.mmorpg.RPGPathResolver;
 import com.nightslayer.mmorpg.MMORPGPlugin;
+import com.nightslayer.mmorpg.database.DatabaseManager;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
  * Gestiona todos los NPCs del sistema RPG
- * Lee desde: worlds/active/data/npcs.json (mundo activo)
- * Archivos universales en: plugins/MMORPGPlugin/data/npcs.json
+ * Lee desde: database universal.db (tabla npcs)
  */
 public class NPCManager implements Listener {
     private final MMORPGPlugin plugin;
     private final RPGPathResolver pathResolver;
+    private final DatabaseManager databaseManager;
     private final Map<String, CustomNPC> npcs;
     private final Map<UUID, String> playerDialogueState; // UUID del jugador -> ID del diálogo actual
     private final Gson gson;
@@ -31,11 +35,217 @@ public class NPCManager implements Listener {
     public NPCManager(MMORPGPlugin plugin) {
         this.plugin = plugin;
         this.pathResolver = plugin.getWorldRPGManager().getPathResolver();
+        this.databaseManager = plugin.getDatabaseManager();
         this.npcs = new HashMap<>();
         this.playerDialogueState = new HashMap<>();
         this.gson = new Gson();
         
+        loadNPCs();
         createDefaultNPCs();
+    }
+    
+    /**
+     * Carga NPCs desde la base de datos universal
+     */
+    private void loadNPCs() {
+        npcs.clear();
+        
+        try {
+            ResultSet rs = databaseManager.executeQuery("SELECT * FROM npcs");
+            
+            while (rs.next()) {
+                String id = rs.getString("id");
+                String name = rs.getString("name");
+                String typeStr = rs.getString("type");
+                String entityTypeStr = rs.getString("entity_type");
+                String worldName = rs.getString("world");
+                double x = rs.getDouble("x");
+                double y = rs.getDouble("y");
+                double z = rs.getDouble("z");
+                float yaw = rs.getFloat("yaw");
+                float pitch = rs.getFloat("pitch");
+                String questId = rs.getString("quest_id");
+                String initialDialogueId = rs.getString("initial_dialogue_id");
+                
+                // Buscar el mundo
+                World world = Bukkit.getWorld(worldName);
+                if (world == null) {
+                    plugin.getLogger().warning("Mundo no encontrado para NPC " + id + ": " + worldName);
+                    continue;
+                }
+                
+                Location location = new Location(world, x, y, z, yaw, pitch);
+                NPCType type = NPCType.valueOf(typeStr);
+                EntityType entityType = EntityType.valueOf(entityTypeStr);
+                
+                CustomNPC npc = new CustomNPC(id, name, type, location, entityType);
+                npc.setQuestGiverId(questId);
+                
+                // Cargar diálogos
+                loadNPCDialogues(npc);
+                
+                // Cargar comercio
+                loadNPCTrades(npc);
+                
+                npcs.put(id, npc);
+                plugin.getLogger().info("Cargado NPC: " + id + " - " + name);
+            }
+            
+            rs.close();
+            plugin.getLogger().info("Cargados " + npcs.size() + " NPCs desde la base de datos");
+            
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error al cargar NPCs: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Carga diálogos de un NPC desde la base de datos
+     */
+    private void loadNPCDialogues(CustomNPC npc) throws SQLException {
+        ResultSet rs = databaseManager.executeQuery(
+            "SELECT * FROM npc_dialogues WHERE npc_id = ?",
+            npc.getId()
+        );
+        
+        while (rs.next()) {
+            String dialogueId = rs.getString("dialogue_id");
+            String linesJson = rs.getString("lines_json");
+            String optionsJson = rs.getString("options_json");
+            String nextDialogueId = rs.getString("next_dialogue_id");
+            
+            // Parsear JSON de líneas
+            JsonArray linesArray = gson.fromJson(linesJson, JsonArray.class);
+            
+            NPCDialogue dialogue = new NPCDialogue(dialogueId);
+            dialogue.setNextDialogueId(nextDialogueId);
+            
+            // Agregar líneas
+            for (JsonElement elem : linesArray) {
+                dialogue.addLine(elem.getAsString());
+            }
+            
+            // Parsear opciones si existen
+            if (optionsJson != null && !optionsJson.isEmpty()) {
+                JsonArray optionsArray = gson.fromJson(optionsJson, JsonArray.class);
+                for (JsonElement optionElem : optionsArray) {
+                    JsonObject optionObj = optionElem.getAsJsonObject();
+                    String text = optionObj.get("text").getAsString();
+                    String targetDialogueId = optionObj.has("targetDialogueId") ? optionObj.get("targetDialogueId").getAsString() : null;
+                    String action = optionObj.has("action") ? optionObj.get("action").getAsString() : null;
+                    
+                    NPCDialogue.DialogueOption option = new NPCDialogue.DialogueOption(text, targetDialogueId, action);
+                    dialogue.addOption(option);
+                }
+            }
+            
+            npc.addDialogue(dialogue);
+        }
+        
+        rs.close();
+    }
+    
+    /**
+     * Carga configuración de comercio de un NPC
+     */
+    private void loadNPCTrades(CustomNPC npc) throws SQLException {
+        ResultSet rs = databaseManager.executeQuery(
+            "SELECT * FROM npc_trades WHERE npc_id = ? ORDER BY trade_slot",
+            npc.getId()
+        );
+        
+        while (rs.next()) {
+            // Por ahora solo cargar - la implementación completa de trades vendrá después
+            plugin.getLogger().info("Trade cargado para NPC " + npc.getId());
+        }
+        
+        rs.close();
+    }
+    
+    /**
+     * Guarda un NPC en la base de datos
+     */
+    public void saveNPC(CustomNPC npc) {
+        Location loc = npc.getLocation();
+        
+        databaseManager.executeUpdate(
+            "INSERT OR REPLACE INTO npcs (id, name, type, entity_type, world, x, y, z, yaw, pitch, quest_id, initial_dialogue_id, created_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            npc.getId(),
+            npc.getName(),
+            npc.getType().name(),
+            npc.getEntityType().name(),
+            loc.getWorld().getName(),
+            loc.getX(),
+            loc.getY(),
+            loc.getZ(),
+            loc.getYaw(),
+            loc.getPitch(),
+            npc.getQuestGiverId(),
+            npc.getInitialDialogueId(),
+            System.currentTimeMillis()
+        );
+        
+        // Guardar diálogos
+        saveNPCDialogues(npc);
+        
+        plugin.getLogger().info("NPC guardado: " + npc.getId());
+    }
+    
+    /**
+     * Guarda los diálogos de un NPC en la base de datos
+     */
+    private void saveNPCDialogues(CustomNPC npc) {
+        // Primero eliminar diálogos existentes
+        databaseManager.executeUpdate("DELETE FROM npc_dialogues WHERE npc_id = ?", npc.getId());
+        
+        // Insertar nuevos diálogos
+        for (NPCDialogue dialogue : npc.getAllDialogues()) {
+            // Convertir líneas a JSON
+            JsonArray linesArray = new JsonArray();
+            for (String line : dialogue.getLines()) {
+                linesArray.add(line);
+            }
+            String linesJson = gson.toJson(linesArray);
+            
+            // Convertir opciones a JSON
+            String optionsJson = null;
+            if (!dialogue.getOptions().isEmpty()) {
+                JsonArray optionsArray = new JsonArray();
+                for (NPCDialogue.DialogueOption option : dialogue.getOptions()) {
+                    JsonObject optionObj = new JsonObject();
+                    optionObj.addProperty("text", option.getText());
+                    if (option.getAction() != null) {
+                        optionObj.addProperty("action", option.getAction());
+                    }
+                    if (option.getTargetDialogueId() != null) {
+                        optionObj.addProperty("targetDialogueId", option.getTargetDialogueId());
+                    }
+                    optionsArray.add(optionObj);
+                }
+                optionsJson = gson.toJson(optionsArray);
+            }
+            
+            databaseManager.executeUpdate(
+                "INSERT INTO npc_dialogues (npc_id, dialogue_id, lines_json, options_json, next_dialogue_id) VALUES (?, ?, ?, ?, ?)",
+                npc.getId(),
+                dialogue.getId(),
+                linesJson,
+                optionsJson,
+                dialogue.getNextDialogueId()
+            );
+        }
+    }
+    
+    /**
+     * Elimina un NPC de la base de datos
+     */
+    public void deleteNPC(String npcId) {
+        databaseManager.executeUpdate("DELETE FROM npc_trades WHERE npc_id = ?", npcId);
+        databaseManager.executeUpdate("DELETE FROM npc_dialogues WHERE npc_id = ?", npcId);
+        databaseManager.executeUpdate("DELETE FROM npcs WHERE id = ?", npcId);
+        plugin.getLogger().info("NPC eliminado: " + npcId);
     }
     
     /**
@@ -59,6 +269,7 @@ public class NPCManager implements Listener {
     public CustomNPC createNPC(String id, String name, NPCType type, Location location, EntityType entityType) {
         CustomNPC npc = new CustomNPC(id, name, type, location, entityType);
         npcs.put(id, npc);
+        saveNPC(npc); // Guardar en BD
         return npc;
     }
     
@@ -67,6 +278,7 @@ public class NPCManager implements Listener {
      */
     public void registerNPC(CustomNPC npc) {
         npcs.put(npc.getId(), npc);
+        saveNPC(npc); // Guardar en BD
     }
     
     /**
@@ -74,6 +286,7 @@ public class NPCManager implements Listener {
      */
     public void removeNPC(String npcId) {
         npcs.remove(npcId);
+        deleteNPC(npcId); // Eliminar de BD
     }
     
     /**
@@ -255,55 +468,6 @@ public class NPCManager implements Listener {
                 player.sendMessage("§aEntrenamiento iniciado");
                 // Aquí se implementará el sistema de entrenamiento
                 break;
-        }
-    }
-    
-    /**
-     * Guarda todos los NPCs de un mundo específico
-     * Guarda en: worlds/{worldName}/data/npcs.json
-     */
-    public void saveAll(String worldName) {
-        File file = pathResolver.getLocalFile(worldName, "npcs.json");
-        
-        try (FileWriter writer = new FileWriter(file)) {
-            JsonObject json = new JsonObject();
-            
-            for (CustomNPC npc : npcs.values()) {
-                // Solo guardar NPCs de este mundo
-                if (npc.getLocation() != null && 
-                    npc.getLocation().getWorld() != null &&
-                    npc.getLocation().getWorld().getName().equals(worldName)) {
-                    json.add(npc.getId(), npc.toJson());
-                }
-            }
-            
-            gson.toJson(json, writer);
-        } catch (Exception e) {
-            plugin.getLogger().warning("Error al guardar NPCs para mundo " + worldName + ": " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Carga NPCs de un mundo específico
-     * Lee desde: worlds/{worldName}/data/npcs.json
-     */
-    public void loadWorld(String worldName) {
-        File file = pathResolver.getLocalFile(worldName, "npcs.json");
-        
-        if (!file.exists()) {
-            return;
-        }
-        
-        try (FileReader reader = new FileReader(file)) {
-            JsonObject json = gson.fromJson(reader, JsonObject.class);
-            if (json != null) {
-                for (String key : json.keySet()) {
-                    // Implementar deserialización de NPCs desde JSON
-                    plugin.getLogger().info("Cargado NPC: " + key + " del mundo " + worldName);
-                }
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Error al cargar NPCs para mundo " + worldName + ": " + e.getMessage());
         }
     }
 }

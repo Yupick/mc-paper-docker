@@ -85,6 +85,22 @@ public class CustomNPC {
         this.initialDialogueId = dialogueId;
     }
     
+    public String getInitialDialogueId() {
+        return initialDialogueId;
+    }
+    
+    public Collection<NPCDialogue> getAllDialogues() {
+        return dialogues.values();
+    }
+    
+    public void setQuestGiverId(String questId) {
+        setQuestId(questId);
+    }
+    
+    public String getQuestGiverId() {
+        return associatedQuests.isEmpty() ? null : associatedQuests.get(0);
+    }
+    
     public List<String> getAssociatedQuests() {
         return associatedQuests;
     }

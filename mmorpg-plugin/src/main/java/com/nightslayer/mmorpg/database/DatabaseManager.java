@@ -151,6 +151,7 @@ public class DatabaseManager {
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 type TEXT NOT NULL,
+                entity_type TEXT DEFAULT 'VILLAGER',
                 world TEXT NOT NULL,
                 x REAL NOT NULL,
                 y REAL NOT NULL,
@@ -158,8 +159,39 @@ public class DatabaseManager {
                 yaw REAL,
                 pitch REAL,
                 quest_id TEXT,
-                dialogue TEXT,
+                initial_dialogue_id TEXT,
                 created_at INTEGER
+            )
+        """);
+        
+        // Tabla de diálogos de NPCs (guardados como JSON en columnas)
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS npc_dialogues (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                npc_id TEXT NOT NULL,
+                dialogue_id TEXT NOT NULL,
+                lines_json TEXT NOT NULL,
+                options_json TEXT,
+                next_dialogue_id TEXT,
+                FOREIGN KEY (npc_id) REFERENCES npcs(id),
+                UNIQUE(npc_id, dialogue_id)
+            )
+        """);
+        
+        // Tabla de comercio de NPCs
+        executeUpdate("""
+            CREATE TABLE IF NOT EXISTS npc_trades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                npc_id TEXT NOT NULL,
+                trade_slot INTEGER NOT NULL,
+                required_item_type TEXT NOT NULL,
+                required_amount INTEGER DEFAULT 1,
+                price_money REAL DEFAULT 0,
+                result_item_type TEXT NOT NULL,
+                result_amount INTEGER DEFAULT 1,
+                max_uses INTEGER DEFAULT -1,
+                FOREIGN KEY (npc_id) REFERENCES npcs(id),
+                UNIQUE(npc_id, trade_slot)
             )
         """);
         
