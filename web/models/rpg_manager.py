@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, List
 
@@ -101,6 +102,112 @@ class RPGManager:
             Path al directorio plugins/MMORPGPlugin/data/
         """
         return self.plugin_data_path
+    
+    def _create_world_local_database(self, world_data_dir: Path) -> bool:
+        """
+        Crea la base de datos local del mundo (world_local.db)
+        
+        Args:
+            world_data_dir: Directorio de datos del mundo (worlds/{world}/data)
+            
+        Returns:
+            True si se creó correctamente
+        """
+        db_path = world_data_dir / "world_local.db"
+        
+        # No sobreescribir si ya existe
+        if db_path.exists():
+            print(f"BD local ya existe: {db_path}")
+            return True
+        
+        try:
+            conn = sqlite3.connect(str(db_path))
+            cursor = conn.cursor()
+            
+            # Crear tablas locales del mundo
+            # Tabla de spawn points (específicos del mundo)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS spawn_points (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    spawn_id TEXT NOT NULL UNIQUE,
+                    mob_id TEXT NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL,
+                    z REAL NOT NULL,
+                    spawn_radius REAL DEFAULT 5.0,
+                    respawn_time_seconds INTEGER DEFAULT 300,
+                    max_mobs INTEGER DEFAULT 1,
+                    is_active INTEGER DEFAULT 1,
+                    created_at INTEGER
+                )
+            """)
+            
+            # Tabla de instancias de dungeons activas
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS dungeon_instances (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    dungeon_id TEXT NOT NULL,
+                    status TEXT DEFAULT 'WAITING',
+                    current_wave INTEGER DEFAULT 0,
+                    start_time INTEGER,
+                    end_time INTEGER,
+                    participants TEXT,
+                    created_at INTEGER
+                )
+            """)
+            
+            # Tabla de eventos activos en este mundo
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS active_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    start_time INTEGER NOT NULL,
+                    end_time INTEGER,
+                    is_active INTEGER DEFAULT 1,
+                    data TEXT,
+                    created_at INTEGER
+                )
+            """)
+            
+            # Tabla de puntos de respawn de jugadores
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS player_respawn_points (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    player_uuid TEXT NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL,
+                    z REAL NOT NULL,
+                    set_at INTEGER,
+                    UNIQUE(player_uuid)
+                )
+            """)
+            
+            # Tabla de estadísticas del mundo
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS world_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    stat_key TEXT NOT NULL UNIQUE,
+                    stat_value TEXT,
+                    updated_at INTEGER
+                )
+            """)
+            
+            # Insertar estadística inicial
+            cursor.execute("""
+                INSERT OR REPLACE INTO world_stats (stat_key, stat_value, updated_at)
+                VALUES ('initialized', 'true', ?)
+            """, (int(datetime.now().timestamp()),))
+            
+            conn.commit()
+            conn.close()
+            
+            print(f"BD local creada: {db_path}")
+            return True
+            
+        except Exception as e:
+            print(f"Error creando BD local: {e}")
+            return False
     
     def get_rpg_status(self, world_name: str) -> Optional[Dict]:
         """
@@ -374,12 +481,13 @@ class RPGManager:
         ESTRUCTURA CREADA:
         ------------------
         worlds/{world_name}/data/
-            ├── npcs.json
-            ├── quests.json
-            ├── spawns.json
-            ├── dungeons.json
-            ├── players.json
+            ├── npcs.json (legacy - plugin usa BD)
+            ├── quests.json (legacy - plugin usa BD)
+            ├── world_local.db (BASE DE DATOS LOCAL DEL MUNDO)
             └── status.json
+        
+        config/data/
+            └── universal.db (BASE DE DATOS UNIVERSAL - ya existe)
         
         plugins/MMORPGPlugin/data/
             ├── items.json (copiado desde config/data/ si existe)
@@ -397,11 +505,14 @@ class RPGManager:
             world_data_dir = self._get_world_data_dir(world_name)
             world_data_dir.mkdir(parents=True, exist_ok=True)
             
-            # 2. Crear directorio de datos universales (si no existe)
+            # 2. Crear base de datos local del mundo (world_local.db)
+            self._create_world_local_database(world_data_dir)
+            
+            # 3. Crear directorio de datos universales (si no existe)
             universal_data_dir = self._get_universal_data_dir()
             universal_data_dir.mkdir(parents=True, exist_ok=True)
             
-            # 3. Copiar archivos universales desde config/data/ si existen
+            # 4. Copiar archivos universales desde config/data/ si existen
             universal_sources = {
                 'items.json': self.config_path / 'data' / 'items.json',
                 'mobs.json': self.config_path / 'data' / 'mobs.json'
@@ -420,7 +531,7 @@ class RPGManager:
                         json.dump(default_data, f, indent=2, ensure_ascii=False)
                     print(f"Creado {filename} vacío en datos universales")
             
-            # 4. Crear archivos locales con estructura base
+            # 5. Crear archivos locales con estructura base (algunos managers aún usan JSON)
             from datetime import datetime
             timestamp = datetime.utcnow().isoformat() + "Z"
             
@@ -433,8 +544,8 @@ class RPGManager:
                     "total_quests_completed": 0
                 },
                 'players.json': {"players": {}},
-                'npcs.json': {"npcs": []},
-                'quests.json': {"quests": []},
+                'npcs.json': {"npcs": []},  # Legacy - plugin usa BD
+                'quests.json': {"quests": []},  # Legacy - plugin usa BD
                 'spawns.json': {"spawns": []},
                 'dungeons.json': {"dungeons": []},
                 'invasions.json': {"invasions": []},
