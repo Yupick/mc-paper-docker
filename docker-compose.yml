@@ -23,5 +23,8 @@ services:
       - EULA=TRUE
       - RCON_PASSWORD=minecraft123
       - ENABLE_RCON=true
+    dns:
+      - 8.8.8.8       # Google DNS
+      - 1.1.1.1       # Cloudflare DNS
     stdin_open: true
     tty: true

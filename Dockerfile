@@ -18,9 +18,9 @@ RUN cd /tmp && \
 # Crear directorio de trabajo
 WORKDIR /server
 
-# Descargar la última versión ESTABLE de PaperMC (sin pre-releases)
-RUN MINECRAFT_VERSION=$(curl -s https://api.papermc.io/v2/projects/paper | jq -r '.versions[] | select(test("^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"))' | tail -1) && \
-    echo "Descargando PaperMC versión ESTABLE ${MINECRAFT_VERSION}..." && \
+# Descargar PaperMC versión 1.20.6 (versión estable LTS)
+RUN MINECRAFT_VERSION="1.20.6" && \
+    echo "Descargando PaperMC versión ${MINECRAFT_VERSION}..." && \
     BUILD=$(curl -s https://api.papermc.io/v2/projects/paper/versions/${MINECRAFT_VERSION}/builds | jq -r '.builds[-1].build') && \
     curl -o paper.jar https://api.papermc.io/v2/projects/paper/versions/${MINECRAFT_VERSION}/builds/${BUILD}/downloads/paper-${MINECRAFT_VERSION}-${BUILD}.jar && \
     echo "PaperMC descargado: $(ls -lh paper.jar)"

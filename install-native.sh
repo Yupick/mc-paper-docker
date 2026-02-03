@@ -350,7 +350,7 @@ setup_web() {
     # Instalar dependencias
     print_info "Instalando dependencias de Python..."
     pip install --upgrade pip
-    pip install Flask python-dotenv requests Werkzeug bcrypt flask-login
+    pip install Flask python-dotenv requests Werkzeug bcrypt flask-login docker mcrcon
     
     # Crear archivo .env si no existe
     if [ ! -f .env ]; then
