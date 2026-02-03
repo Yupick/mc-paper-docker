@@ -53,8 +53,11 @@ public class ConfigManager {
         this.plugin = plugin;
         this.gson = new GsonBuilder().setPrettyPrinting().create();
         
-        // Detectar rutas - en Docker el servidor está en /server
-        this.serverRoot = Paths.get("/server");
+        // Detectar automáticamente la ruta del servidor (funciona Docker y nativo)
+        // plugin.getDataFolder() = /ruta/plugins/MMORPGPlugin
+        // .getParentFile() = /ruta/plugins
+        // .getParentFile() = /ruta (servidor raíz)
+        this.serverRoot = plugin.getDataFolder().getParentFile().getParentFile().toPath();
         this.configDir = serverRoot.resolve("config");
         this.pluginDataDir = serverRoot.resolve("plugins/MMORPGPlugin/data");
         this.worldsDir = serverRoot.resolve("worlds");
