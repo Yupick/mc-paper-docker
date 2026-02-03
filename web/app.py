@@ -17,6 +17,7 @@ from models.world_manager import WorldManager
 from models.rpg_manager import RPGManager
 from models.resource_pack_manager import ResourcePackManager
 from services.backup_service import BackupService
+from services.rcon_native import RCONService, ServerMonitor
 def _load_panel_config():
     try:
         config_file = os.path.join(CONFIG_DIR, 'panel_config.json')
@@ -97,6 +98,20 @@ except Exception as e:
         print(f"  - docker.from_env(): {e}")
         print(f"  - unix socket: {e2}")
         print(f"  Ejecuta: sudo usermod -aG docker $USER && newgrp docker")
+
+# Servicios nativos como fallback para modo sin Docker
+try:
+    rcon_service = RCONService(
+        host=os.getenv('RCON_HOST', 'localhost'),
+        port=int(os.getenv('RCON_PORT', '25575')),
+        password=os.getenv('RCON_PASSWORD', 'minecraft123')
+    )
+    server_monitor = ServerMonitor(BASE_DIR)
+    print("[✓] Servicios nativos RCON disponibles como fallback")
+except Exception as e:
+    print(f"[!] Servicios nativos no disponibles: {e}")
+    rcon_service = None
+    server_monitor = None
 
 # Sistema de caché para reducir llamadas RCON
 class RCONCache:
