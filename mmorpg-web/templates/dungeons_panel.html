@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mazmorras Dinámicas - Panel MMORPG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dungeons.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-dungeon me-2"></i>Mazmorras Dinámicas</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="refreshAllBtn">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3" id="dungeonsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="explorer-tab" data-bs-toggle="tab" data-bs-target="#explorer" type="button">
+                            <i class="fas fa-map"></i> Explorador
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button">
+                            <i class="fas fa-play-circle"></i> Activas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button">
+                            <i class="fas fa-cog"></i> Configuración
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">
+                            <i class="fas fa-history"></i> Historial
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="dungeonsTabContent">
+                    <!-- TAB: Explorador de Mazmorras -->
+                    <div class="tab-pane fade show active" id="explorer" role="tabpanel">
+                        <div id="dungeonsList"></div>
+                    </div>
+
+                    <!-- TAB: Mazmorras Activas -->
+                    <div class="tab-pane fade" id="active" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-play-circle"></i> Sesiones en Curso</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped table-hover" id="activeTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Mazmorra</th>
+                                                <th>Mundo</th>
+                                                <th>Inicio</th>
+                                                <th>Jugadores</th>
+                                                <th>Kills</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="activeTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Configuración -->
+                    <div class="tab-pane fade" id="config" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-cog"></i> Configuración de Mazmorras</h5>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-sm" id="saveConfigBtn">
+                                        <i class="fas fa-save"></i> Guardar
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="loadConfigBtn">
+                                        <i class="fas fa-sync-alt"></i> Recargar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Archivo JSON de Configuración:</label>
+                                    <textarea id="configEditor" class="form-control font-monospace" rows="30"></textarea>
+                                    <small class="text-muted">
+                                        Edita la configuración de mazmorras. Cada mazmorra tiene salas con mobs, objetos y bosses generados proceduralmente.
+                                    </small>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> Estructura de Mazmorra:</h6>
+                                    <pre class="mb-0 small">{
+  "id": "dungeon_id",
+  "name": "Nombre de Mazmorra",
+  "description": "Descripción",
+  "minLevel": 10,
+  "maxLevel": 30,
+  "minPlayers": 1,
+  "maxPlayers": 4,
+  "estimatedDuration": 30,
+  "enabled": true,
+  "roomTemplates": [
+    {
+      "id": "chamber_1",
+      "type": "CHAMBER|CORRIDOR|BOSS_ARENA|TREASURE",
+      "width": 30,
+      "height": 30,
+      "possibleMobs": ["mob_id1", "mob_id2"],
+      "mobCount": 8,
+      "hasTreasure": false,
+      "hasBoss": false
+    }
+  ],
+  "rewards": {
+    "baseXp": 500,
+    "baseCoin": 200,
+    "treasureItems": ["item_name"],
+    "treasureDropChance": 0.3,
+    "bossXpBonus": 1000,
+    "bossCoinBonus": 500
+  }
+}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Historial -->
+                    <div class="tab-pane fade" id="history" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-history"></i> Historial de Mazmorras (Últimas 50)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped table-hover" id="historyTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Mazmorra</th>
+                                                <th>Mundo</th>
+                                                <th>Inicio</th>
+                                                <th>Fin</th>
+                                                <th>Duración</th>
+                                                <th>Jugadores</th>
+                                                <th>Kills</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historyTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: Estadísticas -->
+                    <div class="tab-pane fade" id="stats" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-primary">
+                                        <i class="fas fa-dungeon"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalDungeons">0</div>
+                                        <div class="stat-label">Total Mazmorras</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-success">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statCompletedDungeons">0</div>
+                                        <div class="stat-label">Completadas</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-danger">
+                                        <i class="fas fa-skull"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statTotalMobsKilled">0</div>
+                                        <div class="stat-label">Mobs Eliminados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-info">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="statAvgTime">0</div>
+                                        <div class="stat-label">Tiempo Promedio</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-trophy"></i> Top 10 Aventureros</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Jugador</th>
+                                                <th>Total Kills</th>
+                                                <th>XP Ganado</th>
+                                                <th>Monedas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topPlayersTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalles de Mazmorra -->
+    <div class="modal fade" id="dungeonDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-dungeon"></i> Detalles de Mazmorra</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="dungeonDetailsContent"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="startDungeonBtn">
+                        <i class="fas fa-play"></i> Iniciar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='dungeons.js') }}"></script>
+</body>
+</html>

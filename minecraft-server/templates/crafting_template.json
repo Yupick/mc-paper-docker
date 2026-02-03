@@ -1,0 +1,12 @@
+{
+  "recipes": [],
+  "crafting_stations": [
+    {
+      "id": "workbench",
+      "name": "Crafting Table",
+      "description": "Mesa de trabajo estándar de Minecraft",
+      "material": "crafting_table",
+      "enabled": true
+    }
+  ]
+}

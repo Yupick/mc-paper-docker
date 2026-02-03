@@ -1,0 +1,42 @@
+{
+  "crafting_stations": [
+    {
+      "id": "basic_forge",
+      "name": "Forja Básica",
+      "block": "minecraft:furnace",
+      "recipes_available": 5,
+      "level_required": 1,
+      "enabled": true
+    },
+    {
+      "id": "advanced_forge",
+      "name": "Forja Avanzada",
+      "block": "minecraft:blast_furnace",
+      "recipes_available": 15,
+      "level_required": 10,
+      "enabled": true
+    }
+  ],
+  "recipes": [
+    {
+      "id": "iron_sword",
+      "name": "Espada de Hierro RPG",
+      "station": "basic_forge",
+      "materials": {
+        "minecraft:iron_ingot": 3,
+        "minecraft:stick": 1
+      },
+      "result": {
+        "item": "minecraft:iron_sword",
+        "amount": 1,
+        "custom_name": "Espada Guerrera"
+      },
+      "time_seconds": 30,
+      "experience_reward": 50
+    }
+  ],
+  "settings": {
+    "enable_crafting": true,
+    "notify_completion": true
+  }
+}

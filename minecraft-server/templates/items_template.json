@@ -1,0 +1,212 @@
+{
+  "items": [
+    {
+      "id": "iron_sword_rpg",
+      "name": "Espada de Hierro Encantada",
+      "description": "Una espada forjada con hierro puro, ideal para aventureros principiantes",
+      "type": "WEAPON",
+      "rarity": "COMMON",
+      "level_required": 1,
+      "stats": {
+        "damage": 8.0,
+        "attack_speed": 1.6,
+        "durability": 250,
+        "critical_chance": 5.0
+      },
+      "material": "IRON_SWORD",
+      "custom_model_data": 1001,
+      "lore": [
+        "§7Daño: §c+8",
+        "§7Velocidad de Ataque: §e1.6",
+        "§7Probabilidad Crítica: §65%",
+        "",
+        "§fUna espada común pero confiable"
+      ]
+    },
+    {
+      "id": "diamond_armor_chestplate",
+      "name": "Peto de Diamante Reforzado",
+      "description": "Armadura pesada que proporciona gran protección",
+      "type": "ARMOR",
+      "rarity": "RARE",
+      "level_required": 15,
+      "stats": {
+        "armor": 8.0,
+        "armor_toughness": 2.0,
+        "durability": 528,
+        "health_bonus": 20.0,
+        "knockback_resistance": 0.1
+      },
+      "material": "DIAMOND_CHESTPLATE",
+      "custom_model_data": 2001,
+      "slot": "CHEST",
+      "lore": [
+        "§7Armadura: §9+8",
+        "§7Dureza: §9+2",
+        "§7Vida Adicional: §c+20 ❤",
+        "§7Resistencia al Retroceso: §e10%",
+        "",
+        "§5Una armadura forjada por maestros"
+      ]
+    },
+    {
+      "id": "health_potion_strong",
+      "name": "Poción de Vida Mayor",
+      "description": "Restaura una gran cantidad de salud instantáneamente",
+      "type": "CONSUMABLE",
+      "rarity": "UNCOMMON",
+      "level_required": 5,
+      "stats": {
+        "instant_heal": 40.0,
+        "cooldown": 30
+      },
+      "material": "POTION",
+      "custom_model_data": 3001,
+      "consumable_effects": [
+        {
+          "type": "INSTANT_HEAL",
+          "amount": 40.0,
+          "duration": 0
+        }
+      ],
+      "lore": [
+        "§7Restaura: §c+40 ❤",
+        "§7Tiempo de Reutilización: §e30s",
+        "",
+        "§aUsa con cuidado",
+        "§aClic derecho para consumir"
+      ]
+    },
+    {
+      "id": "mana_crystal",
+      "name": "Cristal de Maná",
+      "description": "Un cristal brillante que restaura energía mágica",
+      "type": "CONSUMABLE",
+      "rarity": "RARE",
+      "level_required": 10,
+      "stats": {
+        "mana_restore": 50.0,
+        "cooldown": 45
+      },
+      "material": "PRISMARINE_SHARD",
+      "custom_model_data": 3002,
+      "consumable_effects": [
+        {
+          "type": "MANA_RESTORE",
+          "amount": 50.0,
+          "duration": 0
+        }
+      ],
+      "lore": [
+        "§7Restaura: §b+50 ✦ Maná",
+        "§7Tiempo de Reutilización: §e45s",
+        "",
+        "§5Un cristal imbuido con energía arcana",
+        "§aClic derecho para usar"
+      ]
+    },
+    {
+      "id": "legendary_bow_inferno",
+      "name": "Arco del Infierno",
+      "description": "Un arco legendario que dispara flechas de fuego",
+      "type": "WEAPON",
+      "rarity": "LEGENDARY",
+      "level_required": 30,
+      "stats": {
+        "damage": 15.0,
+        "attack_speed": 1.0,
+        "durability": 384,
+        "critical_chance": 25.0,
+        "critical_damage": 2.5,
+        "fire_damage": 10.0
+      },
+      "material": "BOW",
+      "custom_model_data": 1100,
+      "special_abilities": [
+        {
+          "id": "inferno_shot",
+          "name": "Disparo Infernal",
+          "description": "Las flechas prenden fuego a los enemigos",
+          "cooldown": 0,
+          "passive": true
+        }
+      ],
+      "lore": [
+        "§7Daño: §c+15",
+        "§7Daño de Fuego: §6+10",
+        "§7Probabilidad Crítica: §625%",
+        "§7Daño Crítico: §6250%",
+        "",
+        "§6◆ Habilidad Pasiva: Disparo Infernal",
+        "§7Las flechas prenden fuego a los enemigos",
+        "",
+        "§6§lLEGENDARIO"
+      ]
+    },
+    {
+      "id": "mystic_staff",
+      "name": "Báculo Místico",
+      "description": "Un báculo que amplifica el poder mágico de su portador",
+      "type": "WEAPON",
+      "rarity": "EPIC",
+      "level_required": 20,
+      "stats": {
+        "magic_damage": 20.0,
+        "mana_bonus": 100.0,
+        "mana_regeneration": 2.0,
+        "spell_power": 1.5,
+        "durability": 200
+      },
+      "material": "STICK",
+      "custom_model_data": 1200,
+      "weapon_type": "STAFF",
+      "special_abilities": [
+        {
+          "id": "arcane_blast",
+          "name": "Explosión Arcana",
+          "description": "Lanza una ráfaga de energía mágica",
+          "cooldown": 10,
+          "mana_cost": 30,
+          "passive": false
+        }
+      ],
+      "lore": [
+        "§7Daño Mágico: §d+20",
+        "§7Maná Adicional: §b+100 ✦",
+        "§7Regeneración de Maná: §b+2.0/s",
+        "§7Poder de Hechizo: §d+50%",
+        "",
+        "§d◆ Habilidad: Explosión Arcana",
+        "§7Lanza una ráfaga de energía mágica",
+        "§7Costo: §b30 ✦ §7| Recarga: §e10s",
+        "",
+        "§5§lÉPICO"
+      ]
+    },
+    {
+      "id": "speed_boots",
+      "name": "Botas del Viento",
+      "description": "Botas ligeras que aumentan la velocidad de movimiento",
+      "type": "ARMOR",
+      "rarity": "UNCOMMON",
+      "level_required": 8,
+      "stats": {
+        "armor": 2.0,
+        "durability": 200,
+        "speed_bonus": 0.2,
+        "jump_boost": 0.1
+      },
+      "material": "LEATHER_BOOTS",
+      "custom_model_data": 2100,
+      "slot": "FEET",
+      "lore": [
+        "§7Armadura: §9+2",
+        "§7Velocidad: §e+20%",
+        "§7Salto: §e+10%",
+        "",
+        "§aLigeras como el viento",
+        "§2§lPOCO COMÚN"
+      ]
+    }
+  ]
+}

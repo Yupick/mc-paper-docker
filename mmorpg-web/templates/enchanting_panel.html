@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Encantamientos - Minecraft RPG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enchanting.css') }}">
+</head>
+<body class="dark-theme">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-magic"></i> Panel de Encantamientos RPG
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">
+                            <i class="fas fa-user"></i> <span id="username">Jugador</span>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Volver</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h2 class="card-title">
+                            <i class="fas fa-wand-magic-sparkles"></i> Sistema de Encantamientos Personalizados
+                        </h2>
+                        <p class="text-muted">Mejora tus items con poderes mágicos únicos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <ul class="nav nav-tabs nav-fill" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="enchantments-tab" data-bs-toggle="tab" data-bs-target="#enchantments" 
+                                type="button" role="tab" aria-controls="enchantments" aria-selected="true">
+                            <i class="fas fa-book-open"></i> Encantamientos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="enchant-tab" data-bs-toggle="tab" data-bs-target="#enchant" 
+                                type="button" role="tab" aria-controls="enchant" aria-selected="false">
+                            <i class="fas fa-wand-magic"></i> Encantar Item
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" 
+                                type="button" role="tab" aria-controls="items" aria-selected="false">
+                            <i class="fas fa-gem"></i> Items Encantados
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" 
+                                type="button" role="tab" aria-controls="stats" aria-selected="false">
+                            <i class="fas fa-chart-line"></i> Estadísticas
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Encantamientos Tab -->
+            <div class="tab-pane fade show active" id="enchantments" role="tabpanel" aria-labelledby="enchantments-tab">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <select class="form-select bg-dark text-white border-secondary" id="filterType">
+                            <option value="">Todos los tipos</option>
+                            <option value="COMBAT">Combate</option>
+                            <option value="DEFENSE">Defensa</option>
+                            <option value="UTILITY">Utilidad</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select bg-dark text-white border-secondary" id="filterTier">
+                            <option value="">Todas las rarezas</option>
+                            <option value="UNCOMMON">Poco Común</option>
+                            <option value="RARE">Raro</option>
+                            <option value="EPIC">Épico</option>
+                            <option value="LEGENDARY">Legendario</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-info w-100" onclick="loadEnchantments()">
+                            <i class="fas fa-sync"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row" id="enchantments-list">
+                    <div class="col-12 text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Encantar Item Tab -->
+            <div class="tab-pane fade" id="enchant" role="tabpanel" aria-labelledby="enchant-tab">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card bg-dark border-secondary mb-4">
+                            <div class="card-header bg-secondary">
+                                <h5 class="mb-0"><i class="fas fa-box"></i> Seleccionar Item</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de Item</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="itemType">
+                                        <option value="">Selecciona un item...</option>
+                                        <option value="SWORD">Espada</option>
+                                        <option value="AXE">Hacha</option>
+                                        <option value="BOW">Arco</option>
+                                        <option value="CROSSBOW">Ballesta</option>
+                                        <option value="TRIDENT">Tridente</option>
+                                        <option value="HELMET">Casco</option>
+                                        <option value="CHESTPLATE">Peto</option>
+                                        <option value="LEGGINGS">Grebas</option>
+                                        <option value="BOOTS">Botas</option>
+                                        <option value="SHIELD">Escudo</option>
+                                    </select>
+                                </div>
+                                <div id="itemPreview" class="item-preview text-center">
+                                    <i class="fas fa-question-circle fa-5x text-muted"></i>
+                                    <p class="text-muted mt-3">Selecciona un item para comenzar</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="card bg-dark border-secondary mb-4">
+                            <div class="card-header bg-secondary">
+                                <h5 class="mb-0"><i class="fas fa-wand-magic"></i> Seleccionar Encantamiento</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Encantamiento Disponible</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="enchantmentSelect" disabled>
+                                        <option value="">Primero selecciona un item...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nivel del Encantamiento</label>
+                                    <input type="range" class="form-range" id="enchantmentLevel" min="1" max="1" value="1" disabled>
+                                    <div class="text-center">
+                                        <span class="badge bg-primary" id="levelDisplay">Nivel 1</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3" id="enchantCostPreview">
+                                    <div class="alert alert-dark border-secondary">
+                                        <h6>Costo de Encantamiento</h6>
+                                        <p class="mb-1"><i class="fas fa-coins text-warning"></i> Monedas: <span id="costCoins">-</span></p>
+                                        <p class="mb-0"><i class="fas fa-star text-info"></i> Experiencia: <span id="costXP">-</span></p>
+                                        <p class="mb-0"><i class="fas fa-percent text-success"></i> Probabilidad: <span id="successRate">-</span></p>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary w-100" id="enchantBtn" onclick="enchantItem()" disabled>
+                                    <i class="fas fa-magic"></i> Encantar Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Encantados Tab -->
+            <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-gem"></i> Mis Items Encantados</h5>
+                                <button class="btn btn-sm btn-outline-info" onclick="loadEnchantedItems()">
+                                    <i class="fas fa-sync"></i> Actualizar
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="enchanted-items-list" class="row g-3">
+                                    <div class="col-12 text-center text-muted">
+                                        <p><i class="fas fa-inbox"></i> Cargando items...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas Tab -->
+            <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">Items Encantados</h6>
+                                <h3 class="card-title text-primary" id="stat-items">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-success">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">Encantamientos Aplicados</h6>
+                                <h3 class="card-title text-success" id="stat-enchants">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-warning">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">XP Invertido</h6>
+                                <h3 class="card-title text-warning" id="stat-xp">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-info">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">Monedas Gastadas</h6>
+                                <h3 class="card-title text-info" id="stat-coins">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-header bg-secondary">
+                                <h5 class="mb-0"><i class="fas fa-history"></i> Historial de Encantamientos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover table-sm">
+                                        <thead class="table-secondary">
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Item</th>
+                                                <th>Encantamiento</th>
+                                                <th>Nivel</th>
+                                                <th>Costo</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="history-list">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">Cargando...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para detalles de encantamiento -->
+    <div class="modal fade" id="enchantmentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="enchantmentTitle">Encantamiento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Descripción</h6>
+                        <p id="enchantmentDescription"></p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Tipo</h6>
+                            <span class="badge bg-secondary" id="enchantmentType"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Rareza</h6>
+                            <span class="badge bg-secondary" id="enchantmentTier"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Nivel Máximo</h6>
+                            <span id="enchantmentMaxLevel"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Items Aplicables</h6>
+                        <div id="enchantmentApplicable"></div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Efectos</h6>
+                        <ul id="enchantmentEffects" class="list-group list-group-dark"></ul>
+                    </div>
+                    <div class="mb-3" id="incompatibleSection">
+                        <h6 class="text-muted">Incompatible con</h6>
+                        <div id="enchantmentIncompatible" class="text-warning"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='enchanting.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+{
+  "quests": [
+    {
+      "id": "hunt_zombies",
+      "name": "Cazador de No-Muertos",
+      "description": "Elimina zombies para proteger la aldea",
+      "requiredLevel": 3,
+      "npcGiver": "quest_master_1",
+      "difficulty": "NORMAL",
+      "repeatable": true,
+      "cooldown": 3600000,
+      "objectives": [
+        {
+          "id": "kill_zombies",
+          "type": "KILL",
+          "target": "Zombies",
+          "required": 10,
+          "description": "Elimina 10 Zombies"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "EXPERIENCE",
+          "amount": 100
+        },
+        {
+          "type": "MONEY",
+          "amount": 50
+        }
+      ]
+    },
+    {
+      "id": "dragon_slayer",
+      "name": "Asesino de Dragones",
+      "description": "Derrota al poderoso Dragón del Fin",
+      "requiredLevel": 15,
+      "npcGiver": "quest_master_epic",
+      "difficulty": "EPIC",
+      "repeatable": false,
+      "cooldown": 0,
+      "objectives": [
+        {
+          "id": "kill_dragon",
+          "type": "KILL",
+          "target": "Ender Dragon",
+          "required": 1,
+          "description": "Elimina 1 Ender Dragon"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "EXPERIENCE",
+          "amount": 1000
+        },
+        {
+          "type": "MONEY",
+          "amount": 500
+        },
+        {
+          "type": "CLASS_SKILL_POINT",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "id": "welcome_quest",
+      "name": "Bienvenido al Mundo RPG",
+      "description": "Completa tu primera misión para comenzar tu aventura",
+      "requiredLevel": 1,
+      "npcGiver": "quest_master_1",
+      "difficulty": "EASY",
+      "repeatable": false,
+      "cooldown": 0,
+      "objectives": [
+        {
+          "id": "talk_1",
+          "type": "TALK",
+          "target": "Maestro de Misiones",
+          "required": 1,
+          "description": "Habla con Maestro de Misiones"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "EXPERIENCE",
+          "amount": 50
+        },
+        {
+          "type": "ITEM",
+          "amount": 10,
+          "identifier": "BREAD"
+        }
+      ]
+    },
+    {
+      "id": "gather_resources",
+      "name": "Recolector Experto",
+      "description": "Reúne recursos para la comunidad",
+      "requiredLevel": 2,
+      "npcGiver": "quest_master_1",
+      "difficulty": "EASY",
+      "repeatable": false,
+      "cooldown": 0,
+      "objectives": [
+        {
+          "id": "collect_wood",
+          "type": "COLLECT",
+          "target": "Madera",
+          "required": 64,
+          "description": "Recolecta 64 Madera"
+        },
+        {
+          "id": "collect_stone",
+          "type": "COLLECT",
+          "target": "Piedra",
+          "required": 64,
+          "description": "Recolecta 64 Piedra"
+        }
+      ],
+      "rewards": [
+        {
+          "type": "EXPERIENCE",
+          "amount": 75
+        },
+        {
+          "type": "ITEM",
+          "amount": 1,
+          "identifier": "IRON_PICKAXE"
+        }
+      ]
+    }
+  ]
+}

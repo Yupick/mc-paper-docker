@@ -1,0 +1,32 @@
+{
+  "enabled": true,
+  "achievements": {
+    "killer_1": {
+      "name": "Cazador Novato",
+      "description": "Mata 10 mobs cualquiera",
+      "trigger": {
+        "type": "KILL_ANY",
+        "target": 10
+      },
+      "reward": {
+        "xp": 250,
+        "coins": 100,
+        "title": "Novato"
+      }
+    },
+    "dragon_slayer": {
+      "name": "Asesino de Dragones",
+      "description": "Derrota al Ender Dragon",
+      "trigger": {
+        "type": "KILL_MOB",
+        "mobId": "ender_dragon",
+        "target": 1
+      },
+      "reward": {
+        "xp": 5000,
+        "title": "Dragon Slayer",
+        "broadcast": true
+      }
+    }
+  }
+}

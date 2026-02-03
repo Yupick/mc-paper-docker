@@ -1,0 +1,226 @@
+{% extends "dashboard_v2.html" %}
+
+{% block title %}Mascotas y Monturas - MMORPG{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='pets.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 mb-2">
+                <i class="fas fa-paw me-2"></i>Mascotas y Monturas
+            </h1>
+            <p class="lead text-muted">Gestiona tus compañeros y monturas RPG</p>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-pills mb-4" id="petsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="my-pets-tab" data-bs-toggle="tab" data-bs-target="#my-pets" type="button" role="tab">
+                <i class="fas fa-heart me-2"></i>Mis Mascotas
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="shop-tab" data-bs-toggle="tab" data-bs-target="#shop" type="button" role="tab">
+                <i class="fas fa-store me-2"></i>Tienda
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="mounts-tab" data-bs-toggle="tab" data-bs-target="#mounts" type="button" role="tab">
+                <i class="fas fa-horse me-2"></i>Monturas
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
+                <i class="fas fa-chart-bar me-2"></i>Estadísticas
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content" id="petsTabsContent">
+        <!-- Tab 1: Mis Mascotas -->
+        <div class="tab-pane fade show active" id="my-pets" role="tabpanel">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4><i class="fas fa-list me-2"></i>Mis Mascotas Adoptadas</h4>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-primary fs-6" id="pet-count">0 / 10 mascotas</span>
+                </div>
+            </div>
+
+            <div class="row" id="my-pets-list">
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Cargando mascotas...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Tienda -->
+        <div class="tab-pane fade" id="shop" role="tabpanel">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h4><i class="fas fa-shopping-cart me-2"></i>Mascotas Disponibles</h4>
+                </div>
+                <div class="col-md-6">
+                    <select class="form-select" id="type-filter">
+                        <option value="">Todos los tipos</option>
+                        <option value="COMBAT">Combate</option>
+                        <option value="SUPPORT">Soporte</option>
+                        <option value="GATHERING">Recolección</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row" id="shop-pets-list">
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Cargando tienda...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Monturas -->
+        <div class="tab-pane fade" id="mounts" role="tabpanel">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4><i class="fas fa-horse-head me-2"></i>Monturas Desbloqueables</h4>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-success fs-6" id="mount-count">0 / 5 monturas</span>
+                </div>
+            </div>
+
+            <div class="row" id="mounts-list">
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Cargando monturas...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Estadísticas -->
+        <div class="tab-pane fade" id="stats" role="tabpanel">
+            <h4 class="mb-4"><i class="fas fa-trophy me-2"></i>Estadísticas de Mascotas</h4>
+
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-paw"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="stat-total-pets">0</h3>
+                            <p>Mascotas Adoptadas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-horse"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="stat-total-mounts">0</h3>
+                            <p>Monturas Desbloqueadas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="stat-evolutions">0</h3>
+                            <p>Evoluciones</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="stat-coins-spent">0</h3>
+                            <p>Monedas Gastadas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity History -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Historial de Actividad</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Acción</th>
+                                    <th>Mascota/Montura</th>
+                                    <th>Costo</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-history">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No hay actividad registrada</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Pet Details -->
+<div class="modal fade" id="petDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="petDetailsTitle">Detalles de Mascota</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="petDetailsBody">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Mount Details -->
+<div class="modal fade" id="mountDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mountDetailsTitle">Detalles de Montura</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="mountDetailsBody">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="unlockMountBtn" onclick="unlockMount()">Desbloquear</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='pets.js') }}"></script>
+{% endblock %}

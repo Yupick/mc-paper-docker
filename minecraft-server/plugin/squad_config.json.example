@@ -1,0 +1,31 @@
+{
+  "squads": {
+    "enabled": true,
+    "max_members": 10,
+    "max_squads_per_player": 1,
+    "require_approval": true,
+    "auto_disband_inactive_days": 30
+  },
+  "ranks": [
+    {
+      "id": "leader",
+      "name": "Líder",
+      "permissions": ["invite", "kick", "disband", "edit_settings"]
+    },
+    {
+      "id": "officer",
+      "name": "Oficial",
+      "permissions": ["invite", "kick", "edit_settings"]
+    },
+    {
+      "id": "member",
+      "name": "Miembro",
+      "permissions": []
+    }
+  ],
+  "settings": {
+    "show_squad_chat": true,
+    "notify_level_up": true,
+    "share_experience": false
+  }
+}

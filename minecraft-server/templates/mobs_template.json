@@ -1,0 +1,507 @@
+{
+  "mobs": [
+    {
+      "id": "zombie_warrior",
+      "name": "Guerrero Zombie",
+      "description": "Un zombie corrupto que ha conservado sus habilidades de combate",
+      "type": "HOSTILE",
+      "entity_type": "ZOMBIE",
+      "level": 5,
+      "stats": {
+        "health": 40.0,
+        "max_health": 40.0,
+        "damage": 6.0,
+        "armor": 2.0,
+        "speed": 0.23,
+        "knockback_resistance": 0.0,
+        "experience_reward": 15
+      },
+      "ai_behavior": {
+        "aggressive": true,
+        "attack_range": 2.0,
+        "detection_range": 16.0,
+        "can_break_doors": false
+      },
+      "drops": [
+        {
+          "item_id": "ROTTEN_FLESH",
+          "min_amount": 1,
+          "max_amount": 3,
+          "chance": 80.0
+        },
+        {
+          "item_id": "iron_sword_rpg",
+          "min_amount": 1,
+          "max_amount": 1,
+          "chance": 5.0
+        },
+        {
+          "item_id": "EMERALD",
+          "min_amount": 1,
+          "max_amount": 2,
+          "chance": 10.0
+        }
+      ],
+      "equipment": {
+        "hand": "IRON_SWORD",
+        "helmet": "CHAINMAIL_HELMET",
+        "chestplate": null,
+        "leggings": null,
+        "boots": "LEATHER_BOOTS"
+      },
+      "abilities": [],
+      "spawn_conditions": {
+        "biomes": ["PLAINS", "FOREST", "TAIGA"],
+        "time": "NIGHT",
+        "light_level_max": 7,
+        "min_y": 50,
+        "max_y": 100
+      }
+    },
+    {
+      "id": "skeleton_archer",
+      "name": "Arquero Esqueleto",
+      "description": "Un esqueleto hábil con el arco, mantén la distancia",
+      "type": "HOSTILE",
+      "entity_type": "SKELETON",
+      "level": 8,
+      "stats": {
+        "health": 30.0,
+        "max_health": 30.0,
+        "damage": 8.0,
+        "armor": 1.0,
+        "speed": 0.25,
+        "knockback_resistance": 0.0,
+        "experience_reward": 20,
+        "projectile_speed": 1.6,
+        "accuracy": 75.0
+      },
+      "ai_behavior": {
+        "aggressive": true,
+        "attack_range": 15.0,
+        "detection_range": 20.0,
+        "prefer_ranged": true,
+        "flee_from_melee": true
+      },
+      "drops": [
+        {
+          "item_id": "BONE",
+          "min_amount": 1,
+          "max_amount": 3,
+          "chance": 90.0
+        },
+        {
+          "item_id": "ARROW",
+          "min_amount": 5,
+          "max_amount": 15,
+          "chance": 70.0
+        },
+        {
+          "item_id": "BOW",
+          "min_amount": 1,
+          "max_amount": 1,
+          "chance": 8.0,
+          "durability_percent": 60.0
+        }
+      ],
+      "equipment": {
+        "hand": "BOW",
+        "helmet": "LEATHER_HELMET",
+        "chestplate": null,
+        "leggings": null,
+        "boots": null
+      },
+      "abilities": [
+        {
+          "id": "rapid_fire",
+          "name": "Fuego Rápido",
+          "cooldown": 15,
+          "effect": "Dispara 3 flechas rápidamente"
+        }
+      ],
+      "spawn_conditions": {
+        "biomes": ["PLAINS", "DESERT", "SAVANNA"],
+        "time": "NIGHT",
+        "light_level_max": 7,
+        "min_y": 50,
+        "max_y": 100
+      }
+    },
+    {
+      "id": "cave_spider_venomous",
+      "name": "Araña de Cueva Venenosa",
+      "description": "Una araña mutada que inyecta veneno letal",
+      "type": "HOSTILE",
+      "entity_type": "CAVE_SPIDER",
+      "level": 12,
+      "stats": {
+        "health": 25.0,
+        "max_health": 25.0,
+        "damage": 5.0,
+        "armor": 0.0,
+        "speed": 0.35,
+        "knockback_resistance": 0.0,
+        "experience_reward": 30
+      },
+      "ai_behavior": {
+        "aggressive": true,
+        "attack_range": 2.0,
+        "detection_range": 16.0,
+        "can_climb": true,
+        "ambush_predator": true
+      },
+      "drops": [
+        {
+          "item_id": "STRING",
+          "min_amount": 2,
+          "max_amount": 5,
+          "chance": 80.0
+        },
+        {
+          "item_id": "SPIDER_EYE",
+          "min_amount": 1,
+          "max_amount": 2,
+          "chance": 60.0
+        },
+        {
+          "item_id": "FERMENTED_SPIDER_EYE",
+          "min_amount": 1,
+          "max_amount": 1,
+          "chance": 15.0
+        }
+      ],
+      "abilities": [
+        {
+          "id": "poison_bite",
+          "name": "Mordida Venenosa",
+          "cooldown": 0,
+          "effect": "POISON",
+          "duration": 7,
+          "amplifier": 1,
+          "passive": true
+        },
+        {
+          "id": "web_trap",
+          "name": "Trampa de Telaraña",
+          "cooldown": 20,
+          "effect": "Coloca telarañas alrededor del jugador"
+        }
+      ],
+      "spawn_conditions": {
+        "biomes": ["DEEP_DARK", "DRIPSTONE_CAVES", "LUSH_CAVES"],
+        "time": "ANY",
+        "light_level_max": 7,
+        "min_y": -50,
+        "max_y": 40
+      }
+    },
+    {
+      "id": "golem_guardian",
+      "name": "Gólem Guardián",
+      "description": "Un antiguo guardián de piedra que protege tesoros olvidados",
+      "type": "HOSTILE",
+      "entity_type": "IRON_GOLEM",
+      "level": 25,
+      "stats": {
+        "health": 150.0,
+        "max_health": 150.0,
+        "damage": 15.0,
+        "armor": 8.0,
+        "armor_toughness": 4.0,
+        "speed": 0.20,
+        "knockback_resistance": 0.8,
+        "experience_reward": 100
+      },
+      "ai_behavior": {
+        "aggressive": true,
+        "attack_range": 3.0,
+        "detection_range": 24.0,
+        "guardian": true,
+        "patrol_area": true
+      },
+      "drops": [
+        {
+          "item_id": "IRON_INGOT",
+          "min_amount": 5,
+          "max_amount": 15,
+          "chance": 100.0
+        },
+        {
+          "item_id": "DIAMOND",
+          "min_amount": 1,
+          "max_amount": 3,
+          "chance": 25.0
+        },
+        {
+          "item_id": "diamond_armor_chestplate",
+          "min_amount": 1,
+          "max_amount": 1,
+          "chance": 8.0
+        },
+        {
+          "item_id": "EMERALD",
+          "min_amount": 3,
+          "max_amount": 8,
+          "chance": 40.0
+        }
+      ],
+      "equipment": {
+        "hand": null,
+        "helmet": null,
+        "chestplate": null,
+        "leggings": null,
+        "boots": null
+      },
+      "abilities": [
+        {
+          "id": "ground_slam",
+          "name": "Golpe Terrestre",
+          "cooldown": 15,
+          "effect": "Golpea el suelo causando daño en área y lanzando a los jugadores"
+        },
+        {
+          "id": "regeneration",
+          "name": "Regeneración de Piedra",
+          "cooldown": 30,
+          "effect": "Se regenera 30 de salud lentamente"
+        }
+      ],
+      "spawn_conditions": {
+        "biomes": ["DEEP_DARK", "ANCIENT_CITY"],
+        "time": "ANY",
+        "light_level_max": 15,
+        "structure_only": true,
+        "min_y": -50,
+        "max_y": 10
+      }
+    },
+    {
+      "id": "dragon_whelp",
+      "name": "Cría de Dragón",
+      "description": "Un joven dragón con gran potencial, pero aún inexperto",
+      "type": "HOSTILE",
+      "entity_type": "PHANTOM",
+      "level": 18,
+      "stats": {
+        "health": 80.0,
+        "max_health": 80.0,
+        "damage": 12.0,
+        "armor": 3.0,
+        "speed": 0.40,
+        "flight_speed": 0.8,
+        "knockback_resistance": 0.3,
+        "experience_reward": 75
+      },
+      "ai_behavior": {
+        "aggressive": true,
+        "attack_range": 8.0,
+        "detection_range": 32.0,
+        "can_fly": true,
+        "dive_attack": true,
+        "circle_target": true
+      },
+      "drops": [
+        {
+          "item_id": "DRAGON_BREATH",
+          "min_amount": 2,
+          "max_amount": 5,
+          "chance": 70.0
+        },
+        {
+          "item_id": "NETHERITE_SCRAP",
+          "min_amount": 1,
+          "max_amount": 2,
+          "chance": 20.0
+        },
+        {
+          "item_id": "ELYTRA",
+          "min_amount": 1,
+          "max_amount": 1,
+          "chance": 5.0,
+          "durability_percent": 40.0
+        },
+        {
+          "item_id": "mana_crystal",
+          "min_amount": 1,
+          "max_amount": 3,
+          "chance": 35.0
+        }
+      ],
+      "equipment": {
+        "hand": null,
+        "helmet": null,
+        "chestplate": null,
+        "leggings": null,
+        "boots": null
+      },
+      "abilities": [
+        {
+          "id": "fire_breath",
+          "name": "Aliento de Fuego",
+          "cooldown": 10,
+          "effect": "Lanza una ráfaga de fuego en línea recta",
+          "damage": 8.0,
+          "range": 12.0
+        },
+        {
+          "id": "wing_gust",
+          "name": "Ráfaga de Alas",
+          "cooldown": 8,
+          "effect": "Empuja a los jugadores cercanos con fuerza"
+        },
+        {
+          "id": "aerial_dive",
+          "name": "Picada Aérea",
+          "cooldown": 15,
+          "effect": "Se lanza en picada causando daño crítico"
+        }
+      ],
+      "spawn_conditions": {
+        "biomes": ["MOUNTAINS", "SNOWY_PEAKS", "JAGGED_PEAKS"],
+        "time": "ANY",
+        "light_level_max": 15,
+        "min_y": 120,
+        "max_y": 256,
+        "rare": true
+      }
+    },
+    {
+      "id": "necromancer_boss",
+      "name": "§5Nigromante Oscuro",
+      "description": "Un poderoso hechicero que domina las artes oscuras de la nigromancia",
+      "type": "BOSS",
+      "entity_type": "WITHER_SKELETON",
+      "level": 50,
+      "stats": {
+        "health": 500.0,
+        "max_health": 500.0,
+        "damage": 25.0,
+        "magic_damage": 30.0,
+        "armor": 10.0,
+        "armor_toughness": 6.0,
+        "speed": 0.28,
+        "knockback_resistance": 1.0,
+        "experience_reward": 500
+      },
+      "ai_behavior": {
+        "aggressive": true,
+        "attack_range": 20.0,
+        "detection_range": 40.0,
+        "intelligent": true,
+        "summon_minions": true,
+        "teleport": true,
+        "boss": true
+      },
+      "drops": [
+        {
+          "item_id": "NETHER_STAR",
+          "min_amount": 1,
+          "max_amount": 3,
+          "chance": 100.0
+        },
+        {
+          "item_id": "mystic_staff",
+          "min_amount": 1,
+          "max_amount": 1,
+          "chance": 50.0
+        },
+        {
+          "item_id": "legendary_bow_inferno",
+          "min_amount": 1,
+          "max_amount": 1,
+          "chance": 35.0
+        },
+        {
+          "item_id": "DIAMOND",
+          "min_amount": 10,
+          "max_amount": 30,
+          "chance": 100.0
+        },
+        {
+          "item_id": "EMERALD",
+          "min_amount": 15,
+          "max_amount": 40,
+          "chance": 100.0
+        }
+      ],
+      "equipment": {
+        "hand": "NETHERITE_SWORD",
+        "helmet": "NETHERITE_HELMET",
+        "chestplate": "NETHERITE_CHESTPLATE",
+        "leggings": "NETHERITE_LEGGINGS",
+        "boots": "NETHERITE_BOOTS"
+      },
+      "abilities": [
+        {
+          "id": "summon_undead",
+          "name": "Invocar No-Muertos",
+          "cooldown": 20,
+          "effect": "Invoca 3-5 zombies guerreros para luchar"
+        },
+        {
+          "id": "dark_ritual",
+          "name": "Ritual Oscuro",
+          "cooldown": 30,
+          "effect": "Se cura 100 de salud y aumenta su daño un 50% durante 15s"
+        },
+        {
+          "id": "death_ray",
+          "name": "Rayo de Muerte",
+          "cooldown": 15,
+          "effect": "Dispara un rayo que causa 40 de daño mágico",
+          "damage": 40.0,
+          "range": 25.0
+        },
+        {
+          "id": "soul_drain",
+          "name": "Drenar Alma",
+          "cooldown": 12,
+          "effect": "Drena 20 de salud del jugador más cercano y se cura esa cantidad"
+        },
+        {
+          "id": "teleport_strike",
+          "name": "Golpe Fantasma",
+          "cooldown": 10,
+          "effect": "Se teletransporta detrás del jugador y ataca"
+        }
+      ],
+      "phases": [
+        {
+          "phase": 1,
+          "health_percentage": 100,
+          "abilities_active": ["summon_undead", "death_ray"]
+        },
+        {
+          "phase": 2,
+          "health_percentage": 60,
+          "abilities_active": ["summon_undead", "death_ray", "soul_drain", "dark_ritual"],
+          "speed_multiplier": 1.2
+        },
+        {
+          "phase": 3,
+          "health_percentage": 30,
+          "abilities_active": ["summon_undead", "death_ray", "soul_drain", "dark_ritual", "teleport_strike"],
+          "speed_multiplier": 1.4,
+          "damage_multiplier": 1.5,
+          "enrage": true
+        }
+      ],
+      "boss_bar": {
+        "enabled": true,
+        "color": "PURPLE",
+        "style": "SEGMENTED_10",
+        "title": "§5§l⚔ NIGROMANTE OSCURO ⚔"
+      },
+      "spawn_conditions": {
+        "biomes": ["DEEP_DARK"],
+        "time": "ANY",
+        "light_level_max": 15,
+        "structure_only": true,
+        "dungeon_boss": true,
+        "min_y": -50,
+        "max_y": 10,
+        "requires_summoning": true
+      }
+    }
+  ]
+}

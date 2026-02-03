@@ -1,0 +1,26 @@
+{
+    "pet_settings": {
+        "max_pets_per_player": 3
+    },
+    "pets": [
+        {
+            "id": "wolf_pup",
+            "name": "Lobezno",
+            "type": "COMBAT",
+            "rarity": "COMMON",
+            "base_stats": { "health": 20, "damage": 3, "speed": 0.2 },
+            "adoption_cost": 100,
+            "feed_restore_health": 5,
+            "evolution_levels": [ { "stats_multiplier": 1.0 }, { "stats_multiplier": 1.2 } ]
+        }
+    ],
+    "mounts": [
+        {
+            "id": "horse_brown",
+            "name": "Corcel Marrón",
+            "speed": 0.25,
+            "jump": 0.5,
+            "unlock_cost": 250
+        }
+    ]
+}

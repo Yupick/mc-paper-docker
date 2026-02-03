@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Rangos - RPG</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/ranks.css">
+</head>
+<body>
+<div class="rk-container">
+    <div class="rk-header">
+        <div>
+            <h1><i class="fas fa-medal"></i> Sistema de Rangos y Títulos</h1>
+            <p class="subtitle">Gestiona progresión, recompensas y asignaciones manuales</p>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="refreshRanks()"><i class="fas fa-rotate"></i> Actualizar</button>
+            <button class="btn btn-success" onclick="openRankModal()"><i class="fas fa-plus"></i> Nuevo Rango</button>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" data-tab="config">Configuración</button>
+        <button class="tab-btn" data-tab="list">Rangos</button>
+        <button class="tab-btn" data-tab="stats">Estadísticas</button>
+        <button class="tab-btn" data-tab="player">Jugador</button>
+    </div>
+
+    <div id="config" class="tab-content active">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-gear"></i> Configuración Global</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <label>Habilitar rangos</label>
+                    <label class="switch">
+                        <input type="checkbox" id="rkEnabled">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <p class="muted">Si se desactiva, no se evaluarán promociones ni asignaciones automáticas.</p>
+                <button class="btn btn-primary" onclick="saveConfig()"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="list" class="tab-content">
+        <div class="list-header">
+            <h3><i class="fas fa-layer-group"></i> Rangos</h3>
+            <button class="btn btn-success" onclick="openRankModal()"><i class="fas fa-plus"></i> Nuevo</button>
+        </div>
+        <div id="ranksGrid" class="grid"></div>
+    </div>
+
+    <div id="stats" class="tab-content">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon success"><i class="fas fa-users"></i></div>
+                <div>
+                    <p class="label">Asignaciones totales</p>
+                    <h3 id="totalAssignments">0</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info"><i class="fas fa-id-card"></i></div>
+                <div>
+                    <p class="label">Jugadores registrados</p>
+                    <h3 id="totalPlayers">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-trophy"></i> Rangos más asignados</h3>
+            </div>
+            <div class="card-body">
+                <table class="table" id="rankLeaderboard">
+                    <thead>
+                    <tr><th>#</th><th>Rango</th><th>Asignaciones</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="player" class="tab-content">
+        <div class="player-search">
+            <input type="text" id="playerSearch" placeholder="Nombre del jugador">
+            <button class="btn btn-primary" onclick="loadPlayerRank()"><i class="fas fa-search"></i> Buscar</button>
+        </div>
+        <div id="playerContent" class="card">
+            <div class="card-body">
+                <p class="muted">Ingresa un jugador para ver y asignar rango.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="rankModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Nuevo Rango</h2>
+            <span class="close" onclick="closeRankModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="rankId">ID</label>
+                <input type="text" id="rankId" placeholder="ej: aventurero" />
+            </div>
+            <div class="form-group">
+                <label for="rankName">Nombre</label>
+                <input type="text" id="rankName" />
+            </div>
+            <div class="form-group">
+                <label for="rankDescription">Descripción</label>
+                <textarea id="rankDescription"></textarea>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="rankOrder">Orden</label>
+                    <input type="number" id="rankOrder" value="1" />
+                </div>
+                <div class="form-group">
+                    <label for="reqLevel">Nivel requerido</label>
+                    <input type="number" id="reqLevel" value="1" />
+                </div>
+                <div class="form-group">
+                    <label for="reqAchievements">Logros completados</label>
+                    <input type="number" id="reqAchievements" value="0" />
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="rewardXp">XP</label>
+                    <input type="number" id="rewardXp" value="0" />
+                </div>
+                <div class="form-group">
+                    <label for="rewardCoins">Coins</label>
+                    <input type="number" id="rewardCoins" value="0" />
+                </div>
+                <div class="form-group">
+                    <label for="rewardTitle">Título</label>
+                    <input type="text" id="rewardTitle" placeholder="Campeón" />
+                </div>
+                <div class="form-group">
+                    <label for="rewardItem">Item</label>
+                    <input type="text" id="rewardItem" placeholder="item_id" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="rewardPermissions">Permisos (separados por coma)</label>
+                <input type="text" id="rewardPermissions" placeholder="perm.node, otro.perm" />
+            </div>
+            <div class="form-row">
+                <label>Broadcast</label>
+                <label class="switch">
+                    <input type="checkbox" id="rewardBroadcast">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRankModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveRank()"><i class="fas fa-save"></i> Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/static/ranks.js"></script>
+</body>
+</html>

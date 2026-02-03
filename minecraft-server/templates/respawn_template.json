@@ -1,0 +1,15 @@
+{
+  "respawn_settings": {
+    "enabled": true,
+    "cooldown_seconds": 5,
+    "message_on_respawn": "Has resucitado"
+  },
+  "respawn_points": {
+    "default": {
+      "world": "world",
+      "x": 0,
+      "y": 64,
+      "z": 0
+    }
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "ranks": [
+    {
+      "id": "novice",
+      "name": "§7Novato",
+      "level_requirement": 1,
+      "permissions": [
+        "mmorpg.chat.novice",
+        "mmorpg.pets.adopt.common"
+      ],
+      "prefix": "§7[Novato]",
+      "stats_bonus": {
+        "health": 0,
+        "damage": 0,
+        "defense": 0
+      }
+    },
+    {
+      "id": "apprentice",
+      "name": "§aAprendiz",
+      "level_requirement": 10,
+      "permissions": [
+        "mmorpg.chat.apprentice",
+        "mmorpg.pets.adopt.common",
+        "mmorpg.pets.adopt.uncommon",
+        "mmorpg.dungeons.shadow_crypt"
+      ],
+      "prefix": "§a[Aprendiz]",
+      "stats_bonus": {
+        "health": 10,
+        "damage": 2,
+        "defense": 1
+      }
+    },
+    {
+      "id": "warrior",
+      "name": "§eGuerrero",
+      "level_requirement": 25,
+      "permissions": [
+        "mmorpg.chat.warrior",
+        "mmorpg.pets.adopt.rare",
+        "mmorpg.dungeons.frozen_temple",
+        "mmorpg.mounts.basic"
+      ],
+      "prefix": "§e[Guerrero]",
+      "stats_bonus": {
+        "health": 25,
+        "damage": 5,
+        "defense": 3
+      }
+    },
+    {
+      "id": "veteran",
+      "name": "§9Veterano",
+      "level_requirement": 40,
+      "permissions": [
+        "mmorpg.chat.veteran",
+        "mmorpg.pets.adopt.epic",
+        "mmorpg.dungeons.all",
+        "mmorpg.mounts.rare"
+      ],
+      "prefix": "§9[Veterano]",
+      "stats_bonus": {
+        "health": 50,
+        "damage": 10,
+        "defense": 6
+      }
+    },
+    {
+      "id": "champion",
+      "name": "§6Campeón",
+      "level_requirement": 60,
+      "permissions": [
+        "mmorpg.chat.champion",
+        "mmorpg.pets.adopt.legendary",
+        "mmorpg.invasions.participate",
+        "mmorpg.mounts.epic"
+      ],
+      "prefix": "§6[Campeón]",
+      "stats_bonus": {
+        "health": 100,
+        "damage": 15,
+        "defense": 10
+      }
+    },
+    {
+      "id": "legend",
+      "name": "§5Leyenda",
+      "level_requirement": 80,
+      "permissions": [
+        "mmorpg.chat.legend",
+        "mmorpg.pets.all",
+        "mmorpg.invasions.start",
+        "mmorpg.mounts.legendary"
+      ],
+      "prefix": "§5[Leyenda]",
+      "stats_bonus": {
+        "health": 200,
+        "damage": 25,
+        "defense": 15
+      }
+    },
+    {
+      "id": "mythic",
+      "name": "§d§lMítico",
+      "level_requirement": 95,
+      "permissions": [
+        "mmorpg.chat.mythic",
+        "mmorpg.pets.all",
+        "mmorpg.dungeons.create",
+        "mmorpg.mounts.all"
+      ],
+      "prefix": "§d§l[Mítico]",
+      "stats_bonus": {
+        "health": 350,
+        "damage": 40,
+        "defense": 25
+      }
+    },
+    {
+      "id": "transcendent",
+      "name": "§c§l§kT§r§c§lTrascendente§c§l§kT",
+      "level_requirement": 100,
+      "permissions": [
+        "mmorpg.chat.transcendent",
+        "mmorpg.admin.events",
+        "mmorpg.all"
+      ],
+      "prefix": "§c§l[Trascendente]",
+      "stats_bonus": {
+        "health": 500,
+        "damage": 60,
+        "defense": 40
+      }
+    }
+  ]
+}

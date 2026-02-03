@@ -1,0 +1,27 @@
+{
+  "achievements": [
+    {
+      "id": "first_steps",
+      "name": "Primeros Pasos",
+      "description": "Completa tu primer quest",
+      "icon": "minecraft:grass_block",
+      "reward_experience": 100,
+      "reward_currency": 50,
+      "hidden": false
+    },
+    {
+      "id": "monster_slayer",
+      "name": "Cazador de Monstruos",
+      "description": "Derrota 100 monstruos",
+      "icon": "minecraft:zombie_head",
+      "reward_experience": 500,
+      "reward_currency": 250,
+      "hidden": false
+    }
+  ],
+  "settings": {
+    "enabled": true,
+    "notify_completion": true,
+    "display_progress": true
+  }
+}

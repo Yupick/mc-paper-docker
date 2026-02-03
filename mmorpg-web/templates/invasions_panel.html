@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invasiones - Panel MMORPG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='invasions.css') }}">
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-shield-exclamation text-danger"></i> Gestión de Invasiones</h2>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="refreshAllData()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="invasionsTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Activas
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button">
+                    <i class="bi bi-gear"></i> Configuración
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">
+                    <i class="bi bi-clock-history"></i> Historial
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button">
+                    <i class="bi bi-graph-up"></i> Estadísticas
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="invasionsTabContent">
+            
+            <!-- ACTIVAS TAB -->
+            <div class="tab-pane fade show active" id="active" role="tabpanel">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle"></i> Invasiones activas en tiempo real. Las invasiones se inician automáticamente según configuración o manualmente desde este panel.
+                </div>
+
+                <div class="mb-3">
+                    <button class="btn btn-danger" onclick="showStartInvasionModal()">
+                        <i class="bi bi-play-fill"></i> Iniciar Invasión Manual
+                    </button>
+                </div>
+
+                <div id="activeInvasionsContainer">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIGURACIÓN TAB -->
+            <div class="tab-pane fade" id="config" role="tabpanel">
+                <div class="alert alert-warning mb-4">
+                    <i class="bi bi-exclamation-triangle"></i> Cambios en la configuración requieren recargar el plugin o reiniciar el servidor.
+                </div>
+
+                <div class="mb-3">
+                    <button class="btn btn-primary" onclick="saveInvasionsConfig()">
+                        <i class="bi bi-save"></i> Guardar Configuración
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="loadInvasionsConfig()">
+                        <i class="bi bi-arrow-clockwise"></i> Recargar
+                    </button>
+                </div>
+
+                <div id="configEditor">
+                    <textarea class="form-control font-monospace" id="configTextarea" rows="25"></textarea>
+                </div>
+            </div>
+
+            <!-- HISTORIAL TAB -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="historySearch" placeholder="Buscar por ID, mundo o estado...">
+                        <button class="btn btn-outline-secondary" onclick="loadInvasionsHistory()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="historyContainer">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESTADÍSTICAS TAB -->
+            <div class="tab-pane fade" id="stats" role="tabpanel">
+                <div id="statsContainer">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal para iniciar invasión -->
+    <div class="modal fade" id="startInvasionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Iniciar Invasión Manual</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar Invasión</label>
+                        <select class="form-select" id="invasionSelect">
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                    <div id="invasionPreview" class="alert alert-secondary d-none">
+                        <h6>Vista Previa</h6>
+                        <div id="invasionPreviewContent"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="startInvasion()">
+                        <i class="bi bi-play-fill"></i> Iniciar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal detalles de invasión -->
+    <div class="modal fade" id="invasionDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de Invasión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="invasionDetailsContent">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='invasions.js') }}"></script>
+</body>
+</html>

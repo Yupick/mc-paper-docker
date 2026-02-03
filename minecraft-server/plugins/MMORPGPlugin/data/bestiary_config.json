@@ -1,0 +1,48 @@
+{
+  "categories": {
+    "undead": {
+      "mobs": [
+        "zombie_elite",
+        "skeleton_archer",
+        "zombie_bruja"
+      ],
+      "name": "No-muertos",
+      "description": "Criaturas que volvieron de la muerte",
+      "completionReward": {
+        "item": "legendary_sword",
+        "xp": 5000,
+        "title": "Cazador de No-muertos"
+      }
+    },
+    "beasts": {
+      "mobs": [
+        "spider_giant",
+        "wolf_alpha"
+      ],
+      "name": "Bestias",
+      "description": "Criaturas salvajes y peligrosas",
+      "completionReward": {
+        "item": "beast_tamer_staff",
+        "xp": 5000,
+        "title": "Domador de Bestias"
+      }
+    }
+  },
+  "enabled": true,
+  "progressThresholds": [
+    0,
+    25,
+    50,
+    75,
+    100,
+    500,
+    1000
+  ],
+  "discoveryRewards": {
+    "tier4": 2500,
+    "tier3": 1000,
+    "tier2": 500,
+    "firstKill": 100,
+    "tier1": 250
+  }
+}

@@ -1,0 +1,353 @@
+/* Kills Tracking Dashboard Styles */
+
+/* Controles de filtro */
+.kills-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+}
+
+.filter-input {
+    flex: 1;
+    padding: 10px 15px;
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #00d4ff;
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: #00d4ff;
+    color: #000;
+}
+
+.btn-primary:hover {
+    background-color: #00b3cc;
+    transform: translateY(-2px);
+}
+
+/* Tabla de kills */
+.kills-table-container {
+    margin: 20px 0;
+}
+
+.kills-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.kills-table thead {
+    background-color: #2a2a2a;
+    border-bottom: 2px solid #00d4ff;
+}
+
+.kills-table th {
+    padding: 12px 15px;
+    text-align: left;
+    color: #00d4ff;
+    font-weight: bold;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kills-table tbody tr {
+    border-bottom: 1px solid #333;
+    transition: background-color 0.2s ease;
+}
+
+.kills-table tbody tr:hover {
+    background-color: #252525;
+}
+
+.kills-table td {
+    padding: 12px 15px;
+    color: #e0e0e0;
+    font-size: 13px;
+}
+
+/* Badge de XP */
+.xp-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    color: #000;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.xp-value {
+    color: #00d4ff;
+    font-weight: bold;
+}
+
+/* Grid de estadísticas por jugador */
+.player-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.player-stat-card {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.player-stat-card:hover {
+    transform: translateY(-5px);
+    border-color: #00d4ff;
+    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.2);
+}
+
+.player-stat-card h3 {
+    color: #00d4ff;
+    font-size: 16px;
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 13px;
+    color: #b0b0b0;
+}
+
+.stat-row strong {
+    color: #00d4ff;
+    font-size: 14px;
+}
+
+.kills-by-mob {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.kills-by-mob h4 {
+    color: #00d4ff;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin: 0 0 10px 0;
+}
+
+.kills-by-mob ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.kills-by-mob li {
+    padding: 5px 0;
+    font-size: 12px;
+    color: #888;
+}
+
+.kills-by-mob li:before {
+    content: "→ ";
+    color: #00d4ff;
+    margin-right: 5px;
+}
+
+/* Tabla de estadísticas por mob */
+.mob-stats-container {
+    margin: 20px 0;
+}
+
+.mob-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mob-stats-table thead {
+    background-color: #2a2a2a;
+    border-bottom: 2px solid #00a366;
+}
+
+.mob-stats-table th {
+    padding: 12px 15px;
+    text-align: left;
+    color: #00a366;
+    font-weight: bold;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mob-stats-table tbody tr {
+    border-bottom: 1px solid #333;
+    transition: background-color 0.2s ease;
+}
+
+.mob-stats-table tbody tr:hover {
+    background-color: #252525;
+}
+
+.mob-stats-table td {
+    padding: 12px 15px;
+    color: #e0e0e0;
+    font-size: 13px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Timeline chart */
+.timeline-container {
+    margin: 20px 0;
+}
+
+.timeline-chart {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.timeline-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.timeline-table thead {
+    border-bottom: 2px solid #ff9500;
+}
+
+.timeline-table th {
+    padding: 12px 15px;
+    text-align: left;
+    color: #ff9500;
+    font-weight: bold;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.timeline-table tbody tr {
+    border-bottom: 1px solid #333;
+}
+
+.timeline-table td {
+    padding: 12px 15px;
+    color: #e0e0e0;
+    font-size: 13px;
+}
+
+/* Progress bar para timeline */
+.progress-bar {
+    position: relative;
+    width: 100%;
+    height: 30px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9500, #ffb347);
+    transition: width 0.3s ease;
+}
+
+.progress-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-weight: bold;
+    font-size: 12px;
+    z-index: 1;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+/* Responsivos */
+@media (max-width: 768px) {
+    .kills-controls {
+        flex-direction: column;
+    }
+
+    .player-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kills-table,
+    .mob-stats-table {
+        font-size: 12px;
+    }
+
+    .kills-table th,
+    .kills-table td,
+    .mob-stats-table th,
+    .mob-stats-table td {
+        padding: 8px 10px;
+    }
+}
+
+/* Estados vacíos */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.empty-state p {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* Animaciones de carga */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.kills-table tr,
+.player-stat-card,
+.mob-stats-table tr {
+    animation: fadeIn 0.3s ease-out;
+}

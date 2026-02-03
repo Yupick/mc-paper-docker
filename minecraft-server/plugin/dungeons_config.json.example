@@ -1,0 +1,30 @@
+{
+  "dungeons": [
+    {
+      "id": "forest_dungeon",
+      "name": "Mazmorra del Bosque",
+      "description": "Una mazmorra en el corazón del bosque",
+      "location": {
+        "world": "mmorpg-survival",
+        "x": 1000,
+        "y": 64,
+        "z": 1000
+      },
+      "min_level": 10,
+      "max_players": 5,
+      "difficulty": "NORMAL",
+      "enabled": true,
+      "boss": {
+        "id": "forest_guardian",
+        "name": "Guardián del Bosque",
+        "health": 100,
+        "damage": 10
+      }
+    }
+  ],
+  "settings": {
+    "enable_dungeons": true,
+    "allow_multiple_runs": true,
+    "daily_reset": true
+  }
+}

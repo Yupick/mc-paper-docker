@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Invasiones - MMORPG Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-meteor"></i> Gestión de Invasiones</h2>
+        <div>
+            <button class="btn btn-primary" onclick="openCreateInvasionModal()">
+                <i class="fas fa-plus"></i> Crear Invasión
+            </button>
+            <button class="btn btn-info" onclick="loadInvasions()">
+                <i class="fas fa-sync"></i> Recargar
+            </button>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5>Total Invasiones</h5>
+                    <h2 id="total-invasions-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>Activas</h5>
+                    <h2 id="active-invasions-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5>Programadas</h5>
+                    <h2 id="scheduled-invasions-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Nivel Promedio</h5>
+                    <h2 id="avg-level">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-5">
+                    <input type="text" id="search-input" class="form-control" placeholder="Buscar invasión..." onkeyup="filterInvasions()">
+                </div>
+                <div class="col-md-4">
+                    <select id="world-filter" class="form-control" onchange="filterInvasions()">
+                        <option value="">Todos los mundos</option>
+                        <option value="world">Overworld</option>
+                        <option value="world_nether">Nether</option>
+                        <option value="world_the_end">The End</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-secondary btn-block" onclick="clearFilters()">Limpiar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Nivel</th>
+                        <th>Mundo</th>
+                        <th>Oleadas</th>
+                        <th>Duración</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="invasions-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="invasionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="invasionModalTitle">Crear Invasión</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="invasion-form">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>ID *</label>
+                            <input type="text" class="form-control" id="invasion-id" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Nombre *</label>
+                            <input type="text" class="form-control" id="invasion-name" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Nivel</label>
+                            <input type="number" class="form-control" id="invasion-level" value="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Mundo</label>
+                            <select class="form-control" id="invasion-world">
+                                <option value="world">Overworld</option>
+                                <option value="world_nether">Nether</option>
+                                <option value="world_the_end">The End</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Duración (min)</label>
+                            <input type="number" class="form-control" id="invasion-duration" value="15">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Intervalo (min)</label>
+                            <input type="number" class="form-control" id="invasion-interval" value="60">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="invasion-active">
+                            <label class="form-check-label">Activa</label>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6>Oleadas de Mobs</h6>
+                    <div id="waves-container"></div>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addWave()">
+                        <i class="fas fa-plus"></i> Añadir Oleada
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveInvasion()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/invasions.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        loadInvasions();
+        setInterval(() => !$('#invasionModal').is(':visible') && loadInvasions(), 60000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Logros - RPG</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/achievements.css">
+</head>
+<body>
+<div class="ach-container">
+    <div class="ach-header">
+        <div>
+            <h1><i class="fas fa-trophy"></i> Sistema de Logros</h1>
+            <p class="subtitle">Gestiona logros, recompensas y progreso de jugadores</p>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="refreshAchievements()"><i class="fas fa-rotate"></i> Actualizar</button>
+            <button class="btn btn-success" onclick="openAchievementModal()"><i class="fas fa-plus"></i> Nuevo Logro</button>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" data-tab="config">Configuración</button>
+        <button class="tab-btn" data-tab="list">Logros</button>
+        <button class="tab-btn" data-tab="stats">Estadísticas</button>
+        <button class="tab-btn" data-tab="player">Jugador</button>
+    </div>
+
+    <div id="config" class="tab-content active">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-gear"></i> Configuración Global</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <label>Habilitar logros</label>
+                    <label class="switch">
+                        <input type="checkbox" id="achEnabled">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <p class="muted">Si se desactiva, no se registrará progreso ni se otorgarán recompensas.</p>
+                <button class="btn btn-primary" onclick="saveConfig()"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="list" class="tab-content">
+        <div class="list-header">
+            <h3><i class="fas fa-list"></i> Lista de Logros</h3>
+            <button class="btn btn-success" onclick="openAchievementModal()"><i class="fas fa-plus"></i> Nuevo</button>
+        </div>
+        <div id="achievementsGrid" class="grid"></div>
+    </div>
+
+    <div id="stats" class="tab-content">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon success"><i class="fas fa-flag-checkered"></i></div>
+                <div>
+                    <p class="label">Total completados</p>
+                    <h3 id="totalCompletions">0</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info"><i class="fas fa-users"></i></div>
+                <div>
+                    <p class="label">Jugadores con progreso</p>
+                    <h3 id="totalPlayers">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-crown"></i> Logros más completados</h3>
+            </div>
+            <div class="card-body">
+                <table class="table" id="leaderboardTable">
+                    <thead>
+                    <tr><th>#</th><th>Logro</th><th>Completados</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="player" class="tab-content">
+        <div class="player-search">
+            <input type="text" id="playerSearch" placeholder="Nombre del jugador">
+            <button class="btn btn-primary" onclick="loadPlayerAchievements()"><i class="fas fa-search"></i> Buscar</button>
+        </div>
+        <div id="playerContent" class="card">
+            <div class="card-body">
+                <p class="muted">Ingresa un jugador para ver su progreso.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="achievementModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Nuevo Logro</h2>
+            <span class="close" onclick="closeAchievementModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="achId">ID</label>
+                <input type="text" id="achId" placeholder="ej: killer_3">
+            </div>
+            <div class="form-group">
+                <label for="achName">Nombre</label>
+                <input type="text" id="achName">
+            </div>
+            <div class="form-group">
+                <label for="achDescription">Descripción</label>
+                <textarea id="achDescription"></textarea>
+            </div>
+            <div class="form-row">
+                <label>Tipo de trigger</label>
+                <select id="triggerType">
+                    <option value="KILL_ANY">KILL_ANY (cualquier mob)</option>
+                    <option value="KILL_MOB">KILL_MOB (mob específico)</option>
+                </select>
+            </div>
+            <div class="form-group" id="mobIdGroup" style="display:none;">
+                <label for="mobId">Mob ID (para KILL_MOB)</label>
+                <input type="text" id="mobId" placeholder="ender_dragon">
+            </div>
+            <div class="form-group">
+                <label for="target">Objetivo</label>
+                <input type="number" id="target" min="1" value="1">
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="rewardXP">XP</label>
+                    <input type="number" id="rewardXP" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="rewardCoins">Coins</label>
+                    <input type="number" id="rewardCoins" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="rewardTitle">Título</label>
+                    <input type="text" id="rewardTitle" placeholder="Campeón">
+                </div>
+                <div class="form-group">
+                    <label for="rewardItem">Item</label>
+                    <input type="text" id="rewardItem" placeholder="item_id">
+                </div>
+                <div class="form-row">
+                    <label>Broadcast</label>
+                    <label class="switch">
+                        <input type="checkbox" id="rewardBroadcast">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAchievementModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveAchievement()"><i class="fas fa-save"></i> Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/achievements.js"></script>
+</body>
+</html>

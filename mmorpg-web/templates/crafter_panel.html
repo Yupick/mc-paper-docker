@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Crafteo - Minecraft RPG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='crafting.css') }}">
+</head>
+<body class="dark-theme">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-hammer"></i> Panel de Crafteo RPG
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">
+                            <i class="fas fa-user"></i> <span id="username">Jugador</span>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Volver</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h2 class="card-title">
+                            <i class="fas fa-tools"></i> Sistema de Crafteo de Items
+                        </h2>
+                        <p class="text-muted">Crea items poderosos usando materiales recolectados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <ul class="nav nav-tabs nav-fill" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="recipes-tab" data-bs-toggle="tab" data-bs-target="#recipes" 
+                                type="button" role="tab" aria-controls="recipes" aria-selected="true">
+                            <i class="fas fa-book"></i> Recetas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="crafting-tab" data-bs-toggle="tab" data-bs-target="#crafting" 
+                                type="button" role="tab" aria-controls="crafting" aria-selected="false">
+                            <i class="fas fa-hammer"></i> Crafteo en Curso
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" 
+                                type="button" role="tab" aria-controls="inventory" aria-selected="false">
+                            <i class="fas fa-box"></i> Inventario
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" 
+                                type="button" role="tab" aria-controls="stats" aria-selected="false">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Recetas Tab -->
+            <div class="tab-pane fade show active" id="recipes" role="tabpanel" aria-labelledby="recipes-tab">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card bg-dark border-secondary mb-4">
+                            <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-book"></i> Recetas Disponibles</h5>
+                                <button class="btn btn-sm btn-outline-info" onclick="loadRecipes()">
+                                    <i class="fas fa-sync"></i> Actualizar
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="recipes-list" class="row g-3">
+                                    <div class="col-12 text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crafteo en Curso Tab -->
+            <div class="tab-pane fade" id="crafting" role="tabpanel" aria-labelledby="crafting-tab">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-hammer"></i> Crafteos en Curso</h5>
+                                <button class="btn btn-sm btn-outline-info" onclick="loadActiveSessions()">
+                                    <i class="fas fa-sync"></i> Actualizar
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="crafting-list" class="row g-3">
+                                    <div class="col-12 text-center text-muted">
+                                        <p><i class="fas fa-inbox"></i> No hay crafteos en curso</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventario Tab -->
+            <div class="tab-pane fade" id="inventory" role="tabpanel" aria-labelledby="inventory-tab">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-header bg-secondary">
+                                <h5 class="mb-0"><i class="fas fa-box"></i> Materiales y Items</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="inventory-list" class="row g-3">
+                                    <div class="col-12 text-center text-muted">
+                                        <p><i class="fas fa-inbox"></i> Sincronizando inventario...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas Tab -->
+            <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">Recetas Desbloqueadas</h6>
+                                <h3 class="card-title text-primary" id="stat-recipes">0/10</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-success">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">Items Crafteados</h6>
+                                <h3 class="card-title text-success" id="stat-crafted">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-warning">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">XP Ganado</h6>
+                                <h3 class="card-title text-warning" id="stat-xp">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-dark border-info">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle text-muted">Monedas Ganadas</h6>
+                                <h3 class="card-title text-info" id="stat-coins">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-header bg-secondary">
+                                <h5 class="mb-0"><i class="fas fa-history"></i> Historial de Crafteos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover table-sm">
+                                        <thead class="table-secondary">
+                                            <tr>
+                                                <th>Receta</th>
+                                                <th>Fecha</th>
+                                                <th>XP</th>
+                                                <th>Monedas</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="history-list">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">Cargando...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles de receta -->
+    <div class="modal fade" id="recipeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="recipeTitle">Receta</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Descripción</h6>
+                        <p id="recipeDescription"></p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Rango</h6>
+                            <span class="badge bg-secondary" id="recipeTier"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Tiempo de Crafteo</h6>
+                            <p id="recipeCraftingTime"></p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Ingredientes Necesarios</h6>
+                        <ul id="recipeIngredients" class="list-group list-group-dark"></ul>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Resultado y Recompensas</h6>
+                        <ul id="recipeRewards" class="list-group list-group-dark"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="startCraftBtn" onclick="startCrafting()">
+                        <i class="fas fa-hammer"></i> Iniciar Crafteo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='crafting.js') }}"></script>
+</body>
+</html>

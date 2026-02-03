@@ -1,0 +1,9 @@
+{
+  "refresh_interval": 5000,
+  "logs_interval": 10000,
+  "tps_interval": 10000,
+  "pause_when_hidden": true,
+  "enable_cache": true,
+  "cache_ttl": 3000,
+  "rcon_enabled": true
+}

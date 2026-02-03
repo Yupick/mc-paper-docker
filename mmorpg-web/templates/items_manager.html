@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Items - Panel MMORPG{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-gem"></i> Gestión de Items</h2>
+        </div>
+        <div class="col-md-4 text-right">
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="openCreateItemModal()">
+                    <i class="fas fa-plus"></i> Crear Item
+                </button>
+                <button class="btn btn-info" onclick="loadItems()">
+                    <i class="fas fa-sync"></i> Recargar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Items</h5>
+                    <h2 id="total-items-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Items Legendarios</h5>
+                    <h2 id="legendary-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Items Épicos</h5>
+                    <h2 id="epic-count">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Items Raros</h5>
+                    <h2 id="rare-count">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="search-input" placeholder="Buscar..." onkeyup="filterItems()">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="rarity-filter" onchange="filterItems()">
+                                <option value="">Todas las rarezas</option>
+                                <option value="common">Común</option>
+                                <option value="uncommon">Poco Común</option>
+                                <option value="rare">Raro</option>
+                                <option value="epic">Épico</option>
+                                <option value="legendary">Legendario</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-control" id="type-filter" onchange="filterItems()">
+                                <option value="">Todos los tipos</option>
+                                <option value="WEAPON">Arma</option>
+                                <option value="ARMOR">Armadura</option>
+                                <option value="CONSUMABLE">Consumible</option>
+                                <option value="MATERIAL">Material</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-secondary btn-block" onclick="clearFilters()">
+                                <i class="fas fa-times"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Catálogo de Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Rareza</th>
+                                    <th>Nivel Req.</th>
+                                    <th>Stats</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-tbody">
+                                <tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="itemModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="itemModalTitle">Crear Item</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="item-form">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>ID *</label>
+                            <input type="text" class="form-control" id="item-id" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Nombre *</label>
+                            <input type="text" class="form-control" id="item-name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Tipo</label>
+                            <select class="form-control" id="item-type">
+                                <option value="WEAPON">Arma</option>
+                                <option value="ARMOR">Armadura</option>
+                                <option value="CONSUMABLE">Consumible</option>
+                                <option value="MATERIAL">Material</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Rareza</label>
+                            <select class="form-control" id="item-rarity">
+                                <option value="common">Común</option>
+                                <option value="uncommon">Poco Común</option>
+                                <option value="rare">Raro</option>
+                                <option value="epic">Épico</option>
+                                <option value="legendary">Legendario</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Nivel Requerido</label>
+                            <input type="number" class="form-control" id="item-level" value="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>Daño</label>
+                            <input type="number" class="form-control" id="item-damage" value="0" step="0.1">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Defensa</label>
+                            <input type="number" class="form-control" id="item-defense" value="0" step="0.1">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Durabilidad</label>
+                            <input type="number" class="form-control" id="item-durability" value="100">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Precio</label>
+                            <input type="number" class="form-control" id="item-price" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea class="form-control" id="item-description" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveItem()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/items.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        loadItems();
+        setInterval(() => !$('#itemModal').is(':visible') && loadItems(), 60000);
+    });
+</script>
+{% endblock %}

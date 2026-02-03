@@ -1,0 +1,36 @@
+{
+  "ranks": [
+    {
+      "id": 1,
+      "name": "Novato",
+      "prefix": "&7[Novato]",
+      "color": "#808080",
+      "required_experience": 0,
+      "permissions": ["basic.commands"],
+      "reward_interval_hours": 24
+    },
+    {
+      "id": 2,
+      "name": "Aprendiz",
+      "prefix": "&9[Aprendiz]",
+      "color": "#4169E1",
+      "required_experience": 5000,
+      "permissions": ["basic.commands", "advanced.commands"],
+      "reward_interval_hours": 12
+    },
+    {
+      "id": 3,
+      "name": "Veterano",
+      "prefix": "&6[Veterano]",
+      "color": "#FFD700",
+      "required_experience": 50000,
+      "permissions": ["all.commands"],
+      "reward_interval_hours": 6
+    }
+  ],
+  "settings": {
+    "enable_ranks": true,
+    "announce_rank_up": true,
+    "auto_rank_up": true
+  }
+}
