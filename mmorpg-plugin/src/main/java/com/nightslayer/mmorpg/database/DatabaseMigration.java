@@ -152,8 +152,8 @@ public class DatabaseMigration {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """;
             
-            try (Connection conn = dbManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 
                 conn.setAutoCommit(false);  // Iniciar transacción
                 
@@ -178,6 +178,7 @@ public class DatabaseMigration {
                 conn.commit();  // Commit explícito
                 plugin.getLogger().info("✓ Migraron " + results.length + " mascotas");
             }
+            // NO cerrar la conexión - es compartida por DatabaseManager
         } catch (Exception e) {
             plugin.getLogger().warning("Error migrando mascotas: " + e.getMessage());
             e.printStackTrace();
@@ -202,8 +203,8 @@ public class DatabaseMigration {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """;
 
-            try (Connection conn = dbManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
 
                 for (JsonElement elem : eventsArray) {
                     JsonObject eventData = elem.getAsJsonObject();
@@ -272,8 +273,8 @@ public class DatabaseMigration {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """;
             
-            try (Connection conn = dbManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 
                 for (Map.Entry<String, JsonObject> entry : zonesMap.entrySet()) {
                     String zoneId = entry.getKey();
@@ -344,8 +345,8 @@ public class DatabaseMigration {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """;
             
-            try (Connection conn = dbManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 
                 for (JsonElement elem : recipesArray) {
                     JsonObject recipeData = elem.getAsJsonObject();
@@ -365,6 +366,7 @@ public class DatabaseMigration {
                 conn.commit();
                 plugin.getLogger().info("✅ Migradas " + results.length + " recetas de crafting desde JSON");
             }
+            // NO cerrar la conexión - es compartida por DatabaseManager
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error migrando crafting: " + e.getMessage());
             e.printStackTrace();
@@ -380,8 +382,8 @@ public class DatabaseMigration {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         
-        try (Connection conn = dbManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+        Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             
             // Receta 1: Espada de Hierro Mejorada
             pstmt.setString(1, "iron_sword_enhanced");
@@ -423,6 +425,7 @@ public class DatabaseMigration {
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error generando recetas por defecto: " + e.getMessage());
         }
+            // NO cerrar la conexión - es compartida por DatabaseManager
     }
 
     /**
@@ -455,8 +458,8 @@ public class DatabaseMigration {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """;
             
-            try (Connection conn = dbManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 
                 for (JsonElement elem : achievementsArray) {
                     JsonObject achData = elem.getAsJsonObject();
@@ -498,6 +501,7 @@ public class DatabaseMigration {
                 plugin.getLogger().info("✅ Migrados " + results.length + " logros desde achievements.json");
                 
             }
+            // NO cerrar la conexión - es compartida por DatabaseManager
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error migrando achievements: " + e.getMessage());
             e.printStackTrace();
@@ -530,8 +534,8 @@ public class DatabaseMigration {
                     """;
             
             JsonArray categories = config.getAsJsonArray("categories");
-            try (Connection conn = dbManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 
                 int order = 0;
                 for (JsonElement elem : categories) {
@@ -550,9 +554,11 @@ public class DatabaseMigration {
                 conn.commit();
                 plugin.getLogger().info("✅ Migradas " + results.length + " categorías de bestiario desde JSON");
             }
+            // NO cerrar la conexión - es compartida por DatabaseManager
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error migrando bestiario: " + e.getMessage());
         }
+            // NO cerrar la conexión - es compartida por DatabaseManager
     }
 
     private static void generateDefaultBestiary(DatabaseManager dbManager, MMORPGPlugin plugin) {
@@ -561,8 +567,8 @@ public class DatabaseMigration {
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
         
-        try (Connection conn = dbManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+        Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             
             // Categoría 1: Undead
             pstmt.setString(1, "undead");
@@ -589,6 +595,7 @@ public class DatabaseMigration {
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error generando bestiario: " + e.getMessage());
         }
+            // NO cerrar la conexión - es compartida por DatabaseManager
     }
 
     /**
@@ -617,8 +624,8 @@ public class DatabaseMigration {
                     """;
             
             JsonArray enchantments = config.getAsJsonArray("enchantments");
-            try (Connection conn = dbManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 
                 for (JsonElement elem : enchantments) {
                     JsonObject enchData = elem.getAsJsonObject();
@@ -636,9 +643,11 @@ public class DatabaseMigration {
                 conn.commit();
                 plugin.getLogger().info("✅ Migrados " + results.length + " encantamientos desde JSON");
             }
+            // NO cerrar la conexión - es compartida por DatabaseManager
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error migrando encantamientos: " + e.getMessage());
         }
+            // NO cerrar la conexión - es compartida por DatabaseManager
     }
 
     private static void generateDefaultEnchantments(DatabaseManager dbManager, MMORPGPlugin plugin) {
@@ -647,8 +656,8 @@ public class DatabaseMigration {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
         
-        try (Connection conn = dbManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+        Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             
             // Encantamiento 1: Filo Vampírico
             pstmt.setString(1, "vampiric_edge");
@@ -677,6 +686,7 @@ public class DatabaseMigration {
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error generando encantamientos: " + e.getMessage());
         }
+            // NO cerrar la conexión - es compartida por DatabaseManager
     }
 
     /**
@@ -721,8 +731,8 @@ public class DatabaseMigration {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         
-        try (Connection conn = dbManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+        Connection conn = dbManager.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             
             // Zona 1: Bosque Inicial
             pstmt.setString(1, "forest_newbie");
@@ -755,5 +765,6 @@ public class DatabaseMigration {
         } catch (Exception e) {
             plugin.getLogger().warning("⚠️ Error generando zonas de respawn: " + e.getMessage());
         }
+            // NO cerrar la conexión - es compartida por DatabaseManager
     }
 }
