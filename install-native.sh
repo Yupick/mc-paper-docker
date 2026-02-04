@@ -620,8 +620,6 @@ echo "Logs: tail -f $SCRIPT_DIR/web.log"
 WEB_START
     
     chmod +x start-web.sh
-    
-    deactivate
     print_success "Panel web configurado en: $WEB_DIR"
     cd "$INSTALL_DIR"
 }
