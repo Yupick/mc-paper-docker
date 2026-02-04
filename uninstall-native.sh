@@ -42,11 +42,30 @@ echo "  - Panel Web ($WEB_DIR)"
 echo "  - Servicios systemd (si existen)"
 echo "  - Scripts de control"
 echo ""
-print_warning "Los siguientes archivos NO se eliminarán:"
+print_warning "Los siguientes archivos NO se eliminarán automáticamente:"
 echo "  - Código fuente (mmorpg-plugin/, web/)"
-echo "  - Archivos de configuración en config/"
 echo ""
 
+# Preguntar sobre mundos y backups (config siempre se preserva)
+echo ""
+print_warning "¿Deseas eliminar los mundos creados?"
+read -p "[y/N]: " DELETE_WORLDS_RESP
+DELETE_WORLDS=0
+if [[ $DELETE_WORLDS_RESP =~ ^[Yy]$ ]]; then
+    DELETE_WORLDS=1
+fi
+
+print_warning "¿Deseas eliminar los backups?"
+read -p "[y/N]: " DELETE_BACKUPS_RESP
+DELETE_BACKUPS=0
+if [[ $DELETE_BACKUPS_RESP =~ ^[Yy]$ ]]; then
+    DELETE_BACKUPS=1
+fi
+
+# Config siempre se preserva
+DELETE_CONFIG=0
+
+echo ""
 read -p "¿Estás seguro de que quieres continuar? Escribe 'DESINSTALAR': " confirm
 
 if [ "$confirm" != "DESINSTALAR" ]; then
@@ -99,6 +118,26 @@ for script in start-server.sh start-web.sh logs.sh server-control.sh update-from
         rm "$SCRIPT_DIR/$script"
     fi
 done
+
+# Eliminar mundos si se solicitó
+if [ $DELETE_WORLDS -eq 1 ]; then
+    if [ -d "$SCRIPT_DIR/worlds" ]; then
+        print_warning "Eliminando mundos..."
+        rm -rf "$SCRIPT_DIR/worlds"
+        print_success "Mundos eliminados"
+    fi
+fi
+
+# Config siempre se preserva (DELETE_CONFIG=0)
+
+# Eliminar backups si se solicitó
+if [ $DELETE_BACKUPS -eq 1 ]; then
+    if [ -d "$SCRIPT_DIR/backups" ]; then
+        print_warning "Eliminando backups..."
+        rm -rf "$SCRIPT_DIR/backups"
+        print_success "Backups eliminados"
+    fi
+fi
 
 print_success "Desinstalación completada"
 print_warning "El código fuente permanece intacto en: $SCRIPT_DIR"

@@ -1,9 +1,0 @@
-{
-    "stations": [
-        { "id": "altar_basic", "name": "Altar Básico", "max_tier": "UNCOMMON", "success": 90 }
-    ],
-    "rules": {
-        "base_success": 80,
-        "tier_scaling": { "UNCOMMON": 100, "RARE": 90, "EPIC": 80, "LEGENDARY": 70 }
-    }
-}

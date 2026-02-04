@@ -2,8 +2,9 @@
 Servicio nativo de RCON para Minecraft sin Docker
 """
 import os
+import subprocess
 import psutil
-from mcrcon import MCRcon
+from multiprocessing import Process, Queue
 
 
 class RCONService:
@@ -14,9 +15,19 @@ class RCONService:
         self.port = port
         self.password = password or os.getenv('RCON_PASSWORD', 'minecraft123')
     
+    def _execute_in_process(self, queue, command):
+        """Ejecuta RCON en un proceso separado para evitar problemas con signal"""
+        from mcrcon import MCRcon
+        try:
+            with MCRcon(self.host, self.password, self.port, tlsmode=0) as mcr:
+                response = mcr.command(command)
+                queue.put({'output': response.encode('utf-8'), 'exit_code': 0})
+        except Exception as e:
+            queue.put({'output': str(e).encode('utf-8'), 'exit_code': 1})
+    
     def execute_command(self, command):
         """
-        Ejecuta un comando RCON directamente al servidor
+        Ejecuta un comando RCON usando multiprocessing para evitar problemas con signal
         
         Args:
             command: Comando de Minecraft a ejecutar
@@ -25,11 +36,25 @@ class RCONService:
             dict con 'output' (bytes) y 'exit_code' (int)
         """
         try:
-            with MCRcon(self.host, self.password, self.port) as mcr:
-                response = mcr.command(command)
+            queue = Queue()
+            process = Process(target=self._execute_in_process, args=(queue, command))
+            process.start()
+            process.join(timeout=10)
+            
+            if process.is_alive():
+                process.terminate()
+                process.join()
                 return {
-                    'output': response.encode('utf-8'),
-                    'exit_code': 0
+                    'output': b'Command timeout',
+                    'exit_code': 1
+                }
+            
+            if not queue.empty():
+                return queue.get()
+            else:
+                return {
+                    'output': b'No response from RCON',
+                    'exit_code': 1
                 }
         except Exception as e:
             return {

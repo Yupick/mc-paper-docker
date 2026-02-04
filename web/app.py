@@ -12,7 +12,16 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from threading import Lock
 from time import time
-import docker
+
+# Intentar importar docker, pero no fallar si no está disponible
+try:
+    import docker
+    DOCKER_AVAILABLE = True
+except ImportError:
+    docker = None
+    DOCKER_AVAILABLE = False
+    print("[!] Módulo docker no disponible - usando solo modo nativo")
+
 from models.world_manager import WorldManager
 from models.rpg_manager import RPGManager
 from models.resource_pack_manager import ResourcePackManager
@@ -45,18 +54,21 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret-key')
 
 # Configuración de rutas RELATIVAS - funciona en cualquier ubicación
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # /ruta/al/mc-paper
-MINECRAFT_DIR = os.getenv('MINECRAFT_DIR', BASE_DIR)  # Si no hay .env, usa ruta relativa
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # /ruta/al/mc-paper-docker
+MINECRAFT_DIR = os.getenv('MINECRAFT_DIR', os.path.join(BASE_DIR, 'minecraft-server'))  # Servidor en minecraft-server/
 PLUGINS_DIR = os.path.join(MINECRAFT_DIR, 'plugins')
-CONFIG_DIR = os.path.join(MINECRAFT_DIR, 'config')
-# SERVER_PROPERTIES apunta al mundo activo (worlds/active/server.properties)
-SERVER_PROPERTIES = os.path.join(MINECRAFT_DIR, 'worlds', 'active', 'server.properties')
-WHITELIST_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'whitelist.json')
-BLACKLIST_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'banned-players.json')
-OPS_FILE = os.path.join(MINECRAFT_DIR, 'worlds', 'ops.json')
-BACKUP_DIR = os.path.join(MINECRAFT_DIR, 'backups')
-WORLDS_DIR = os.path.join(MINECRAFT_DIR, 'worlds')
+CONFIG_DIR = os.path.join(BASE_DIR, 'config')  # Config en raíz del proyecto
+# SERVER_PROPERTIES ahora está en minecraft-server/server.properties
+SERVER_PROPERTIES = os.path.join(MINECRAFT_DIR, 'server.properties')
+# Mundos en directorio maestro (raíz del proyecto)
+WORLDS_DIR = os.path.join(BASE_DIR, 'worlds')
+WHITELIST_FILE = os.path.join(WORLDS_DIR, 'active', 'whitelist.json')
+BLACKLIST_FILE = os.path.join(WORLDS_DIR, 'active', 'banned-players.json')
+OPS_FILE = os.path.join(WORLDS_DIR, 'active', 'ops.json')
+BACKUP_DIR = os.path.join(BASE_DIR, 'backups')
 BACKUP_WORLDS_DIR = os.path.join(BACKUP_DIR, 'worlds')
+# Plugin MMORPG en minecraft-server/plugins/MMORPGPlugin/
+MMORPG_PLUGIN_DIR = os.path.join(PLUGINS_DIR, 'MMORPGPlugin')
 CONTAINER_NAME = os.getenv('DOCKER_CONTAINER_NAME', 'minecraft-paper')
 
 app.config['UPLOAD_FOLDER'] = PLUGINS_DIR
@@ -81,23 +93,29 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Cliente Docker
-try:
-    # Intentar primero con configuración por defecto
-    docker_client = docker.from_env()
-    # Verificar que funciona
-    docker_client.ping()
-except Exception as e:
+# Cliente Docker (opcional)
+docker_client = None
+if DOCKER_AVAILABLE:
     try:
-        # Intentar con socket Unix explícito (triple barra)
-        docker_client = docker.DockerClient(base_url='unix:///var/run/docker.sock')
+        # Intentar primero con configuración por defecto
+        docker_client = docker.from_env()
+        # Verificar que funciona
         docker_client.ping()
-    except Exception as e2:
-        docker_client = None
-        print(f"Error conectando con Docker:")
-        print(f"  - docker.from_env(): {e}")
-        print(f"  - unix socket: {e2}")
-        print(f"  Ejecuta: sudo usermod -aG docker $USER && newgrp docker")
+        print("[✓] Cliente Docker disponible")
+    except Exception as e:
+        try:
+            # Intentar con socket Unix explícito (triple barra)
+            docker_client = docker.DockerClient(base_url='unix:///var/run/docker.sock')
+            docker_client.ping()
+            print("[✓] Cliente Docker disponible (via socket)")
+        except Exception as e2:
+            docker_client = None
+            print(f"[!] Error conectando con Docker:")
+            print(f"  - docker.from_env(): {e}")
+            print(f"  - unix socket: {e2}")
+            print(f"  Ejecuta: sudo usermod -aG docker $USER && newgrp docker")
+else:
+    print("[!] Módulo docker no instalado - usando solo modo nativo")
 
 # Servicios nativos como fallback para modo sin Docker
 try:
@@ -151,8 +169,8 @@ def load_user(user_id):
     return User(user_id)
 
 # Función helper para ejecutar comandos RCON
-def execute_rcon_command(container, command, use_cache=False, cache_ttl=5):
-    """Ejecuta un comando RCON en el contenedor de Minecraft"""
+def execute_rcon_command(command, use_cache=False, cache_ttl=5):
+    """Ejecuta un comando RCON usando el servicio nativo"""
     # Usar caché si está habilitada
     if use_cache:
         cache_key = f"rcon:{command}"
@@ -160,15 +178,17 @@ def execute_rcon_command(container, command, use_cache=False, cache_ttl=5):
         if cached is not None:
             return cached
     
-    # mcrcon sintaxis: mcrcon -H localhost -P 25575 -p password "command"
-    rcon_password = os.getenv('RCON_PASSWORD', 'minecraft123')
-    exec_result = container.exec_run(f'mcrcon -H localhost -P 25575 -p {rcon_password} "{command}"')
+    # Ejecutar comando via servicio nativo
+    if rcon_service:
+        result = rcon_service.execute_command(command)
+    else:
+        result = {'output': b'', 'exit_code': 1}
     
     # Guardar en caché si está habilitada
     if use_cache:
-        rcon_cache.set(cache_key, exec_result, cache_ttl)
+        rcon_cache.set(cache_key, result, cache_ttl)
     
-    return exec_result
+    return result
 
 # Rutas de autenticación
 @app.route('/login', methods=['GET', 'POST'])
@@ -323,30 +343,20 @@ def dashboard_old():
 @login_required
 def server_status():
     try:
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            status = container.status
-            stats = container.stats(stream=False)
-            
-            # Calcular uso de CPU y memoria
-            cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
-            system_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
-            cpu_percent = (cpu_delta / system_delta) * 100.0 if system_delta > 0 else 0.0
-            
-            memory_usage = stats['memory_stats']['usage']
-            memory_limit = stats['memory_stats']['limit']
-            memory_percent = (memory_usage / memory_limit) * 100.0 if memory_limit > 0 else 0.0
+        if server_monitor:
+            status = server_monitor.get_status()
+            stats = server_monitor.get_stats()
             
             return jsonify({
                 'status': status,
                 'running': status == 'running',
-                'cpu_percent': round(cpu_percent, 2),
-                'memory_usage_mb': round(memory_usage / (1024 * 1024), 2),
-                'memory_limit_mb': round(memory_limit / (1024 * 1024), 2),
-                'memory_percent': round(memory_percent, 2)
+                'cpu_percent': stats.get('cpu_percent', 0),
+                'memory_usage_mb': stats.get('memory_mb', 0),
+                'memory_limit_mb': 1024,  # Límite configurado en server-control.sh
+                'memory_percent': (stats.get('memory_mb', 0) / 1024) * 100
             })
         else:
-            return jsonify({'error': 'Docker no disponible'}), 500
+            return jsonify({'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -355,12 +365,11 @@ def server_status():
 @login_required
 def server_logs():
     try:
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            logs = container.logs(tail=100).decode('utf-8')
+        if server_monitor:
+            logs = server_monitor.get_logs(lines=100)
             return jsonify({'logs': logs})
         else:
-            return jsonify({'error': 'Docker no disponible'}), 500
+            return jsonify({'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -370,8 +379,7 @@ def server_logs():
 def restart_server():
     try:
         result = subprocess.run(
-            ['sudo', 'docker-compose', 'restart'],
-            cwd=MINECRAFT_DIR,
+            [os.path.join(BASE_DIR, 'server-control.sh'), 'restart', 'server'],
             capture_output=True,
             text=True
         )
@@ -388,8 +396,7 @@ def restart_server():
 def stop_server():
     try:
         result = subprocess.run(
-            ['sudo', 'docker-compose', 'stop'],
-            cwd=MINECRAFT_DIR,
+            [os.path.join(BASE_DIR, 'server-control.sh'), 'stop', 'server'],
             capture_output=True,
             text=True
         )
@@ -406,8 +413,7 @@ def stop_server():
 def start_server():
     try:
         result = subprocess.run(
-            ['sudo', 'docker-compose', 'start'],
-            cwd=MINECRAFT_DIR,
+            [os.path.join(BASE_DIR, 'server-control.sh'), 'start', 'server'],
             capture_output=True,
             text=True
         )
@@ -677,18 +683,17 @@ def update_property():
 @login_required
 def get_players():
     try:
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+        if server_monitor:
+            if True:
                 cfg = _load_panel_config()
                 rcon_enabled = cfg.get('rcon_enabled', True)
                 rcon_polling = cfg.get('rcon_polling_enabled', True)
 
                 if rcon_enabled and rcon_polling:
                     # Ejecutar comando list con caché de 10 segundos
-                    exec_result = execute_rcon_command(container, 'list', use_cache=True, cache_ttl=10)
-                    if exec_result.exit_code == 0:
-                        output = exec_result.output.decode('utf-8')
+                    exec_result = execute_rcon_command( 'list', use_cache=True, cache_ttl=10)
+                    if exec_result['exit_code'] == 0:
+                        output = exec_result['output'].decode('utf-8')
                         # Parsear salida: "There are X of a max of Y players online: player1, player2"
                         match = re.search(r'There are (\d+) of a max of (\d+) players online:?\s*(.*)', output)
                         if match:
@@ -703,7 +708,7 @@ def get_players():
                             })
                 
                 # Si RCON no está disponible, intentar leer del log
-                logs = container.logs(tail=500).decode('utf-8')
+                logs = server_monitor.get_logs(lines=500)
                 # Contar joins menos leaves
                 joins = re.findall(r'(\w+) joined the game', logs)
                 leaves = re.findall(r'(\w+) left the game', logs)
@@ -717,7 +722,7 @@ def get_players():
             else:
                 return jsonify({'online': 0, 'max': 20, 'players': []})
         else:
-            return jsonify({'error': 'Docker no disponible'}), 500
+            return jsonify({'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'online': 0, 'max': 20, 'players': [], 'error': str(e)})
 
@@ -730,34 +735,30 @@ def execute_command():
         if not command:
             return jsonify({'success': False, 'error': 'Comando vacío'}), 400
         
-        if docker_client:
+        if server_monitor and server_monitor.get_status() == 'running':
             cfg = _load_panel_config()
             if not cfg.get('rcon_enabled', True):
                 return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
-            container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
-                # Ejecutar comando con mcrcon
-                exec_result = execute_rcon_command(container, command)
-                
-                # Decodificar output
-                if exec_result.output:
-                    output = exec_result.output.decode('utf-8', errors='replace').strip()
-                else:
-                    output = 'Comando ejecutado (sin salida)'
-                
-                # Si hay error de exit code pero no hay output, es un error de rcon
-                if exec_result.exit_code != 0 and not output:
-                    output = 'Error: RCON no disponible o comando inválido'
-                
-                return jsonify({
-                    'success': exec_result.exit_code == 0,
-                    'output': output,
-                    'command': command
-                })
+            
+            # Ejecutar comando con RCON nativo
+            exec_result = execute_rcon_command(command)
+            
+            # Decodificar output
+            if exec_result['output']:
+                output = exec_result['output'].decode('utf-8', errors='replace').strip()
             else:
-                return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
+                output = 'Comando ejecutado (sin salida)'
+            
+            # Si hay error de exit code pero no hay output, es un error de rcon
+            if exec_result['exit_code'] != 0 and not output:
+                output = 'Error: RCON no disponible o comando inválido'
+            
+            return jsonify({
+                'success': exec_result['exit_code'] == 0,
+                'output': output
+            })
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servidor no está ejecutándose'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -777,18 +778,18 @@ def kick_player():
             if not cfg.get('rcon_enabled', True):
                 return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+            if True:
                 command = f'kick {player} {reason}'
-                exec_result = execute_rcon_command(container, command)
+                exec_result = execute_rcon_command( command)
                 
                 return jsonify({
-                    'success': exec_result.exit_code == 0,
+                    'success': exec_result['exit_code'] == 0,
                     'message': f'Jugador {player} kickeado'
                 })
             else:
                 return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -807,18 +808,18 @@ def ban_player():
             if not cfg.get('rcon_enabled', True):
                 return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+            if True:
                 command = f'ban {player} {reason}'
-                exec_result = execute_rcon_command(container, command)
+                exec_result = execute_rcon_command( command)
                 
                 return jsonify({
-                    'success': exec_result.exit_code == 0,
+                    'success': exec_result['exit_code'] == 0,
                     'message': f'Jugador {player} baneado'
                 })
             else:
                 return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -837,18 +838,18 @@ def change_gamemode():
             if not cfg.get('rcon_enabled', True):
                 return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+            if True:
                 command = f'gamemode {gamemode} {player}'
-                exec_result = execute_rcon_command(container, command)
+                exec_result = execute_rcon_command( command)
                 
                 return jsonify({
-                    'success': exec_result.exit_code == 0,
+                    'success': exec_result['exit_code'] == 0,
                     'message': f'Gamemode de {player} cambiado a {gamemode}'
                 })
             else:
                 return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -876,20 +877,19 @@ def add_op():
         if not player:
             return jsonify({'success': False, 'error': 'Nombre de jugador requerido'}), 400
         
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+        if server_monitor:
+            if True:
                 command = f'op {player}'
-                exec_result = execute_rcon_command(container, command)
+                exec_result = execute_rcon_command( command)
                 
                 return jsonify({
-                    'success': exec_result.exit_code == 0,
+                    'success': exec_result['exit_code'] == 0,
                     'message': f'{player} es ahora operador'
                 })
             else:
                 return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -902,20 +902,19 @@ def remove_op():
         if not player:
             return jsonify({'success': False, 'error': 'Nombre de jugador requerido'}), 400
         
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+        if server_monitor:
+            if True:
                 command = f'deop {player}'
-                exec_result = execute_rcon_command(container, command)
+                exec_result = execute_rcon_command( command)
                 
                 return jsonify({
-                    'success': exec_result.exit_code == 0,
+                    'success': exec_result['exit_code'] == 0,
                     'message': f'{player} ya no es operador'
                 })
             else:
                 return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -924,9 +923,8 @@ def remove_op():
 @login_required
 def get_server_version():
     try:
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            logs = container.logs(tail=100).decode('utf-8')
+        if server_monitor:
+            logs = server_monitor.get_logs(lines=100)
             # Buscar versión de Paper en los logs
             match = re.search(r'This server is running Paper version ([^\s]+)', logs)
             if match:
@@ -934,7 +932,7 @@ def get_server_version():
             else:
                 return jsonify({'version': 'Desconocida'})
         else:
-            return jsonify({'error': 'Docker no disponible'}), 500
+            return jsonify({'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'version': 'Error', 'error': str(e)})
 
@@ -1078,23 +1076,23 @@ def reload_plugins():
             if not cfg.get('rcon_enabled', True):
                 return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+            if True:
                 # Ejecutar comando reload con PlugMan si está instalado, sino con reload estándar
-                exec_result = execute_rcon_command(container, 'plugman reload all')
+                exec_result = execute_rcon_command( 'plugman reload all')
                 
-                if exec_result.exit_code != 0:
+                if exec_result['exit_code'] != 0:
                     # Intentar con reload estándar de Bukkit
-                    exec_result = execute_rcon_command(container, 'reload confirm')
+                    exec_result = execute_rcon_command( 'reload confirm')
                 
                 return jsonify({
-                    'success': exec_result.exit_code == 0,
-                    'message': 'Plugins recargados' if exec_result.exit_code == 0 else 'Error al recargar plugins',
-                    'output': exec_result.output.decode('utf-8') if exec_result.output else ''
+                    'success': exec_result['exit_code'] == 0,
+                    'message': 'Plugins recargados' if exec_result['exit_code'] == 0 else 'Error al recargar plugins',
+                    'output': exec_result['output'].decode('utf-8') if exec_result['output'] else ''
                 })
             else:
                 return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1122,10 +1120,10 @@ def get_plugins_detailed():
                     if docker_client and _load_panel_config().get('rcon_enabled', True):
                         try:
                             container = docker_client.containers.get(CONTAINER_NAME)
-                            if container.status == 'running':
-                                exec_result = execute_rcon_command(container, 'plugins')
-                                if exec_result.exit_code == 0:
-                                    output = exec_result.output.decode('utf-8')
+                            if True:
+                                exec_result = execute_rcon_command( 'plugins')
+                                if exec_result['exit_code'] == 0:
+                                    output = exec_result['output'].decode('utf-8')
                                     # Parsear output para encontrar el plugin
                                     if plugin_name.lower() in output.lower():
                                         status = 'Cargado'
@@ -1172,27 +1170,32 @@ def get_plugins_detailed():
 @login_required
 def get_uptime():
     try:
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
-                started_at = container.attrs['State']['StartedAt']
-                start_time = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
-                uptime_seconds = (datetime.now(start_time.tzinfo) - start_time).total_seconds()
-                
-                days = int(uptime_seconds // 86400)
-                hours = int((uptime_seconds % 86400) // 3600)
-                minutes = int((uptime_seconds % 3600) // 60)
-                
-                uptime_str = f'{days}d {hours}h {minutes}m'
-                return jsonify({
-                    'uptime': uptime_str,
-                    'uptime_seconds': int(uptime_seconds),
-                    'started_at': started_at
-                })
+        if server_monitor:
+            # Obtener tiempo de inicio del servidor desde el PID
+            pid = server_monitor.get_pid()
+            if pid:
+                try:
+                    import psutil
+                    process = psutil.Process(pid)
+                    start_time = datetime.fromtimestamp(process.create_time())
+                    uptime_seconds = (datetime.now() - start_time).total_seconds()
+                    
+                    days = int(uptime_seconds // 86400)
+                    hours = int((uptime_seconds % 86400) // 3600)
+                    minutes = int((uptime_seconds % 3600) // 60)
+                    
+                    uptime_str = f'{days}d {hours}h {minutes}m'
+                    return jsonify({
+                        'uptime': uptime_str,
+                        'uptime_seconds': int(uptime_seconds),
+                        'started_at': start_time.isoformat()
+                    })
+                except:
+                    return jsonify({'uptime': 'No disponible', 'uptime_seconds': 0})
             else:
                 return jsonify({'uptime': 'Servidor apagado', 'uptime_seconds': 0})
         else:
-            return jsonify({'error': 'Docker no disponible'}), 500
+            return jsonify({'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1257,9 +1260,8 @@ def save_stat():
 @login_required
 def get_tps():
     try:
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+        if server_monitor:
+            if True:
                 cfg = _load_panel_config()
                 if (not cfg.get('rcon_enabled', True)) or (not cfg.get('rcon_polling_enabled', True)):
                     # Si el polling RCON está deshabilitado, devolver valor en caché si existe, o por defecto
@@ -1281,12 +1283,12 @@ def get_tps():
                     return jsonify({'tps_1m': 20.0, 'tps_5m': 20.0, 'tps_15m': 20.0, 'raw': 'RCON polling disabled', 'cached': True})
                 # Ejecutar comando tps con caché de 30 segundos
                 # Esto reduce DRÁSTICAMENTE las llamadas RCON
-                exec_result = execute_rcon_command(container, 'tps', use_cache=True, cache_ttl=30)
+                exec_result = execute_rcon_command( 'tps', use_cache=True, cache_ttl=30)
                 # Guardar bajo clave fija para posible uso offline
                 rcon_cache.set('rcon:tps', exec_result, ttl=60)
                 
-                if exec_result.exit_code == 0:
-                    output = exec_result.output.decode('utf-8')
+                if exec_result['exit_code'] == 0:
+                    output = exec_result['output'].decode('utf-8')
                     # Parsear TPS del output
                     # Formato típico: "TPS from last 1m, 5m, 15m: 20.0, 20.0, 20.0"
                     match = re.search(r'(\d+\.?\d*),?\s*(\d+\.?\d*),?\s*(\d+\.?\d*)', output)
@@ -1302,7 +1304,7 @@ def get_tps():
             else:
                 return jsonify({'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'error': 'Docker no disponible'}), 500
+            return jsonify({'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1311,9 +1313,8 @@ def get_tps():
 @login_required
 def get_chat():
     try:
-        if docker_client:
-            container = docker_client.containers.get(CONTAINER_NAME)
-            logs = container.logs(tail=200).decode('utf-8', errors='ignore')
+        if server_monitor:
+            logs = server_monitor.get_logs(lines=200)
             
             # Filtrar solo mensajes de chat
             chat_pattern = r'\[.*?\]: <(\w+)> (.+)'
@@ -1330,7 +1331,7 @@ def get_chat():
             
             return jsonify({'messages': chat_messages[-50:]})  # Últimos 50 mensajes
         else:
-            return jsonify({'error': 'Docker no disponible'}), 500
+            return jsonify({'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1348,18 +1349,18 @@ def say_message():
             if not cfg.get('rcon_enabled', True):
                 return jsonify({'success': False, 'error': 'RCON deshabilitado en el panel'}), 400
             container = docker_client.containers.get(CONTAINER_NAME)
-            if container.status == 'running':
+            if True:
                 command = f'say {message}'
-                exec_result = execute_rcon_command(container, command)
+                exec_result = execute_rcon_command( command)
                 
                 return jsonify({
-                    'success': exec_result.exit_code == 0,
+                    'success': exec_result['exit_code'] == 0,
                     'message': 'Mensaje enviado'
                 })
             else:
                 return jsonify({'success': False, 'error': 'Servidor no está corriendo'}), 400
         else:
-            return jsonify({'success': False, 'error': 'Docker no disponible'}), 500
+            return jsonify({'success': False, 'error': 'Servicio de monitoreo no disponible'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1588,15 +1589,15 @@ def activate_world(slug):
         container = docker_client.containers.get(CONTAINER_NAME)
         
         # Verificar si el servidor está corriendo
-        server_was_running = container.status == 'running'
+        server_was_running = True
         
         # Detener servidor si está corriendo
         if server_was_running:
             try:
                 # Enviar comando de guardado y apagado
                 try:
-                    execute_rcon_command(container, 'save-all')
-                    execute_rcon_command(container, 'stop')
+                    execute_rcon_command( 'save-all')
+                    execute_rcon_command( 'stop')
                 except Exception:
                     # Si RCON está deshabilitado o falla, intentaremos detener vía Docker
                     pass
@@ -1610,7 +1611,7 @@ def activate_world(slug):
                     time.sleep(1)
                 # Si aún sigue corriendo, forzar stop por Docker
                 container.reload()
-                if container.status == 'running':
+                if True:
                     container.stop(timeout=30)
                 
             except Exception as e:
@@ -1645,7 +1646,7 @@ def activate_world(slug):
                     time.sleep(15)
                     
                     # Recargar mundos RPG en el plugin
-                    result = execute_rcon_command(container, 'rpg reload')
+                    result = execute_rcon_command( 'rpg reload')
                     if result.exit_code == 0:
                         print(f"✓ Mundos RPG recargados automáticamente después de activar '{world.metadata['name']}'")
                     else:

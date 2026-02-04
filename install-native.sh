@@ -263,6 +263,99 @@ download_paper() {
     cd "$INSTALL_DIR"
 }
 
+# Descargar plugins de compatibilidad
+download_compatibility_plugins() {
+    print_info "Descargando plugins de compatibilidad..."
+    
+    cd "$MC_DIR/plugins"
+    
+    # Descargar GeyserMC (permite jugadores de Bedrock)
+    print_info "  → Descargando GeyserMC..."
+    if curl -L -o Geyser-Spigot.jar "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot" 2>/dev/null; then
+        if [ -f Geyser-Spigot.jar ]; then
+            GEYSER_SIZE=$(du -h Geyser-Spigot.jar | cut -f1)
+            # Verificar que no sea un archivo corrupto (< 100KB)
+            GEYSER_BYTES=$(stat -f%z Geyser-Spigot.jar 2>/dev/null || stat -c%s Geyser-Spigot.jar 2>/dev/null)
+            if [ "$GEYSER_BYTES" -gt 100000 ]; then
+                print_success "    ✅ GeyserMC descargado ($GEYSER_SIZE)"
+            else
+                print_warning "    ⚠️  Archivo GeyserMC corrupto, eliminando..."
+                rm -f Geyser-Spigot.jar
+            fi
+        fi
+    else
+        print_warning "    ⚠️  Error descargando GeyserMC"
+    fi
+    
+    # Descargar Floodgate (autenticación para Bedrock)
+    print_info "  → Descargando Floodgate..."
+    if curl -L -o floodgate-spigot.jar "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot" 2>/dev/null; then
+        if [ -f floodgate-spigot.jar ]; then
+            FLOODGATE_SIZE=$(du -h floodgate-spigot.jar | cut -f1)
+            FLOODGATE_BYTES=$(stat -f%z floodgate-spigot.jar 2>/dev/null || stat -c%s floodgate-spigot.jar 2>/dev/null)
+            if [ "$FLOODGATE_BYTES" -gt 100000 ]; then
+                print_success "    ✅ Floodgate descargado ($FLOODGATE_SIZE)"
+            else
+                print_warning "    ⚠️  Archivo Floodgate corrupto, eliminando..."
+                rm -f floodgate-spigot.jar
+            fi
+        fi
+    else
+        print_warning "    ⚠️  Error descargando Floodgate"
+    fi
+    
+    # Descargar ViaVersion (permite diferentes versiones de clientes)
+    print_info "  → Descargando ViaVersion..."
+    VIAVERSION_URL=$(curl -s https://api.github.com/repos/ViaVersion/ViaVersion/releases/latest | grep "browser_download_url.*ViaVersion-.*\.jar" | cut -d '"' -f 4)
+    if [ -n "$VIAVERSION_URL" ]; then
+        if curl -L -o ViaVersion.jar "$VIAVERSION_URL" 2>/dev/null; then
+            if [ -f ViaVersion.jar ]; then
+                VIAVERSION_SIZE=$(du -h ViaVersion.jar | cut -f1)
+                print_success "    ✅ ViaVersion descargado ($VIAVERSION_SIZE)"
+            fi
+        else
+            print_warning "    ⚠️  Error descargando ViaVersion"
+        fi
+    else
+        print_warning "    ⚠️  No se pudo obtener URL de ViaVersion"
+    fi
+    
+    # Descargar ViaBackwards (soporte para versiones antiguas)
+    print_info "  → Descargando ViaBackwards..."
+    VIABACKWARDS_URL=$(curl -s https://api.github.com/repos/ViaVersion/ViaBackwards/releases/latest | grep "browser_download_url.*ViaBackwards-.*\.jar" | cut -d '"' -f 4)
+    if [ -n "$VIABACKWARDS_URL" ]; then
+        if curl -L -o ViaBackwards.jar "$VIABACKWARDS_URL" 2>/dev/null; then
+            if [ -f ViaBackwards.jar ]; then
+                VIABACKWARDS_SIZE=$(du -h ViaBackwards.jar | cut -f1)
+                print_success "    ✅ ViaBackwards descargado ($VIABACKWARDS_SIZE)"
+            fi
+        else
+            print_warning "    ⚠️  Error descargando ViaBackwards"
+        fi
+    else
+        print_warning "    ⚠️  No se pudo obtener URL de ViaBackwards"
+    fi
+    
+    # Descargar ViaRewind (soporte para versiones muy antiguas 1.7-1.8)
+    print_info "  → Descargando ViaRewind..."
+    VIAREWIND_URL=$(curl -s https://api.github.com/repos/ViaVersion/ViaRewind/releases/latest | grep "browser_download_url.*ViaRewind-.*\.jar" | cut -d '"' -f 4)
+    if [ -n "$VIAREWIND_URL" ]; then
+        if curl -L -o ViaRewind.jar "$VIAREWIND_URL" 2>/dev/null; then
+            if [ -f ViaRewind.jar ]; then
+                VIAREWIND_SIZE=$(du -h ViaRewind.jar | cut -f1)
+                print_success "    ✅ ViaRewind descargado ($VIAREWIND_SIZE)"
+            fi
+        else
+            print_warning "    ⚠️  Error descargando ViaRewind"
+        fi
+    else
+        print_warning "    ⚠️  No se pudo obtener URL de ViaRewind"
+    fi
+    
+    cd "$INSTALL_DIR"
+    print_success "Plugins de compatibilidad descargados"
+}
+
 # Configurar servidor
 setup_server() {
     print_info "Configurando servidor Minecraft..."
@@ -325,6 +418,128 @@ START_SCRIPT
     cd "$INSTALL_DIR"
 }
 
+# Configurar estructura de mundos
+setup_world_structure() {
+    print_info "Configurando estructura de mundos..."
+    
+    cd "$INSTALL_DIR"
+    
+    # Si ya existe worlds/ y tiene mundos, no sobrescribir
+    if [ -d "worlds" ] && [ -f "worlds/worlds.json" ]; then
+        print_success "Estructura de mundos existente detectada, preservando..."
+        return 0
+    fi
+    
+    # Crear directorio maestro de mundos
+    mkdir -p worlds/mundo-inicial
+    
+    # Crear subdirectorios de dimensiones
+    mkdir -p worlds/mundo-inicial/world
+    mkdir -p worlds/mundo-inicial/world_nether
+    mkdir -p worlds/mundo-inicial/world_the_end
+    
+    # Crear metadata.json del mundo inicial
+    cat > worlds/mundo-inicial/metadata.json << META
+{
+  "name": "Mundo Inicial",
+  "slug": "mundo-inicial",
+  "description": "Mundo principal del servidor",
+  "gamemode": "survival",
+  "difficulty": "normal",
+  "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "last_played": null,
+  "size_mb": 0,
+  "seed": "",
+  "version": "1.20.6",
+  "spawn": {"x": 0, "y": 64, "z": 0},
+  "settings": {
+    "pvp": true,
+    "spawn_monsters": true,
+    "spawn_animals": true,
+    "view_distance": 10,
+    "max_players": 20
+  },
+  "tags": ["principal", "rpg"],
+  "isRPG": true
+}
+META
+    
+    # Crear worlds.json
+    cat > worlds/worlds.json << WCONFIG
+{
+  "active_world": "mundo-inicial",
+  "worlds": [
+    {
+      "slug": "mundo-inicial",
+      "status": "active",
+      "auto_backup": true,
+      "backup_interval": "6h"
+    }
+  ],
+  "settings": {
+    "max_worlds": 10,
+    "auto_backup_before_switch": true,
+    "keep_backups": 5
+  }
+}
+WCONFIG
+    
+    # Crear symlink 'active' al mundo inicial
+    cd worlds
+    ln -sf mundo-inicial active
+    cd "$INSTALL_DIR"
+    
+    print_success "Estructura de mundos creada"
+}
+
+# Crear symlinks de mundos en minecraft-server
+create_world_symlinks() {
+    print_info "Creando symlinks de mundos..."
+    
+    cd "$MC_DIR"
+    
+    # Eliminar directorios/symlinks si existen
+    rm -rf world world_nether world_the_end 2>/dev/null || true
+    
+    # Crear symlinks relativos apuntando a ../worlds/active/
+    ln -sf ../worlds/active/world world
+    ln -sf ../worlds/active/world_nether world_nether
+    ln -sf ../worlds/active/world_the_end world_the_end
+    
+    print_success "Symlinks de mundos creados"
+    cd "$INSTALL_DIR"
+}
+
+# Forzar server.properties antes del inicio
+force_server_properties() {
+    print_info "Forzando configuración del servidor..."
+    
+    # Si existe config/server.properties, usarlo como base
+    if [ -f "$CONFIG_DIR/server.properties" ]; then
+        cp "$CONFIG_DIR/server.properties" "$MC_DIR/server.properties"
+    fi
+    
+    # Forzar level-name=world para que use el symlink
+    sed -i 's/^level-name=.*/level-name=world/' "$MC_DIR/server.properties"
+    
+    # Asegurar que RCON esté habilitado
+    if ! grep -q "^enable-rcon=" "$MC_DIR/server.properties"; then
+        echo "enable-rcon=true" >> "$MC_DIR/server.properties"
+    else
+        sed -i 's/^enable-rcon=.*/enable-rcon=true/' "$MC_DIR/server.properties"
+    fi
+    
+    if ! grep -q "^rcon.port=" "$MC_DIR/server.properties"; then
+        echo "rcon.port=25575" >> "$MC_DIR/server.properties"
+    fi
+    
+    if ! grep -q "^rcon.password=" "$MC_DIR/server.properties"; then
+        echo "rcon.password=minecraft" >> "$MC_DIR/server.properties"
+    fi
+    
+    print_success "Configuración forzada"
+}
+
 # Configurar panel web
 setup_web() {
     print_info "Configurando panel web..."
@@ -350,15 +565,22 @@ setup_web() {
     # Instalar dependencias
     print_info "Instalando dependencias de Python..."
     pip install --upgrade pip
-    pip install Flask python-dotenv requests Werkzeug bcrypt flask-login docker mcrcon
+    pip install Flask python-dotenv requests Werkzeug bcrypt flask-login docker mcrcon psutil
     
     # Crear archivo .env si no existe
     if [ ! -f .env ]; then
         SECRET_KEY=$(openssl rand -hex 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+        
+        # Generar hash de contraseña usando Python
+        source venv/bin/activate
+        ADMIN_PASSWORD_HASH=$(python3 -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('admin123456'))")
+        deactivate
+        
         cat > .env << ENV_FILE
 SECRET_KEY=$SECRET_KEY
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123456
+ADMIN_PASSWORD_HASH=$ADMIN_PASSWORD_HASH
+MINECRAFT_DIR=$MC_DIR
 SERVER_HOST=localhost
 SERVER_PORT=25575
 RCON_PASSWORD=minecraft
@@ -370,10 +592,31 @@ ENV_FILE
     # Crear script de inicio
     cat > start-web.sh << 'WEB_START'
 #!/bin/bash
-cd "$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PID_FILE="$SCRIPT_DIR/panel.pid"
+
+cd "$SCRIPT_DIR"
+
+# Verificar si ya está corriendo
+if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE")
+    if kill -0 "$PID" 2>/dev/null; then
+        echo "Panel web ya está ejecutándose (PID: $PID)"
+        exit 1
+    fi
+    rm -f "$PID_FILE"
+fi
+
 source venv/bin/activate
 export FLASK_APP=app.py
-python3 app.py
+
+# Iniciar en background con nohup
+nohup python3 app.py > web.log 2>&1 &
+echo $! > "$PID_FILE"
+
+echo "Panel web iniciado (PID: $(cat "$PID_FILE"))"
+echo "URL: http://localhost:5000"
+echo "Logs: tail -f $SCRIPT_DIR/web.log"
 WEB_START
     
     chmod +x start-web.sh
@@ -515,6 +758,10 @@ fi
 check_compile_plugin
 download_paper
 setup_server
+setup_world_structure
+create_world_symlinks
+force_server_properties
+download_compatibility_plugins
 setup_web
 
 # Preguntar por systemd
@@ -529,6 +776,280 @@ fi
 
 # Crear scripts de control
 cd "$INSTALL_DIR"
+
+# Script start-server.sh
+# Script server-control.sh (control unificado)
+cat > server-control.sh << 'CONTROL'
+#!/bin/bash
+# Script de control unificado para servidor Minecraft y panel web
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MC_DIR="$SCRIPT_DIR/minecraft-server"
+WEB_DIR="$SCRIPT_DIR/mmorpg-web"
+MC_PID_FILE="$MC_DIR/server.pid"
+WEB_PID_FILE="$WEB_DIR/panel.pid"
+
+# Colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+show_help() {
+    echo "Uso: $0 {start|stop|restart|status|logs} {server|web|all}"
+    echo ""
+    echo "Comandos:"
+    echo "  start    - Iniciar servicio"
+    echo "  stop     - Detener servicio"
+    echo "  restart  - Reiniciar servicio"
+    echo "  status   - Ver estado del servicio"
+    echo "  logs     - Ver logs en tiempo real"
+    echo ""
+    echo "Servicios:"
+    echo "  server   - Servidor Minecraft"
+    echo "  web      - Panel Web"
+    echo "  all      - Ambos servicios"
+    echo ""
+    echo "Ejemplos:"
+    echo "  $0 start server    # Iniciar solo el servidor"
+    echo "  $0 stop all        # Detener todo"
+    echo "  $0 restart web     # Reiniciar panel web"
+}
+
+start_server() {
+    if [ -f "$MC_PID_FILE" ]; then
+        PID=$(cat "$MC_PID_FILE")
+        if kill -0 "$PID" 2>/dev/null; then
+            echo -e "${YELLOW}[!] Servidor ya está ejecutándose (PID: $PID)${NC}"
+            return 1
+        fi
+    fi
+    
+    echo -e "${CYAN}[INFO] Iniciando servidor Minecraft...${NC}"
+    cd "$MC_DIR"
+    nohup ./start.sh > /dev/null 2>&1 &
+    echo $! > "$MC_PID_FILE"
+    sleep 2
+    
+    if kill -0 $(cat "$MC_PID_FILE") 2>/dev/null; then
+        echo -e "${GREEN}[✓] Servidor iniciado (PID: $(cat "$MC_PID_FILE"))${NC}"
+        return 0
+    else
+        echo -e "${RED}[✗] Error al iniciar el servidor${NC}"
+        return 1
+    fi
+}
+
+stop_server() {
+    if [ ! -f "$MC_PID_FILE" ]; then
+        echo -e "${YELLOW}[!] Servidor no está ejecutándose${NC}"
+        return 1
+    fi
+    
+    PID=$(cat "$MC_PID_FILE")
+    if ! kill -0 "$PID" 2>/dev/null; then
+        echo -e "${YELLOW}[!] Servidor no está ejecutándose${NC}"
+        rm -f "$MC_PID_FILE"
+        return 1
+    fi
+    
+    echo -e "${CYAN}[INFO] Deteniendo servidor Minecraft (PID: $PID)...${NC}"
+    kill "$PID"
+    
+    # Esperar hasta 30 segundos
+    for i in {1..30}; do
+        if ! kill -0 "$PID" 2>/dev/null; then
+            rm -f "$MC_PID_FILE"
+            echo -e "${GREEN}[✓] Servidor detenido${NC}"
+            return 0
+        fi
+        sleep 1
+    done
+    
+    # Si aún no se detuvo, forzar
+    kill -9 "$PID" 2>/dev/null
+    rm -f "$MC_PID_FILE"
+    echo -e "${GREEN}[✓] Servidor detenido (forzado)${NC}"
+    return 0
+}
+
+start_web() {
+    if [ -f "$WEB_PID_FILE" ]; then
+        PID=$(cat "$WEB_PID_FILE")
+        if kill -0 "$PID" 2>/dev/null; then
+            echo -e "${YELLOW}[!] Panel web ya está ejecutándose (PID: $PID)${NC}"
+            return 1
+        fi
+    fi
+    
+    echo -e "${CYAN}[INFO] Iniciando panel web...${NC}"
+    cd "$WEB_DIR"
+    ./start-web.sh
+    sleep 2
+    
+    if [ -f "$WEB_PID_FILE" ] && kill -0 $(cat "$WEB_PID_FILE") 2>/dev/null; then
+        echo -e "${GREEN}[✓] Panel web iniciado (PID: $(cat "$WEB_PID_FILE"))${NC}"
+        echo -e "${CYAN}[INFO] URL: http://localhost:5000${NC}"
+        return 0
+    else
+        echo -e "${RED}[✗] Error al iniciar el panel web${NC}"
+        return 1
+    fi
+}
+
+stop_web() {
+    if [ ! -f "$WEB_PID_FILE" ]; then
+        echo -e "${YELLOW}[!] Panel web no está ejecutándose${NC}"
+        return 1
+    fi
+    
+    PID=$(cat "$WEB_PID_FILE")
+    if ! kill -0 "$PID" 2>/dev/null; then
+        echo -e "${YELLOW}[!] Panel web no está ejecutándose${NC}"
+        rm -f "$WEB_PID_FILE"
+        return 1
+    fi
+    
+    echo -e "${CYAN}[INFO] Deteniendo panel web (PID: $PID)...${NC}"
+    kill "$PID"
+    sleep 2
+    
+    if ! kill -0 "$PID" 2>/dev/null; then
+        rm -f "$WEB_PID_FILE"
+        echo -e "${GREEN}[✓] Panel web detenido${NC}"
+        return 0
+    fi
+    
+    # Si aún no se detuvo, forzar
+    kill -9 "$PID" 2>/dev/null
+    rm -f "$WEB_PID_FILE"
+    echo -e "${GREEN}[✓] Panel web detenido (forzado)${NC}"
+    return 0
+}
+
+status_server() {
+    if [ -f "$MC_PID_FILE" ]; then
+        PID=$(cat "$MC_PID_FILE")
+        if kill -0 "$PID" 2>/dev/null; then
+            echo -e "${GREEN}[✓] Servidor Minecraft: EJECUTÁNDOSE (PID: $PID)${NC}"
+            return 0
+        fi
+    fi
+    echo -e "${RED}[✗] Servidor Minecraft: DETENIDO${NC}"
+    return 1
+}
+
+status_web() {
+    if [ -f "$WEB_PID_FILE" ]; then
+        PID=$(cat "$WEB_PID_FILE")
+        if kill -0 "$PID" 2>/dev/null; then
+            echo -e "${GREEN}[✓] Panel Web: EJECUTÁNDOSE (PID: $PID)${NC}"
+            echo -e "${CYAN}    URL: http://localhost:5000${NC}"
+            return 0
+        fi
+    fi
+    echo -e "${RED}[✗] Panel Web: DETENIDO${NC}"
+    return 1
+}
+
+logs_server() {
+    if [ -f "$MC_DIR/logs/latest.log" ]; then
+        tail -f "$MC_DIR/logs/latest.log"
+    else
+        echo -e "${RED}[✗] No se encontró el archivo de logs${NC}"
+        return 1
+    fi
+}
+
+logs_web() {
+    if [ -f "$WEB_DIR/web.log" ]; then
+        tail -f "$WEB_DIR/web.log"
+    else
+        echo -e "${RED}[✗] No se encontró el archivo de logs${NC}"
+        return 1
+    fi
+}
+
+# Procesar comando
+COMMAND=$1
+TARGET=$2
+
+if [ -z "$COMMAND" ] || [ -z "$TARGET" ]; then
+    show_help
+    exit 1
+fi
+
+case "$COMMAND" in
+    start)
+        case "$TARGET" in
+            server) start_server ;;
+            web) start_web ;;
+            all)
+                start_server
+                start_web
+                ;;
+            *) show_help; exit 1 ;;
+        esac
+        ;;
+    stop)
+        case "$TARGET" in
+            server) stop_server ;;
+            web) stop_web ;;
+            all)
+                stop_server
+                stop_web
+                ;;
+            *) show_help; exit 1 ;;
+        esac
+        ;;
+    restart)
+        case "$TARGET" in
+            server)
+                stop_server
+                sleep 2
+                start_server
+                ;;
+            web)
+                stop_web
+                sleep 2
+                start_web
+                ;;
+            all)
+                stop_server
+                stop_web
+                sleep 2
+                start_server
+                start_web
+                ;;
+            *) show_help; exit 1 ;;
+        esac
+        ;;
+    status)
+        case "$TARGET" in
+            server) status_server ;;
+            web) status_web ;;
+            all)
+                status_server
+                status_web
+                ;;
+            *) show_help; exit 1 ;;
+        esac
+        ;;
+    logs)
+        case "$TARGET" in
+            server) logs_server ;;
+            web) logs_web ;;
+            *) show_help; exit 1 ;;
+        esac
+        ;;
+    *)
+        show_help
+        exit 1
+        ;;
+esac
+CONTROL
+chmod +x server-control.sh
 
 # Script start-server.sh
 cat > start-server.sh << 'SRVSTART'

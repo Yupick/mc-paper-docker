@@ -31,7 +31,9 @@ public class RPGPathResolver {
     public RPGPathResolver(MMORPGPlugin plugin) {
         this.plugin = plugin;
         this.universalDataDir = new File(plugin.getDataFolder(), "data");
-        this.worldsBasePath = plugin.getConfig().getString("worlds.base-path", "/server/worlds");
+        // Calcular worlds/ relativo al servidor (../worlds/)
+        File worldsDir = new File(plugin.getServer().getWorldContainer().getParentFile(), "worlds");
+        this.worldsBasePath = worldsDir.getAbsolutePath();
         
         // Crear directorio de datos universales si no existe
         if (!universalDataDir.exists()) {

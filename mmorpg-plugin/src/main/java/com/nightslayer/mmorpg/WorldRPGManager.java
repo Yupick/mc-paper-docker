@@ -30,11 +30,31 @@ public class WorldRPGManager {
     }
     
     /**
-     * Carga la metadata de un mundo desde su archivo metadata.json
+     * Carga la metadata del mundo ACTIVO desde worlds/active/metadata.json
+     */
+    public WorldMetadata loadActiveWorldMetadata() {
+        File worldsDir = new File(plugin.getServer().getWorldContainer().getParentFile(), "worlds");
+        File metadataFile = new File(worldsDir, "active/metadata.json");
+        
+        if (!metadataFile.exists()) {
+            return null;
+        }
+        
+        try (FileReader reader = new FileReader(metadataFile)) {
+            return gson.fromJson(reader, WorldMetadata.class);
+        } catch (IOException e) {
+            plugin.getLogger().log(Level.WARNING, 
+                "Error al leer metadata del mundo activo", e);
+            return null;
+        }
+    }
+    
+    /**
+     * Carga la metadata de un mundo específico desde worlds/{worldName}/metadata.json
      */
     public WorldMetadata loadWorldMetadata(String worldName) {
-        String worldsBasePath = plugin.getConfig().getString("worlds.base-path", "/server/worlds");
-        File metadataFile = new File(worldsBasePath + "/" + worldName + "/metadata.json");
+        File worldsDir = new File(plugin.getServer().getWorldContainer().getParentFile(), "worlds");
+        File metadataFile = new File(worldsDir, worldName + "/metadata.json");
         
         if (!metadataFile.exists()) {
             return null;
