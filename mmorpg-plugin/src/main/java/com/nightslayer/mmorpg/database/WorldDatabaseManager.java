@@ -25,28 +25,38 @@ public class WorldDatabaseManager {
     
     /**
      * Obtiene o crea la conexión a la BD del mundo activo
-     * Resuelve el symlink worlds/active y abre worlds/active/data/world.db
+     * Lee desde worlds/active/world/data/world.db (usando el symlink directamente)
      */
     public Connection getWorldConnection() {
         try {
-            File worldsDir = new File(plugin.getServer().getWorldContainer(), "active");
+            // Obtener worlds/active (symlink al mundo activo)
+            File worldsDir = new File(plugin.getServer().getWorldContainer().getParentFile(), "worlds");
+            File activeWorldLink = new File(worldsDir, "active");
             
-            // Resolver el symlink si existe
-            File actualWorldDir = worldsDir.getCanonicalFile();
-            if (!actualWorldDir.exists()) {
-                plugin.getLogger().warning("Directorio del mundo activo no existe: " + actualWorldDir.getAbsolutePath());
+            if (!activeWorldLink.exists()) {
+                plugin.getLogger().warning("Symlink del mundo activo no existe: " + activeWorldLink.getAbsolutePath());
                 return null;
             }
             
-            String worldName = actualWorldDir.getName();
+            // NO resolver el symlink - usar directamente "active"
+            // Esto permite que cuando cambie el symlink, automáticamente apunte al nuevo mundo
+            File worldDir = new File(activeWorldLink, "world");
+            if (!worldDir.exists()) {
+                plugin.getLogger().warning("Directorio world no existe en: " + worldDir.getAbsolutePath());
+                return null;
+            }
             
-            // Si el mundo cambió, cerrar la conexión anterior y abrir la nueva
-            if (!worldName.equals(activeWorldName)) {
+            // Usar "active" como nombre del mundo para identificar la conexión
+            String worldName = "active";
+            
+            // Si el mundo cambió o no hay conexión, abrir la BD
+            if (!worldName.equals(activeWorldName) || activeWorldConnection == null || activeWorldConnection.isClosed()) {
                 if (activeWorldConnection != null && !activeWorldConnection.isClosed()) {
                     activeWorldConnection.close();
                 }
                 activeWorldName = worldName;
-                activeWorldConnection = openWorldDatabase(actualWorldDir);
+                // Abrir BD desde worlds/active/world/data/world.db (usando symlink)
+                activeWorldConnection = openWorldDatabase(worldDir);
             }
             
             return activeWorldConnection;

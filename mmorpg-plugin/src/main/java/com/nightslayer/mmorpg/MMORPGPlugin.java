@@ -95,6 +95,15 @@ public class MMORPGPlugin extends JavaPlugin {
         } else {
             getLogger().warning("No se pudo inicializar la BD local del mundo activo");
         }
+        
+        // Migrar datos JSON a SQLite si es primera ejecución
+        getLogger().info("Ejecutando migración de datos a SQLite...");
+        com.nightslayer.mmorpg.database.DatabaseMigration.migrate(
+            getDataFolder().getAbsolutePath(),
+            databaseManager,
+            this
+        );
+        
         worldRPGManager = new WorldRPGManager(this);
         dataManager = new DataManager(this);
         
@@ -240,18 +249,18 @@ public class MMORPGPlugin extends JavaPlugin {
      * Detecta qué mundos tienen el modo RPG activado
      */
     private void detectRPGWorlds() {
-        String worldsBasePath = getConfig().getString("worlds.base-path", "/server/worlds");
-        File worldsDir = new File(worldsBasePath);
+        File worldsDir = new File(getServer().getWorldContainer().getParentFile(), "worlds");
         
         if (!worldsDir.exists()) {
-            getLogger().warning("Directorio de mundos no encontrado: " + worldsBasePath);
+            getLogger().warning("Directorio de mundos no encontrado: " + worldsDir.getAbsolutePath());
             return;
         }
         
         int rpgWorldsCount = 0;
         
-        // Iterar sobre los subdirectorios (mundos)
-        File[] worldFolders = worldsDir.listFiles(File::isDirectory);
+        // Iterar sobre los subdirectorios (mundos), excluyendo 'active' y 'templates'
+        File[] worldFolders = worldsDir.listFiles(file -> 
+            file.isDirectory() && !file.getName().equals("active") && !file.getName().equals("templates"));
         if (worldFolders != null) {
             for (File worldFolder : worldFolders) {
                 File metadataFile = new File(worldFolder, "metadata.json");

@@ -233,6 +233,7 @@ public class DatabaseMigration {
 
     /**
      * Migra zonas de respawn de respawn_config.json
+     * Si no existe JSON, genera zonas de respawn por defecto
      */
     private static void migrateRespawnTemplates(String dataDirectory, DatabaseManager dbManager, MMORPGPlugin plugin) {
         try {
@@ -241,7 +242,12 @@ public class DatabaseMigration {
             if (!configFile.exists()) {
                 configFile = new File(new File(dataDirectory).getParentFile(), "respawn_config.json");
             }
-            if (!configFile.exists()) return;
+            
+            if (!configFile.exists()) {
+                plugin.getLogger().info("📝 Generando zonas de respawn por defecto...");
+                generateDefaultRespawnZones(dbManager, plugin);
+                return;
+            }
 
             JsonObject config = gson.fromJson(new FileReader(configFile), JsonObject.class);
 
@@ -702,7 +708,52 @@ public class DatabaseMigration {
             plugin.getLogger().info("✅ Sistema de economía inicializado (balances creados dinámicamente)");
             
         } catch (Exception e) {
-            plugin.getLogger().warning("⚠️ Error inicializando economía: " + e.getMessage());
+            plugin.getLogger().warning("⚠️ Error en economía: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Genera zonas de respawn por defecto cuando no existe respawn_config.json
+     */
+    private static void generateDefaultRespawnZones(DatabaseManager dbManager, MMORPGPlugin plugin) {
+        String insertSQL = """
+                INSERT INTO respawn_templates (id, world, name, type, location, mob_ids, max_mobs, respawn_interval_seconds, enabled)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            
+            // Zona 1: Bosque Inicial
+            pstmt.setString(1, "forest_newbie");
+            pstmt.setString(2, "world");
+            pstmt.setString(3, "Bosque para Principiantes");
+            pstmt.setString(4, "FARMEO");
+            pstmt.setString(5, "{\"x\":100,\"y\":64,\"z\":100,\"radius\":30}");
+            pstmt.setString(6, "[\"zombie\",\"skeleton\"]");
+            pstmt.setInt(7, 10);
+            pstmt.setInt(8, 60);
+            pstmt.setInt(9, 1);
+            pstmt.addBatch();
+            
+            // Zona 2: Cueva de Arañas
+            pstmt.setString(1, "spider_cave");
+            pstmt.setString(2, "world");
+            pstmt.setString(3, "Cueva de Arañas");
+            pstmt.setString(4, "FARMEO");
+            pstmt.setString(5, "{\"x\":-50,\"y\":40,\"z\":200,\"radius\":20}");
+            pstmt.setString(6, "[\"cave_spider\",\"spider\"]");
+            pstmt.setInt(7, 8);
+            pstmt.setInt(8, 90);
+            pstmt.setInt(9, 1);
+            pstmt.addBatch();
+            
+            int[] results = pstmt.executeBatch();
+            conn.commit();
+            plugin.getLogger().info("✅ Generadas " + results.length + " zonas de respawn por defecto");
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("⚠️ Error generando zonas de respawn: " + e.getMessage());
         }
     }
 }
